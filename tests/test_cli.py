@@ -1,9 +1,11 @@
 from pathlib import Path
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
 from nebula_copilot.cli import app
 from nebula_copilot.mock_data import DEFAULT_TRACE_ID
+from nebula_copilot.models import Span, TraceDocument
 
 runner = CliRunner()
 
@@ -101,3 +103,40 @@ def test_list_traces_validation() -> None:
         ],
     )
     assert result.exit_code == 2
+
+
+def test_analyze_es_uses_repository_abstraction() -> None:
+    trace_doc = TraceDocument(
+        trace_id="trace-es-1",
+        root=Span(
+            span_id="root",
+            parent_span_id=None,
+            service_name="gateway",
+            operation_name="GET /api",
+            duration_ms=120,
+            status="OK",
+            exception_stack=None,
+            children=[],
+        ),
+    )
+
+    with patch("nebula_copilot.cli.ESRepository") as mocked_repo_cls:
+        mocked_repo = mocked_repo_cls.return_value
+        mocked_repo.get_trace.return_value = trace_doc
+
+        result = runner.invoke(
+            app,
+            [
+                "analyze-es",
+                "trace-es-1",
+                "--index",
+                "nebula-trace-*",
+                "--format",
+                "json",
+            ],
+        )
+
+    assert result.exit_code == 0
+    mocked_repo_cls.assert_called_once()
+    mocked_repo.get_trace.assert_called_once_with("trace-es-1")
+    assert "trace-es-1" in result.stdout

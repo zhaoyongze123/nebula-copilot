@@ -19,7 +19,7 @@ from nebula_copilot.mock_data import DEFAULT_TRACE_ID, write_mock_file
 from nebula_copilot.notifier import NotifyError, push_summary
 from nebula_copilot.models import Span
 from nebula_copilot.report_schema import NebulaReport, SpanReport
-from nebula_copilot.repository import LocalJsonRepository
+from nebula_copilot.repository import ESRepository, LocalJsonRepository
 
 app = typer.Typer(add_completion=False, help="Nebula-Copilot CLI")
 console = Console()
@@ -310,15 +310,15 @@ def analyze_es(
         password = os.getenv("NEBULA_ES_PASSWORD")
 
     try:
-        trace_doc = fetch_trace_by_id(
+        repository = ESRepository(
             es_url=es_url,
             index=index,
-            trace_id=trace_id,
             username=username,
             password=password,
             verify_certs=verify_certs,
             timeout_seconds=timeout_seconds,
         )
+        trace_doc = repository.get_trace(trace_id)
         result = analyze_trace(trace_doc, top_n=top_n)
         summary = _render_result(trace_doc.root, result, format)
         _maybe_push_webhook(push_webhook, summary)

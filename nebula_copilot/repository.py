@@ -7,6 +7,7 @@ from typing import Protocol
 from pydantic import ValidationError
 
 from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
+from nebula_copilot.es_client import fetch_trace_by_id
 from nebula_copilot.models import TraceDocument
 
 
@@ -44,13 +45,34 @@ class LocalJsonRepository:
 
 
 class ESRepository:
-    """Phase 2 placeholder for Elasticsearch-backed repository."""
+    """Elasticsearch-backed repository implementation."""
 
-    def __init__(self, *_: object, **__: object) -> None:
-        pass
+    def __init__(
+        self,
+        es_url: str,
+        index: str,
+        username: str | None = None,
+        password: str | None = None,
+        verify_certs: bool = True,
+        timeout_seconds: int = 10,
+    ) -> None:
+        self.es_url = es_url
+        self.index = index
+        self.username = username
+        self.password = password
+        self.verify_certs = verify_certs
+        self.timeout_seconds = timeout_seconds
 
     def get_trace(self, trace_id: str) -> TraceDocument:
-        raise NotImplementedError(f"ESRepository not implemented yet. trace_id={trace_id}")
+        return fetch_trace_by_id(
+            es_url=self.es_url,
+            index=self.index,
+            trace_id=trace_id,
+            username=self.username,
+            password=self.password,
+            verify_certs=self.verify_certs,
+            timeout_seconds=self.timeout_seconds,
+        )
 
 
 class HTTPRepository:
