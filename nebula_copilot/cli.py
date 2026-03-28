@@ -166,12 +166,15 @@ def _render_result(trace_root: Span, result: DiagnosisResult, output_format: str
     report = _build_report(result)
     fmt = output_format.lower()
 
+    if fmt == "table":
+        fmt = "rich"
+
     if fmt == "json":
         console.print(report.model_dump_json(indent=2, ensure_ascii=False))
         return report.channel_text
 
     if fmt != "rich":
-        console.print("[red]--format only supports rich/json[/red]")
+        console.print("[red]--format only supports rich/json (table is alias of rich)[/red]")
         raise typer.Exit(code=2)
 
     _print_header_panel(result)
@@ -383,8 +386,9 @@ def list_traces(
             console.print(json.dumps({"trace_ids": trace_ids}, ensure_ascii=False, indent=2))
             return
 
-        if format != "rich":
-            console.print("[red]--format only supports rich/json[/red]")
+        normalized_format = "rich" if format == "table" else format
+        if normalized_format != "rich":
+            console.print("[red]--format only supports rich/json (table is alias of rich)[/red]")
             raise typer.Exit(code=2)
 
         table = Table(title=f"Recent Trace IDs (last {last_minutes} minutes)", header_style="bold cyan")

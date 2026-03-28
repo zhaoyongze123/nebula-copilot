@@ -54,6 +54,24 @@ def test_analyze_invalid_format(tmp_path: Path) -> None:
     assert result.exit_code == 2
 
 
+def test_analyze_table_format_alias(tmp_path: Path) -> None:
+    output = tmp_path / "mock.json"
+    runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
+
+    result = runner.invoke(
+        app,
+        [
+            "analyze",
+            DEFAULT_TRACE_ID,
+            "--source",
+            str(output),
+            "--format",
+            "table",
+        ],
+    )
+    assert result.exit_code == 0
+
+
 def test_analyze_trace_id_not_found(tmp_path: Path) -> None:
     output = tmp_path / "mock.json"
     runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
