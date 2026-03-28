@@ -1,0 +1,12 @@
+---
+description: 全局中文输出与中文提交信息规范
+alwaysApply: true
+---
+
+- 回答与思考过程都使用中文。
+- 写的 git 提交信息（如 feat/fix/chore/docs）都会使用中文描述。
+
+例如：
+
+feat: 增加最近 traceId 查询命令
+fix: 修复 CI 冒烟脚本的 Python 路径兼容问题
