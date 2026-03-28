@@ -54,6 +54,23 @@ def test_analyze_invalid_format(tmp_path: Path) -> None:
     assert result.exit_code == 2
 
 
+def test_analyze_trace_id_not_found(tmp_path: Path) -> None:
+    output = tmp_path / "mock.json"
+    runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
+
+    result = runner.invoke(
+        app,
+        [
+            "analyze",
+            "another-trace",
+            "--source",
+            str(output),
+        ],
+    )
+    assert result.exit_code == 1
+    assert "未找到目标 Trace" in result.stdout
+
+
 def test_list_traces_validation() -> None:
     result = runner.invoke(
         app,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from elasticsearch import Elasticsearch
+from elasticsearch import BadRequestError, Elasticsearch
 
 from nebula_copilot.models import Span, TraceDocument
 
@@ -194,40 +194,46 @@ def list_recent_trace_ids(
     es = _build_es(es_url, username, password, verify_certs, timeout_seconds)
     cutoff_ms = int(datetime.now().timestamp() * 1000) - last_minutes * 60 * 1000
 
-    query = {
-        "size": 0,
-        "query": {
-            "bool": {
-                "should": [
-                    {"range": {"timestamp": {"gte": cutoff_ms}}},
-                    {"range": {"@timestamp": {"gte": f"now-{last_minutes}m", "lte": "now"}}},
-                ],
-                "minimum_should_match": 1,
-            }
-        },
-        "aggs": {
-            "trace_id_snake": {
-                "terms": {"field": "trace_id", "size": limit},
-                "aggs": {
-                    "latest_num": {"max": {"field": "timestamp"}},
-                    "latest_date": {"max": {"field": "@timestamp"}},
-                },
+    def _build_query(field: str) -> Dict[str, Any]:
+        return {
+            "size": 0,
+            "query": {
+                "bool": {
+                    "should": [
+                        {"range": {"timestamp": {"gte": cutoff_ms}}},
+                        {"range": {"@timestamp": {"gte": f"now-{last_minutes}m", "lte": "now"}}},
+                    ],
+                    "minimum_should_match": 1,
+                }
             },
-            "trace_id_camel": {
-                "terms": {"field": "traceId", "size": limit},
-                "aggs": {
-                    "latest_num": {"max": {"field": "timestamp"}},
-                    "latest_date": {"max": {"field": "@timestamp"}},
-                },
+            "aggs": {
+                "trace_ids": {
+                    "terms": {"field": field, "size": limit},
+                    "aggs": {
+                        "latest_num": {"max": {"field": "timestamp"}},
+                        "latest_date": {"max": {"field": "@timestamp"}},
+                    },
+                }
             },
-        },
-    }
+        }
 
-    resp = es.search(index=index, body=query)
+    candidate_fields = [
+        "trace_id.keyword",
+        "traceId.keyword",
+        "trace_id",
+        "traceId",
+    ]
 
     merged: Dict[str, float] = {}
-    for agg_name in ("trace_id_snake", "trace_id_camel"):
-        buckets = resp.get("aggregations", {}).get(agg_name, {}).get("buckets", [])
+    for field in candidate_fields:
+        try:
+            resp = es.search(index=index, body=_build_query(field))
+        except BadRequestError as exc:
+            if "Fielddata is disabled" in str(exc):
+                continue
+            raise
+
+        buckets = resp.get("aggregations", {}).get("trace_ids", {}).get("buckets", [])
         for b in buckets:
             key = b.get("key")
             if not key:
@@ -235,7 +241,7 @@ def list_recent_trace_ids(
             latest_num = b.get("latest_num", {}).get("value") or 0
             latest_date = b.get("latest_date", {}).get("value") or 0
             latest = max(float(latest_num), float(latest_date))
-            merged[key] = max(merged.get(key, 0.0), latest)
+            merged[str(key)] = max(merged.get(str(key), 0.0), latest)
 
     sorted_ids = sorted(merged.items(), key=lambda x: x[1], reverse=True)
     return [trace_id for trace_id, _ in sorted_ids[:limit]]

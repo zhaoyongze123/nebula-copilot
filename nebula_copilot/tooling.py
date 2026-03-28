@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Protocol
 
+from nebula_copilot.analyzer import analyze_trace
+from nebula_copilot.models import TraceDocument
+
 
 class TraceTool(Protocol):
     def __call__(self, trace_id: str) -> Dict[str, Any]:
@@ -32,14 +35,35 @@ class AgentContext:
     tool_registry: ToolRegistry
 
 
+def tool_get_trace(trace_id: str, tool: TraceTool) -> Dict[str, Any]:
+    """Phase 2 tool stub: get trace payload by trace id."""
+    return tool(trace_id)
+
+
+def tool_analyze_trace(trace: TraceDocument) -> Dict[str, Any]:
+    """Phase 2 tool stub: run deterministic diagnosis and return structured JSON."""
+    result = analyze_trace(trace)
+    return result.to_dict()
+
+
+def tool_get_jvm_metrics(service_name: str, tool: JVMTool) -> Dict[str, Any]:
+    """Phase 2 tool stub: query JVM metrics for a service."""
+    return tool(service_name)
+
+
+def tool_search_logs(service_name: str, time_range: str, tool: LogsTool) -> Dict[str, Any]:
+    """Phase 2 tool stub: query service logs by time range."""
+    return tool(service_name, time_range)
+
+
 def run_agent_poc(ctx: AgentContext) -> Dict[str, Any]:
     """Phase 2 POC: simple deterministic tool-calling chain."""
-    trace_payload = ctx.tool_registry.query_trace(ctx.trace_id)
+    trace_payload = tool_get_trace(ctx.trace_id, ctx.tool_registry.query_trace)
     bottleneck_service = trace_payload.get("bottleneck_service", "unknown-service")
 
-    jvm_payload = ctx.tool_registry.query_jvm(bottleneck_service)
+    jvm_payload = tool_get_jvm_metrics(bottleneck_service, ctx.tool_registry.query_jvm)
     keyword = trace_payload.get("keyword", "timeout")
-    logs_payload = ctx.tool_registry.query_logs(bottleneck_service, keyword)
+    logs_payload = tool_search_logs(bottleneck_service, keyword, ctx.tool_registry.query_logs)
 
     return {
         "trace_id": ctx.trace_id,

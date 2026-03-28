@@ -4,7 +4,7 @@ Nebula-Copilot 是一个终端排障助手：
 - 生成本地 mock trace 数据
 - 使用 `nebula-cli analyze <trace_id>` 分析链路
 - 自动输出瓶颈节点、耗时、异常分类和行动建议
-- 支持 `table/json` 双格式输出，方便机器人推送
+- 支持 `rich/json` 双格式输出，方便机器人推送
 - 支持接入真实 Elasticsearch，直接按 TraceID 查询并分析
 
 ## 目录结构
@@ -38,14 +38,14 @@ nebula-cli seed trace_mock_ds_0001 --scenario downstream --output data/mock_ds.j
 ### 2) 分析本地链路
 
 ```bash
-nebula-cli analyze trace_mock_2026_0001 --source data/mock_trace.json --top-n 3 --format table
+nebula-cli analyze trace_mock_2026_0001 --source data/mock_trace.json --top-n 3 --format rich
 nebula-cli analyze trace_mock_2026_0001 --source data/mock_trace.json --top-n 3 --format json
 ```
 
 ### 3) 查询最近 TraceID（高频排障入口）
 
 ```bash
-nebula-cli list-traces --index nebula_metrics --last-minutes 30 --limit 20 --format table
+nebula-cli list-traces --index nebula_metrics --last-minutes 30 --limit 20 --format rich
 nebula-cli list-traces --index nebula_metrics --last-minutes 30 --limit 20 --format json
 ```
 
@@ -62,7 +62,7 @@ export NEBULA_ES_PASSWORD="your_password"
 然后按 TraceID 直接查询并分析：
 
 ```bash
-nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --top-n 5 --format table
+nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --top-n 5 --format rich
 nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --format json
 ```
 
@@ -81,7 +81,7 @@ nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --push-webhook "http
 
 参数说明：
 - `--source/-s`：输入 trace JSON 文件
-- `--format`：`table` 或 `json`
+- `--format`：`rich` 或 `json`
 - `--top-n`：输出最慢的前 N 个 span
 - `--verbose`：开启调试日志
 
@@ -94,7 +94,7 @@ nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --push-webhook "http
 
 ## 排障摘要模板（可贴群）
 
-命令 `analyze --format table` 会自动输出：
+命令 `analyze --format rich` 会自动输出：
 - 瓶颈服务
 - 耗时
 - 异常类型
@@ -132,8 +132,30 @@ CI 自动执行（GitHub Actions）：
 - `query_trace`
 - `query_jvm`
 - `query_logs`
+- `tool_get_trace`
+- `tool_analyze_trace`
+- `tool_get_jvm_metrics`
+- `tool_search_logs`
 
 以及 `run_agent_poc` 演示链路：
 `trace_id -> query_trace -> query_jvm -> query_logs -> agent_report`
 
 后续接入线上 ES/JVM/日志系统时，只需替换 `ToolRegistry` 的具体实现。
+
+另外新增了 `nebula_copilot/repository.py`：
+- `TraceRepository`（协议）
+- `LocalJsonRepository`（当前实现）
+- `ESRepository` / `HTTPRepository`（占位实现）
+
+可以在不改 CLI 主流程的前提下替换数据源。
+
+## 下一阶段 TODO（Phase 2 / 3）
+
+- Phase 2
+  - 将 `LocalJsonRepository` 替换为 `ESRepository` 真实现
+  - 统一 Tool 返回 JSON schema（trace/jvm/logs）
+  - 接入大模型进行“工具调用编排 + 结论生成”
+- Phase 3
+  - 引入故障知识库（Runbook/SOP/复盘）
+  - 增加相似案例检索与引用
+  - 输出建议中附“参考案例”来源

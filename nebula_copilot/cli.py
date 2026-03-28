@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -11,16 +12,21 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from nebula_copilot.analyzer import analyze_trace, build_alert_summary
+from nebula_copilot.analyzer import DiagnosisResult, SpanDiagnosis, analyze_trace, build_alert_summary
+from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
 from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, list_recent_trace_ids
-from nebula_copilot.mock_data import DEFAULT_TRACE_ID, load_mock_file, write_mock_file
+from nebula_copilot.mock_data import DEFAULT_TRACE_ID, write_mock_file
 from nebula_copilot.notifier import NotifyError, push_summary
+from nebula_copilot.models import Span
+from nebula_copilot.report_schema import NebulaReport, SpanReport
+from nebula_copilot.repository import LocalJsonRepository
 
 app = typer.Typer(add_completion=False, help="Nebula-Copilot CLI")
 console = Console()
 logger = logging.getLogger("nebula_copilot")
 
 DEFAULT_DATA_PATH = Path("data/mock_trace.json")
+SLOW_WARNING_MS = 1000
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -31,8 +37,65 @@ def _setup_logging(verbose: bool) -> None:
     )
 
 
-def _print_table(trace_id: str, result) -> None:
-    table = Table(title=f"Nebula Trace Spans - {trace_id}", header_style="bold magenta")
+def _span_path(root: Span, target: SpanDiagnosis) -> str:
+    path: list[str] = []
+
+    def _dfs(node: Span, current: list[str]) -> bool:
+        current.append(node.service_name)
+        if node.span_id == target.span.span_id:
+            path.extend(current)
+            return True
+        for child in node.children:
+            if _dfs(child, current.copy()):
+                return True
+        return False
+
+    if not _dfs(root, []):
+        return target.span.service_name
+    return " > ".join(path)
+
+
+def _severity_style(duration_ms: int, status: str) -> str:
+    if status.upper() == "ERROR":
+        return "bold red"
+    if duration_ms > SLOW_WARNING_MS:
+        return "yellow"
+    return "green"
+
+
+def _print_header_panel(result: DiagnosisResult) -> None:
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    text = Text.assemble(
+        ("TraceID: ", "bold"),
+        (result.trace_id, "bold cyan"),
+        ("\n分析时间: ", "bold"),
+        (generated_at, "white"),
+        ("\n节点总数: ", "bold"),
+        (str(result.total_spans), "white"),
+    )
+    console.print(Panel(text, title="Nebula Trace Analyzer", border_style="blue"))
+
+
+def _print_summary_table(result: DiagnosisResult, root: Span) -> None:
+    b = result.bottleneck
+    table = Table(title="诊断摘要", header_style="bold magenta")
+    table.add_column("Bottleneck Service")
+    table.add_column("Duration(ms)", justify="right")
+    table.add_column("Status")
+    table.add_column("Path")
+
+    style = _severity_style(b.span.duration_ms, b.span.status)
+    table.add_row(
+        f"[{style}]{b.span.service_name}[/{style}]",
+        f"[{style}]{b.span.duration_ms}[/{style}]",
+        f"[{style}]{b.span.status}[/{style}]",
+        _span_path(root, b),
+    )
+    console.print(table)
+
+
+def _print_top_spans_table(result: DiagnosisResult) -> None:
+    table = Table(title=f"Top {len(result.top_spans)} Slow Spans", header_style="bold cyan")
     table.add_column("Service")
     table.add_column("Operation")
     table.add_column("Duration(ms)", justify="right")
@@ -41,54 +104,82 @@ def _print_table(trace_id: str, result) -> None:
 
     for item in result.top_spans:
         span = item.span
-        status_style = "red" if span.status.upper() == "ERROR" else "green"
+        style = _severity_style(span.duration_ms, span.status)
         table.add_row(
-            span.service_name,
+            f"[{style}]{span.service_name}[/{style}]",
             span.operation_name,
-            str(span.duration_ms),
-            f"[{status_style}]{span.status}[/{status_style}]",
+            f"[{style}]{span.duration_ms}[/{style}]",
+            f"[{style}]{span.status}[/{style}]",
             item.error_type,
         )
 
     console.print(table)
 
 
-def _print_diagnosis(result) -> None:
+def _print_diagnosis(result: DiagnosisResult) -> None:
     bottleneck = result.bottleneck
-    diagnosis = Text.assemble(
-        "瓶颈节点: ",
-        (bottleneck.span.service_name, "bold red"),
-        "，耗时: ",
-        (f"{bottleneck.span.duration_ms}ms", "bold yellow"),
-        "，异常类型: ",
-        (bottleneck.error_type, "bold red"),
+    err_summary = bottleneck.span.exception_stack or (
+        "有错误但未提供堆栈" if bottleneck.span.status.upper() == "ERROR" else "无异常"
     )
-    if bottleneck.span.exception_stack:
-        diagnosis.append("\n错误信息: ")
-        diagnosis.append(bottleneck.span.exception_stack, "red")
 
-    diagnosis.append("\n建议动作: ")
-    diagnosis.append(bottleneck.action_suggestion, "cyan")
+    diagnosis = Text.assemble(
+        "瓶颈节点为 ",
+        (bottleneck.span.service_name, "bold red"),
+        "，耗时 ",
+        (f"{bottleneck.span.duration_ms}ms", "bold yellow"),
+        "，状态 ",
+        (bottleneck.span.status, "bold red" if bottleneck.span.status.upper() == "ERROR" else "green"),
+        "。\n异常摘要：",
+        (err_summary, "red" if bottleneck.span.status.upper() == "ERROR" else "green"),
+        "\n建议动作：",
+        (bottleneck.action_suggestion, "cyan"),
+    )
 
-    console.print(Panel(diagnosis, title="诊断结论", border_style="red"))
+    console.print(Panel(diagnosis, title="可读结论", border_style="red"))
 
 
-def _render_result(trace_id: str, result, output_format: str) -> str:
+def _to_span_report(item: SpanDiagnosis) -> SpanReport:
+    return SpanReport(
+        service_name=item.span.service_name,
+        operation_name=item.span.operation_name,
+        duration_ms=item.span.duration_ms,
+        status=item.span.status,
+        error_type=item.error_type,
+        exception_stack=item.span.exception_stack,
+        action_suggestion=item.action_suggestion,
+    )
+
+
+def _build_report(result: DiagnosisResult) -> NebulaReport:
     summary = build_alert_summary(result)
+    return NebulaReport(
+        trace_id=result.trace_id,
+        generated_at=datetime.now().isoformat(timespec="seconds"),
+        summary=summary,
+        bottleneck=_to_span_report(result.bottleneck),
+        top_spans=[_to_span_report(item) for item in result.top_spans],
+        channel_text=summary,
+    )
 
+
+def _render_result(trace_root: Span, result: DiagnosisResult, output_format: str) -> str:
+    report = _build_report(result)
     fmt = output_format.lower()
-    if fmt == "json":
-        console.print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
-        return summary
 
-    if fmt != "table":
-        console.print("[red]--format only supports table/json[/red]")
+    if fmt == "json":
+        console.print(report.model_dump_json(indent=2, ensure_ascii=False))
+        return report.channel_text
+
+    if fmt != "rich":
+        console.print("[red]--format only supports rich/json[/red]")
         raise typer.Exit(code=2)
 
-    _print_table(trace_id, result)
+    _print_header_panel(result)
+    _print_summary_table(result, trace_root)
+    _print_top_spans_table(result)
     _print_diagnosis(result)
-    console.print(Panel(summary, title="可贴群排障摘要", border_style="blue"))
-    return summary
+    console.print(Panel(report.channel_text, title="可贴群排障摘要", border_style="blue"))
+    return report.channel_text
 
 
 def _maybe_push_webhook(push_webhook: str | None, summary: str) -> None:
@@ -100,6 +191,20 @@ def _maybe_push_webhook(push_webhook: str | None, summary: str) -> None:
     except NotifyError as exc:
         console.print(f"[red]Webhook push failed: {exc}[/red]")
         raise typer.Exit(code=1) from exc
+
+
+def _print_data_error(prefix: str, exc: Exception) -> None:
+    if isinstance(exc, TraceNotFoundError):
+        console.print(f"[red]{prefix}: 未找到目标 Trace。{exc}[/red]")
+        console.print("[yellow]建议：请检查 trace_id 或 mock 文件内容。[/yellow]")
+    elif isinstance(exc, TraceValidationError):
+        console.print(f"[red]{prefix}: Trace 数据校验失败。{exc}[/red]")
+        console.print("[yellow]建议：请检查 JSON 字段是否完整且类型正确。[/yellow]")
+    elif isinstance(exc, DataSourceError):
+        console.print(f"[red]{prefix}: 数据源读取失败。{exc}[/red]")
+        console.print("[yellow]建议：请检查文件路径和读取权限。[/yellow]")
+    else:
+        raise exc
 
 
 @app.command()
@@ -128,7 +233,7 @@ def seed(
 def analyze(
     trace_id: str = typer.Argument(..., help="Trace id to analyze"),
     source: Path = typer.Option(DEFAULT_DATA_PATH, "--source", "-s", help="Trace JSON file"),
-    format: str = typer.Option("table", "--format", help="Output format: table/json"),
+    format: str = typer.Option("rich", "--format", help="Output format: rich/json"),
     top_n: int = typer.Option(3, "--top-n", help="Top N slow spans"),
     push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
@@ -141,21 +246,17 @@ def analyze(
         raise typer.Exit(code=2)
 
     try:
-        if not source.exists():
-            console.print("[yellow]Mock data not found, generating default trace...[/yellow]")
-            write_mock_file(source, trace_id, "timeout")
-
-        trace_doc = load_mock_file(source)
-        if trace_doc.trace_id != trace_id:
-            logger.warning("Trace ID mismatch: expected=%s actual=%s", trace_id, trace_doc.trace_id)
-            console.print(
-                f"[yellow]Trace ID mismatch. Expected {trace_id}, got {trace_doc.trace_id}. Using file data.[/yellow]"
-            )
+        repository = LocalJsonRepository(source)
+        trace_doc = repository.get_trace(trace_id)
 
         result = analyze_trace(trace_doc, top_n=top_n)
-        summary = _render_result(trace_doc.trace_id, result, format)
+        summary = _render_result(trace_doc.root, result, format)
         _maybe_push_webhook(push_webhook, summary)
 
+    except (TraceNotFoundError, TraceValidationError, DataSourceError) as exc:
+        logger.error("Analyze failed: %s", exc)
+        _print_data_error("Analyze failed", exc)
+        raise typer.Exit(code=1) from exc
     except typer.Exit:
         raise
     except Exception as exc:  # pragma: no cover
@@ -190,7 +291,7 @@ def analyze_es(
     ),
     verify_certs: bool = typer.Option(True, "--verify-certs/--no-verify-certs", help="Verify TLS certs"),
     timeout_seconds: int = typer.Option(10, "--timeout-seconds", help="ES request timeout"),
-    format: str = typer.Option("table", "--format", help="Output format: table/json"),
+    format: str = typer.Option("rich", "--format", help="Output format: rich/json"),
     top_n: int = typer.Option(3, "--top-n", help="Top N slow spans"),
     push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
@@ -216,7 +317,7 @@ def analyze_es(
             timeout_seconds=timeout_seconds,
         )
         result = analyze_trace(trace_doc, top_n=top_n)
-        summary = _render_result(trace_doc.trace_id, result, format)
+        summary = _render_result(trace_doc.root, result, format)
         _maybe_push_webhook(push_webhook, summary)
 
     except ESQueryError as exc:
@@ -253,7 +354,7 @@ def list_traces(
     ),
     verify_certs: bool = typer.Option(True, "--verify-certs/--no-verify-certs", help="Verify TLS certs"),
     timeout_seconds: int = typer.Option(10, "--timeout-seconds", help="ES request timeout"),
-    format: str = typer.Option("table", "--format", help="Output format: table/json"),
+    format: str = typer.Option("rich", "--format", help="Output format: rich/json"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
 ) -> None:
     """List recent trace IDs from Elasticsearch."""
@@ -282,8 +383,8 @@ def list_traces(
             console.print(json.dumps({"trace_ids": trace_ids}, ensure_ascii=False, indent=2))
             return
 
-        if format != "table":
-            console.print("[red]--format only supports table/json[/red]")
+        if format != "rich":
+            console.print("[red]--format only supports rich/json[/red]")
             raise typer.Exit(code=2)
 
         table = Table(title=f"Recent Trace IDs (last {last_minutes} minutes)", header_style="bold cyan")
