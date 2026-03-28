@@ -1,0 +1,2 @@
+[console_scripts]
+nebula-cli = nebula_copilot.cli:app

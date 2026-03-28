@@ -1,0 +1,46 @@
+{
+  "trace_id": "trace_mock_2026_0001",
+  "root": {
+    "span_id": "span_frontend",
+    "parent_span_id": null,
+    "service_name": "frontend-web",
+    "operation_name": "User checkout",
+    "duration_ms": 920,
+    "status": "ERROR",
+    "exception_stack": null,
+    "children": [
+      {
+        "span_id": "span_gateway",
+        "parent_span_id": "span_frontend",
+        "service_name": "api-gateway",
+        "operation_name": "POST /api/orders",
+        "duration_ms": 980,
+        "status": "ERROR",
+        "exception_stack": null,
+        "children": [
+          {
+            "span_id": "span_order",
+            "parent_span_id": "span_gateway",
+            "service_name": "order-service",
+            "operation_name": "POST /orders/create",
+            "duration_ms": 1080,
+            "status": "ERROR",
+            "exception_stack": null,
+            "children": [
+              {
+                "span_id": "span_inventory",
+                "parent_span_id": "span_order",
+                "service_name": "inventory-service",
+                "operation_name": "GET /inventory/reserve",
+                "duration_ms": 1280,
+                "status": "ERROR",
+                "exception_stack": "java.net.SocketTimeoutException: Read timed out\n\tat com.inventory.client.HttpClient.call(HttpClient.java:87)\n\tat com.inventory.service.InventoryService.reserve(InventoryService.java:142)\n\t... 12 more",
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
