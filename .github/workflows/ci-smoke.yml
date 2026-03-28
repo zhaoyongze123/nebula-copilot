@@ -2,7 +2,6 @@ name: CI Smoke Test
 
 on:
   push:
-    branches: ["**"]
   pull_request:
   workflow_dispatch:
 
