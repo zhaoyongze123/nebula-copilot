@@ -134,7 +134,19 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
 
+      - name: Check LLM secret availability
+        id: key_check
+        env:
+          GH_MODELS_API_KEY: ${{ secrets.GH_MODELS_API_KEY }}
+        run: |
+          if [ -n "$GH_MODELS_API_KEY" ]; then
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Live LLM smoke via GH models
+        if: steps.key_check.outputs.has_key == 'true'
         env:
           GH_MODELS_API_KEY: ${{ secrets.GH_MODELS_API_KEY }}
           LLM_ENABLED: "true"
@@ -142,9 +154,9 @@ jobs:
           LLM_MODEL: "gpt-4.1-mini"
           LLM_REPORT_POLISH_ENABLED: "true"
         run: |
-          if [ -z "$GH_MODELS_API_KEY" ]; then
-            echo "GH_MODELS_API_KEY is empty, skip live smoke"
-            exit 0
-          fi
           python -m nebula_copilot.cli seed ci-live-llm-trace --output /tmp/live_llm_mock.json --scenario timeout
           python -m nebula_copilot.cli agent-analyze ci-live-llm-trace --source /tmp/live_llm_mock.json --runs-path /tmp/live_llm_runs.json --llm-enabled
+
+      - name: Live LLM smoke skipped
+        if: steps.key_check.outputs.has_key != 'true'
+        run: echo "GH_MODELS_API_KEY missing; Live LLM smoke skipped"
