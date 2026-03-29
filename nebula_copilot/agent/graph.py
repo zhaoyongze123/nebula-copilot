@@ -14,6 +14,13 @@ _MAX_RETRY = 2
 _RETRY_BACKOFF_SECONDS = 0.05
 
 
+def _normalize_log_keyword(raw_keyword: str) -> str:
+    keyword = (raw_keyword or "").strip().lower()
+    if keyword in {"", "none", "unknown", "ok", "null"}:
+        return ""
+    return keyword
+
+
 def _run_with_retry(state: AgentState, node: str, fn: Any, *args: Any, **kwargs: Any) -> Dict[str, Any]:
     attempt = 0
     while True:
@@ -55,7 +62,7 @@ def _node_analyze(state: AgentState, trace_doc: TraceDocument) -> None:
 def _route_error_type(state: AgentState) -> str:
     bottleneck = state.diagnosis.get("bottleneck", {})
     error_type = str(bottleneck.get("error_type", "Unknown"))
-    if error_type in {"Timeout", "Downstream"}:
+    if error_type in {"Timeout", "Downstream", "Unknown", "None"}:
         return "dual"
     if error_type == "DB":
         return "jvm"
@@ -75,10 +82,42 @@ def _node_enrich_logs(state: AgentState, tool_registry: ToolRegistry, service_na
 
 
 def _node_report(state: AgentState, service_name: str, llm_executor: Any | None = None) -> None:
-    error_type = state.diagnosis.get("bottleneck", {}).get("error_type", "Unknown")
+    bottleneck = state.diagnosis.get("bottleneck", {}) if isinstance(state.diagnosis, dict) else {}
+    error_type = bottleneck.get("error_type", "Unknown")
+    action_hint = str(bottleneck.get("action_suggestion") or "").strip()
+    jvm = state.jvm_metrics if isinstance(state.jvm_metrics, dict) else {}
+    logs = state.logs if isinstance(state.logs, dict) else {}
+
+    jvm_status = str(jvm.get("status") or "not_queried")
+    if jvm_status == "ok":
+        jvm_hint = (
+            f"JVM证据: p95={jvm.get('p95_duration_ms')}ms, "
+            f"heap={jvm.get('heap_used_mb')}/{jvm.get('heap_max_mb')}MB, "
+            f"gc_count={jvm.get('gc_count')}, error_rate={jvm.get('error_rate')}"
+        )
+    elif jvm_status == "no_data":
+        jvm_hint = "JVM证据: ES中未检索到对应服务指标"
+    elif jvm_status == "not_queried":
+        jvm_hint = "JVM证据: 本次路由未查询"
+    else:
+        jvm_hint = "JVM证据: 暂不可用"
+
+    logs_status = str(logs.get("status") or "not_queried")
+    samples = logs.get("sample") if isinstance(logs.get("sample"), list) else []
+    sample_preview = str(samples[0]) if samples else "无匹配日志"
+    if logs_status == "ok":
+        logs_hint = f"日志证据: 命中{logs.get('doc_count')}条, 示例={sample_preview}"
+    elif logs_status == "no_data":
+        logs_hint = "日志证据: ES中未检索到匹配日志"
+    elif logs_status == "not_queried":
+        logs_hint = "日志证据: 本次路由未查询"
+    else:
+        logs_hint = "日志证据: 暂不可用"
+
     base_summary = (
         f"run_id={state.run_id} trace={state.trace_id} 图执行完成，瓶颈服务={service_name}，"
-        f"异常类型={error_type}。建议优先检查连接池、依赖可用性与关键错误日志。"
+        f"异常类型={error_type}。{jvm_hint}。{logs_hint}。"
+        f"建议动作: {action_hint or '优先检查关键错误日志与依赖可用性。'}"
     )
     state.summary = base_summary
     if llm_executor is not None:
@@ -113,7 +152,7 @@ def run_agent_graph(
 
         bottleneck = state.diagnosis.get("bottleneck", {})
         service_name = str(bottleneck.get("service_name", "unknown-service"))
-        keyword = str(state.trace_payload.get("keyword") or bottleneck.get("error_type") or "timeout").lower()
+        keyword = _normalize_log_keyword(str(state.trace_payload.get("keyword") or bottleneck.get("error_type") or ""))
 
         route = _route_error_type(state)
         state.add_event("route", "ok", "条件路由完成", {"route": route})

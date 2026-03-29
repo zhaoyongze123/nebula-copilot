@@ -1,4 +1,5 @@
 from nebula_copilot.analyzer import analyze_trace, build_alert_summary, classify_error
+from nebula_copilot.models import Span, TraceDocument
 from nebula_copilot.mock_data import build_mock_trace
 
 
@@ -57,3 +58,45 @@ def test_analyze_trace_fallback_when_llm_fails() -> None:
     result = analyze_trace(trace, top_n=1, llm_executor=FailingLLM())
 
     assert "优先检查" in result.bottleneck.action_suggestion
+
+
+def test_analyze_trace_ignores_synthetic_trace_root() -> None:
+    trace = TraceDocument(
+        trace_id="trace_synthetic_root",
+        root=Span(
+            span_id="root",
+            parent_span_id=None,
+            service_name="trace-root",
+            operation_name="trace:trace_synthetic_root",
+            duration_ms=2500,
+            status="OK",
+            exception_stack=None,
+            children=[
+                Span(
+                    span_id="s1",
+                    parent_span_id="root",
+                    service_name="order-service",
+                    operation_name="createOrder",
+                    duration_ms=1300,
+                    status="OK",
+                    exception_stack=None,
+                    children=[],
+                ),
+                Span(
+                    span_id="s2",
+                    parent_span_id="root",
+                    service_name="inventory-service",
+                    operation_name="reserveStock",
+                    duration_ms=1800,
+                    status="ERROR",
+                    exception_stack="java.net.SocketTimeoutException: Read timed out",
+                    children=[],
+                ),
+            ],
+        ),
+    )
+
+    result = analyze_trace(trace, top_n=1)
+
+    assert result.bottleneck.span.service_name == "inventory-service"
+    assert result.bottleneck.error_type == "Timeout"

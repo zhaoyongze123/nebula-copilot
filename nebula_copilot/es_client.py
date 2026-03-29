@@ -12,6 +12,80 @@ class ESQueryError(RuntimeError):
     pass
 
 
+def _extract_by_path(payload: Dict[str, Any], path: str) -> Any:
+    current: Any = payload
+    for part in path.split("."):
+        if not isinstance(current, dict) or part not in current:
+            return None
+        current = current[part]
+    return current
+
+
+def _first_present(payload: Dict[str, Any], keys: List[str]) -> Any:
+    for key in keys:
+        if "." in key:
+            value = _extract_by_path(payload, key)
+        else:
+            value = payload.get(key)
+        if value is not None:
+            return value
+    return None
+
+
+def _safe_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _hits_total_value(hits_block: Dict[str, Any]) -> int:
+    total = hits_block.get("total")
+    if isinstance(total, dict):
+        return int(total.get("value") or 0)
+    if isinstance(total, (int, float)):
+        return int(total)
+    return 0
+
+
+def _service_filter(service_name: str) -> Dict[str, Any]:
+    return {
+        "bool": {
+            "should": [
+                {"term": {"service_name.keyword": service_name}},
+                {"term": {"serviceName.keyword": service_name}},
+                {"term": {"service_name": service_name}},
+                {"term": {"serviceName": service_name}},
+            ],
+            "minimum_should_match": 1,
+        }
+    }
+
+
+def _time_filter(last_minutes: int) -> Dict[str, Any]:
+    cutoff_ms = int(datetime.now().timestamp() * 1000) - last_minutes * 60 * 1000
+    return {
+        "bool": {
+            "should": [
+                {"range": {"timestamp": {"gte": cutoff_ms}}},
+                {"range": {"@timestamp": {"gte": f"now-{last_minutes}m", "lte": "now"}}},
+            ],
+            "minimum_should_match": 1,
+        }
+    }
+
+
 def _to_span(node: Dict[str, Any]) -> Span:
     children = node.get("children", []) or []
     return Span(
@@ -245,3 +319,231 @@ def list_recent_trace_ids(
 
     sorted_ids = sorted(merged.items(), key=lambda x: x[1], reverse=True)
     return [trace_id for trace_id, _ in sorted_ids[:limit]]
+
+
+def query_service_jvm_metrics(
+    es_url: str,
+    index: str,
+    service_name: str,
+    last_minutes: int = 30,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    verify_certs: bool = True,
+    timeout_seconds: int = 10,
+) -> Dict[str, Any]:
+    try:
+        es = _build_es(es_url, username, password, verify_certs, timeout_seconds)
+        query = {
+            "size": 1,
+            "query": {
+                "bool": {
+                    "filter": [
+                        _service_filter(service_name),
+                        _time_filter(last_minutes),
+                    ]
+                }
+            },
+            "sort": [
+                {"timestamp": {"order": "desc", "unmapped_type": "date"}},
+                {"@timestamp": {"order": "desc", "unmapped_type": "date"}},
+            ],
+            "aggs": {
+                "error_docs": {
+                    "filter": {
+                        "bool": {
+                            "should": [
+                                {"term": {"status.keyword": "ERROR"}},
+                                {"term": {"status": "ERROR"}},
+                            ],
+                            "minimum_should_match": 1,
+                        }
+                    }
+                },
+                "p95_duration_ms": {"percentiles": {"field": "duration_ms", "percents": [95]}},
+                "p95_duration": {"percentiles": {"field": "duration", "percents": [95]}},
+            },
+        }
+        resp = es.search(index=index, body=query)
+        hits = resp.get("hits", {}).get("hits", [])
+        total = _hits_total_value(resp.get("hits", {}))
+        latest = hits[0].get("_source", {}) if hits else {}
+
+        heap_used = _safe_float(
+            _first_present(
+                latest,
+                [
+                    "jvm.heap.used",
+                    "jvm.heap_used",
+                    "jvmHeapUsed",
+                    "jvm_heap_used_mb",
+                    "heap_used_mb",
+                    "heapUsedMb",
+                ],
+            )
+        )
+        heap_max = _safe_float(
+            _first_present(
+                latest,
+                [
+                    "jvm.heap.max",
+                    "jvm.heap_max",
+                    "jvmHeapMax",
+                    "jvm_heap_max_mb",
+                    "heap_max_mb",
+                    "heapMaxMb",
+                ],
+            )
+        )
+        gc_count = _safe_int(
+            _first_present(
+                latest,
+                [
+                    "jvm.gc.count",
+                    "jvm.gc_count",
+                    "jvmGcCount",
+                    "gc_count",
+                    "gcCount",
+                ],
+            )
+        )
+        thread_count = _safe_int(
+            _first_present(
+                latest,
+                [
+                    "jvm.threads.live",
+                    "jvm.thread_count",
+                    "thread_count",
+                    "threadCount",
+                ],
+            )
+        )
+
+        p95_ms = resp.get("aggregations", {}).get("p95_duration_ms", {}).get("values", {}).get("95.0")
+        if p95_ms is None:
+            p95_ms = resp.get("aggregations", {}).get("p95_duration", {}).get("values", {}).get("95.0")
+        p95_duration_ms = _safe_float(p95_ms)
+
+        error_count = int(resp.get("aggregations", {}).get("error_docs", {}).get("doc_count") or 0)
+        error_rate = (error_count / total) if total > 0 else 0.0
+
+        return {
+            "service": service_name,
+            "source": "es",
+            "index": index,
+            "window_minutes": last_minutes,
+            "status": "ok" if total > 0 else "no_data",
+            "doc_count": total,
+            "sample_ts": _first_present(latest, ["@timestamp", "timestamp"]),
+            "heap_used_mb": heap_used,
+            "heap_max_mb": heap_max,
+            "gc_count": gc_count,
+            "thread_count": thread_count,
+            "p95_duration_ms": p95_duration_ms,
+            "error_count": error_count,
+            "error_rate": round(error_rate, 4),
+        }
+    except Exception as exc:  # pragma: no cover
+        return {
+            "service": service_name,
+            "source": "es",
+            "index": index,
+            "window_minutes": last_minutes,
+            "status": "unavailable",
+            "error": str(exc),
+            "doc_count": 0,
+            "heap_used_mb": None,
+            "heap_max_mb": None,
+            "gc_count": None,
+            "thread_count": None,
+            "p95_duration_ms": None,
+            "error_count": 0,
+            "error_rate": 0.0,
+        }
+
+
+def search_service_logs(
+    es_url: str,
+    index: str,
+    service_name: str,
+    keyword: str,
+    last_minutes: int = 30,
+    limit: int = 5,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    verify_certs: bool = True,
+    timeout_seconds: int = 10,
+) -> Dict[str, Any]:
+    try:
+        es = _build_es(es_url, username, password, verify_certs, timeout_seconds)
+        must_clauses: List[Dict[str, Any]] = []
+        if keyword:
+            must_clauses.append(
+                {
+                    "bool": {
+                        "should": [
+                            {"match_phrase": {"exceptionStack": keyword}},
+                            {"match_phrase": {"exception_stack": keyword}},
+                            {"match_phrase": {"message": keyword}},
+                            {"match_phrase": {"log": keyword}},
+                            {"match_phrase": {"ai_diagnosis": keyword}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                }
+            )
+
+        query: Dict[str, Any] = {
+            "size": max(1, limit),
+            "query": {
+                "bool": {
+                    "filter": [
+                        _service_filter(service_name),
+                        _time_filter(last_minutes),
+                    ],
+                    "must": must_clauses,
+                }
+            },
+            "sort": [
+                {"timestamp": {"order": "desc", "unmapped_type": "date"}},
+                {"@timestamp": {"order": "desc", "unmapped_type": "date"}},
+            ],
+        }
+        resp = es.search(index=index, body=query)
+        hits = resp.get("hits", {}).get("hits", [])
+        total = _hits_total_value(resp.get("hits", {}))
+
+        samples: List[str] = []
+        trace_ids: List[str] = []
+        for hit in hits:
+            src = hit.get("_source", {})
+            message = _first_present(src, ["exception_stack", "exceptionStack", "message", "log", "ai_diagnosis"])
+            if isinstance(message, str) and message.strip():
+                samples.append(message.strip().replace("\n", " | ")[:220])
+            trace_id = _first_present(src, ["trace_id", "traceId"])
+            if isinstance(trace_id, str) and trace_id:
+                trace_ids.append(trace_id)
+
+        return {
+            "service": service_name,
+            "keyword": keyword,
+            "source": "es",
+            "index": index,
+            "window_minutes": last_minutes,
+            "status": "ok" if total > 0 else "no_data",
+            "doc_count": total,
+            "sample": samples,
+            "trace_ids": trace_ids[: max(1, limit)],
+        }
+    except Exception as exc:  # pragma: no cover
+        return {
+            "service": service_name,
+            "keyword": keyword,
+            "source": "es",
+            "index": index,
+            "window_minutes": last_minutes,
+            "status": "unavailable",
+            "error": str(exc),
+            "doc_count": 0,
+            "sample": [],
+            "trace_ids": [],
+        }

@@ -389,3 +389,100 @@ def test_query_runs_json(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "run-2" in result.stdout
+
+
+def test_monitor_es_triggers_slow_trace(tmp_path: Path) -> None:
+    runs_path = tmp_path / "runs.json"
+    mock_trace = TraceDocument(
+        trace_id="trace-monitor-1",
+        root=Span(
+            span_id="root",
+            parent_span_id=None,
+            service_name="inventory-service",
+            operation_name="reserve",
+            duration_ms=1800,
+            status="ERROR",
+            exception_stack="Read timed out",
+            children=[],
+        ),
+    )
+
+    with patch("nebula_copilot.cli.list_recent_trace_ids") as mocked_list, patch(
+        "nebula_copilot.cli.ESRepository"
+    ) as mocked_repo_cls:
+        mocked_list.return_value = ["trace-monitor-1"]
+        mocked_repo = mocked_repo_cls.return_value
+        mocked_repo.get_trace.return_value = mock_trace
+
+        result = runner.invoke(
+            app,
+            [
+                "monitor-es",
+                "--index",
+                "nebula_metrics",
+                "--max-iterations",
+                "1",
+                "--poll-interval-seconds",
+                "5",
+                "--slow-threshold-ms",
+                "1000",
+                "--runs-path",
+                str(runs_path),
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert runs_path.exists()
+    records = json.loads(runs_path.read_text(encoding="utf-8"))
+    latest = records[-1]
+    assert latest["trace_id"] == "trace-monitor-1"
+    assert latest["trigger_source"] == "monitor-es"
+
+
+def test_monitor_es_deduplicates_between_iterations(tmp_path: Path) -> None:
+    runs_path = tmp_path / "runs.json"
+    mock_trace = TraceDocument(
+        trace_id="trace-monitor-2",
+        root=Span(
+            span_id="root",
+            parent_span_id=None,
+            service_name="inventory-service",
+            operation_name="reserve",
+            duration_ms=1900,
+            status="ERROR",
+            exception_stack="Read timed out",
+            children=[],
+        ),
+    )
+
+    with patch("nebula_copilot.cli.list_recent_trace_ids") as mocked_list, patch(
+        "nebula_copilot.cli.ESRepository"
+    ) as mocked_repo_cls, patch("nebula_copilot.cli.sleep") as mocked_sleep:
+        mocked_list.return_value = ["trace-monitor-2"]
+        mocked_repo = mocked_repo_cls.return_value
+        mocked_repo.get_trace.return_value = mock_trace
+        mocked_sleep.return_value = None
+
+        result = runner.invoke(
+            app,
+            [
+                "monitor-es",
+                "--index",
+                "nebula_metrics",
+                "--max-iterations",
+                "2",
+                "--poll-interval-seconds",
+                "1",
+                "--slow-threshold-ms",
+                "1000",
+                "--trigger-dedupe-seconds",
+                "300",
+                "--runs-path",
+                str(runs_path),
+            ],
+        )
+
+    assert result.exit_code == 0
+    records = json.loads(runs_path.read_text(encoding="utf-8"))
+    monitor_records = [item for item in records if item.get("trigger_source") == "monitor-es"]
+    assert len(monitor_records) == 1

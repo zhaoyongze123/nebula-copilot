@@ -4,8 +4,10 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
+from time import sleep
+from typing import Callable
 
 import typer
 from rich.console import Console
@@ -15,7 +17,13 @@ from rich.text import Text
 
 from nebula_copilot.analyzer import DiagnosisResult, SpanDiagnosis, analyze_trace, build_alert_summary
 from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
-from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, list_recent_trace_ids
+from nebula_copilot.es_client import (
+    ESQueryError,
+    fetch_trace_by_id,
+    list_recent_trace_ids,
+    query_service_jvm_metrics,
+    search_service_logs,
+)
 from nebula_copilot.mock_data import DEFAULT_TRACE_ID, write_mock_file
 from nebula_copilot.notifier import NotifyError, push_summary, push_summary_reliable
 from nebula_copilot.models import Span
@@ -306,6 +314,45 @@ def _build_llm_executor(env_file: Path, cli_llm_enabled: bool) -> LLMExecutor:
     )
 
 
+def _build_es_enrichment_registry(
+    *,
+    query_trace: Callable[[str], dict[str, object]],
+    es_url: str,
+    index: str,
+    username: str | None,
+    password: str | None,
+    verify_certs: bool,
+    timeout_seconds: int,
+    last_minutes: int,
+    logs_limit: int,
+) -> ToolRegistry:
+    return ToolRegistry(
+        query_trace=query_trace,
+        query_jvm=lambda service_name: query_service_jvm_metrics(
+            es_url=es_url,
+            index=index,
+            service_name=service_name,
+            last_minutes=last_minutes,
+            username=username,
+            password=password,
+            verify_certs=verify_certs,
+            timeout_seconds=timeout_seconds,
+        ),
+        query_logs=lambda service_name, keyword: search_service_logs(
+            es_url=es_url,
+            index=index,
+            service_name=service_name,
+            keyword=keyword,
+            last_minutes=last_minutes,
+            limit=logs_limit,
+            username=username,
+            password=password,
+            verify_certs=verify_certs,
+            timeout_seconds=timeout_seconds,
+        ),
+    )
+
+
 @app.command()
 def seed(
     trace_id: str = typer.Argument(DEFAULT_TRACE_ID, help="Trace id for mock data"),
@@ -516,6 +563,26 @@ def list_traces(
 def agent_analyze(
     trace_id: str = typer.Argument(..., help="Trace id to analyze"),
     source: Path = typer.Option(DEFAULT_DATA_PATH, "--source", "-s", help="Trace JSON file"),
+    enrich_index: str = typer.Option("nebula_metrics", "--enrich-index", help="用于JVM/日志补充查询的ES index"),
+    es_url: str = typer.Option(
+        "http://localhost:9200",
+        "--es-url",
+        envvar="NEBULA_ES_URL",
+        help="Elasticsearch URL, can set by NEBULA_ES_URL",
+    ),
+    username: str | None = typer.Option(None, "--username", envvar="NEBULA_ES_USERNAME", help="ES username"),
+    password: str | None = typer.Option(
+        None,
+        "--password",
+        envvar="NEBULA_ES_PASSWORD",
+        help="ES password",
+        prompt=False,
+        hide_input=True,
+    ),
+    verify_certs: bool = typer.Option(True, "--verify-certs/--no-verify-certs", help="Verify TLS certs"),
+    timeout_seconds: int = typer.Option(10, "--timeout-seconds", help="ES request timeout"),
+    enrich_last_minutes: int = typer.Option(30, "--enrich-last-minutes", help="JVM/日志补充查询时间窗（分钟）"),
+    logs_limit: int = typer.Option(5, "--logs-limit", help="日志样本条数"),
     push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
     runs_path: Path = typer.Option(DEFAULT_RUNS_PATH, "--runs-path", help="run_id 持久化文件路径"),
     notify_dedupe_path: Path = typer.Option(
@@ -546,26 +613,29 @@ def agent_analyze(
     effective_guard_path = run_guard_path or cfg.run_guard_path
     effective_dedupe_window = run_dedupe_window_seconds or cfg.run_dedupe_window_seconds
     effective_rate_limit = cfg.run_rate_limit_per_minute if run_rate_limit_per_minute is None else max(0, run_rate_limit_per_minute)
+    if password is None and username and os.getenv("NEBULA_ES_PASSWORD"):
+        password = os.getenv("NEBULA_ES_PASSWORD")
 
     try:
         llm_executor = _build_llm_executor(env_file, llm_enabled)
         repository = LocalJsonRepository(source)
-
-        tool_registry = ToolRegistry(
+        trace_doc = repository.get_trace(trace_id)
+        tool_registry = _build_es_enrichment_registry(
             query_trace=lambda tid: {
                 "trace_id": tid,
-                "bottleneck_service": repository.get_trace(tid).root.service_name,
-                "keyword": "timeout",
+                "bottleneck_service": trace_doc.root.service_name,
+                "keyword": str(trace_doc.root.status).lower(),
             },
-            query_jvm=lambda service_name: {"service": service_name, "heap_used_mb": 512, "gc_count": 3},
-            query_logs=lambda service_name, keyword: {
-                "service": service_name,
-                "keyword": keyword,
-                "sample": ["timeout while waiting for downstream", "retry exhausted"],
-            },
+            es_url=es_url,
+            index=enrich_index,
+            username=username,
+            password=password,
+            verify_certs=verify_certs,
+            timeout_seconds=timeout_seconds,
+            last_minutes=max(1, enrich_last_minutes),
+            logs_limit=max(1, logs_limit),
         )
 
-        trace_doc = repository.get_trace(trace_id)
         guard_result = evaluate_run_guard(
             path=effective_guard_path,
             trace_id=trace_id,
@@ -676,6 +746,210 @@ def agent_analyze(
         logger.exception("Agent analyze failed")
         console.print(f"[red]Agent analyze failed: {exc}[/red]")
         raise typer.Exit(code=1) from exc
+
+
+@app.command("monitor-es")
+def monitor_es(
+    index: str = typer.Option(..., "--index", help="ES index name, e.g. nebula_metrics"),
+    es_url: str = typer.Option(
+        "http://localhost:9200",
+        "--es-url",
+        envvar="NEBULA_ES_URL",
+        help="Elasticsearch URL, can set by NEBULA_ES_URL",
+    ),
+    username: str | None = typer.Option(None, "--username", envvar="NEBULA_ES_USERNAME", help="ES username"),
+    password: str | None = typer.Option(
+        None,
+        "--password",
+        envvar="NEBULA_ES_PASSWORD",
+        help="ES password",
+        prompt=False,
+        hide_input=True,
+    ),
+    verify_certs: bool = typer.Option(True, "--verify-certs/--no-verify-certs", help="Verify TLS certs"),
+    timeout_seconds: int = typer.Option(10, "--timeout-seconds", help="ES request timeout"),
+    poll_interval_seconds: int = typer.Option(5, "--poll-interval-seconds", help="轮询间隔秒数"),
+    last_minutes: int = typer.Option(5, "--last-minutes", help="扫描最近多少分钟 trace"),
+    limit: int = typer.Option(20, "--limit", help="每轮扫描最大 trace 数"),
+    slow_threshold_ms: int = typer.Option(1000, "--slow-threshold-ms", help="慢链路阈值（毫秒）"),
+    trigger_dedupe_seconds: int = typer.Option(300, "--trigger-dedupe-seconds", help="同一 trace 触发去重窗口（秒）"),
+    max_iterations: int = typer.Option(0, "--max-iterations", help="最大轮询次数，0 表示持续运行"),
+    push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
+    runs_path: Path = typer.Option(DEFAULT_RUNS_PATH, "--runs-path", help="run 记录文件路径"),
+    notify_dedupe_path: Path = typer.Option(Path("data/notify_dedupe.json"), "--notify-dedupe-path", help="通知去重缓存文件路径"),
+    notify_dedupe_window_seconds: int = typer.Option(300, "--notify-dedupe-window-seconds", help="通知去重窗口（秒）"),
+    notify_max_retries: int = typer.Option(3, "--notify-max-retries", help="通知最大重试次数"),
+    env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
+    llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 能力"),
+    verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
+) -> None:
+    """持续监控 ES，发现慢链路后自动触发诊断并推送通知。"""
+    _setup_logging(verbose)
+
+    if poll_interval_seconds <= 0:
+        console.print("[red]--poll-interval-seconds must be > 0[/red]")
+        raise typer.Exit(code=2)
+    if last_minutes <= 0:
+        console.print("[red]--last-minutes must be > 0[/red]")
+        raise typer.Exit(code=2)
+    if limit <= 0:
+        console.print("[red]--limit must be > 0[/red]")
+        raise typer.Exit(code=2)
+    if slow_threshold_ms <= 0:
+        console.print("[red]--slow-threshold-ms must be > 0[/red]")
+        raise typer.Exit(code=2)
+    if trigger_dedupe_seconds <= 0:
+        console.print("[red]--trigger-dedupe-seconds must be > 0[/red]")
+        raise typer.Exit(code=2)
+    if max_iterations < 0:
+        console.print("[red]--max-iterations must be >= 0[/red]")
+        raise typer.Exit(code=2)
+
+    if password is None and username and os.getenv("NEBULA_ES_PASSWORD"):
+        password = os.getenv("NEBULA_ES_PASSWORD")
+
+    llm_executor = _build_llm_executor(env_file, llm_enabled)
+    repository = ESRepository(
+        es_url=es_url,
+        index=index,
+        username=username,
+        password=password,
+        verify_certs=verify_certs,
+        timeout_seconds=timeout_seconds,
+    )
+
+    triggered_cache: dict[str, datetime] = {}
+    iteration = 0
+
+    while True:
+        iteration += 1
+        now = datetime.now()
+        triggered_cache = {
+            tid: ts
+            for tid, ts in triggered_cache.items()
+            if now - ts <= timedelta(seconds=trigger_dedupe_seconds)
+        }
+
+        try:
+            trace_ids = list_recent_trace_ids(
+                es_url=es_url,
+                index=index,
+                last_minutes=last_minutes,
+                limit=limit,
+                username=username,
+                password=password,
+                verify_certs=verify_certs,
+                timeout_seconds=timeout_seconds,
+            )
+        except ESQueryError as exc:
+            console.print(f"[red]monitor-es query failed: {exc}[/red]")
+            if max_iterations > 0 and iteration >= max_iterations:
+                raise typer.Exit(code=1) from exc
+            sleep(poll_interval_seconds)
+            continue
+
+        triggered_count = 0
+        for trace_id in trace_ids:
+            if trace_id in triggered_cache:
+                continue
+
+            try:
+                trace_doc = repository.get_trace(trace_id)
+                quick_result = analyze_trace(trace_doc, top_n=1, llm_executor=llm_executor)
+            except (ESQueryError, TraceValidationError, DataSourceError) as exc:
+                logger.warning("monitor-es skip trace_id=%s, reason=%s", trace_id, exc)
+                continue
+
+            bottleneck_ms = quick_result.bottleneck.span.duration_ms
+            if bottleneck_ms < slow_threshold_ms:
+                continue
+
+            run_id = f"run-{uuid.uuid4().hex[:12]}"
+            started_at = datetime.now().isoformat(timespec="seconds")
+
+            keyword = str(quick_result.bottleneck.error_type or "timeout").lower()
+            tool_registry = _build_es_enrichment_registry(
+                query_trace=lambda tid: {
+                    "trace_id": tid,
+                    "bottleneck_service": quick_result.bottleneck.span.service_name,
+                    "keyword": keyword,
+                },
+                es_url=es_url,
+                index=index,
+                username=username,
+                password=password,
+                verify_certs=verify_certs,
+                timeout_seconds=timeout_seconds,
+                last_minutes=last_minutes,
+                logs_limit=5,
+            )
+
+            graph_result = run_agent_graph(
+                trace_id,
+                run_id,
+                trace_doc,
+                tool_registry,
+                llm_executor=llm_executor,
+            )
+            summary = str(graph_result.get("summary") or "")
+
+            notify_result = _notify_with_reliability(
+                push_webhook,
+                summary,
+                dedupe_key=f"{trace_id}:{push_webhook or 'none'}",
+                dedupe_path=notify_dedupe_path,
+                dedupe_window_seconds=max(1, notify_dedupe_window_seconds),
+                max_retries=max(1, notify_max_retries),
+            )
+
+            run_status = str(graph_result.get("status") or "failed")
+            if notify_result["status"] == "failed" and run_status == "ok":
+                run_status = "degraded"
+
+            finished_at = datetime.now().isoformat(timespec="seconds")
+            duration_ms = int((datetime.fromisoformat(finished_at) - datetime.fromisoformat(started_at)).total_seconds() * 1000)
+            history = graph_result.get("history") if isinstance(graph_result.get("history"), list) else []
+
+            _append_run_record(
+                runs_path,
+                {
+                    **graph_result,
+                    "status": run_status,
+                    "trigger_source": "monitor-es",
+                    "started_at": started_at,
+                    "finished_at": finished_at,
+                    "notify": notify_result,
+                    "metrics": {
+                        "duration_ms": duration_ms,
+                        "history_events": len(history),
+                        "failure_events": len(
+                            [
+                                item
+                                for item in history
+                                if isinstance(item, dict) and str(item.get("status")) in {"failed", "fallback"}
+                            ]
+                        ),
+                        "notify_status": notify_result.get("status"),
+                        "bottleneck_duration_ms": bottleneck_ms,
+                        "slow_threshold_ms": slow_threshold_ms,
+                    },
+                },
+            )
+
+            triggered_cache[trace_id] = datetime.now()
+            triggered_count += 1
+            console.print(
+                f"[green]monitor-es triggered trace={trace_id}, bottleneck={bottleneck_ms}ms, status={run_status}[/green]"
+            )
+
+        console.print(
+            f"[cyan]monitor-es iteration={iteration}, scanned={len(trace_ids)}, triggered={triggered_count}[/cyan]"
+        )
+
+        if max_iterations > 0 and iteration >= max_iterations:
+            return
+
+        sleep(poll_interval_seconds)
 
 
 @app.command("query-runs")

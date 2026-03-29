@@ -79,6 +79,52 @@ nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --push-webhook "http
 - `--timeout-seconds`：查询超时秒数
 - `--push-webhook`：将排障摘要推送到群机器人
 
+### 5) 自动监控 ES 慢链路并触发诊断
+
+`monitor-es` 会按固定间隔轮询 ES，发现慢链路后自动触发诊断并推送飞书/钉钉：
+
+```bash
+nebula-cli monitor-es \
+  --index nebula_metrics \
+  --poll-interval-seconds 5 \
+  --slow-threshold-ms 1000 \
+  --last-minutes 5 \
+  --limit 20 \
+  --push-webhook "https://open.feishu.cn/open-apis/bot/v2/hook/xxx" \
+  --llm-enabled
+```
+
+关键参数：
+- `--poll-interval-seconds`：轮询间隔（默认 5 秒）
+- `--slow-threshold-ms`：慢链路阈值（默认 1000ms）
+- `--trigger-dedupe-seconds`：同一 trace 触发去重窗口
+- `--max-iterations`：最大轮询次数（0 表示持续运行）
+
+### 6) 向 ES 批量写入高仿真链路监控数据（正常/慢链路/报错）
+
+脚本：`scripts/load_simulated_es_data.py`
+
+示例：
+
+```bash
+python scripts/load_simulated_es_data.py \
+  --es-url http://localhost:9200 \
+  --index nebula_metrics \
+  --traces 2000 \
+  --time-window-minutes 120 \
+  --normal-ratio 0.72 \
+  --slow-ratio 0.22 \
+  --error-ratio 0.06 \
+  --create-index \
+  --refresh wait_for
+```
+
+特点：
+- 生成完整分布式调用链（gateway -> user -> cart -> inventory -> pricing -> order -> payment）
+- 同时写入 `traceId/trace_id`、`spanId/span_id` 等兼容字段
+- 覆盖真实字段：`@timestamp`、`httpStatus`、`instanceId`、`podName`、`errorType`、`exceptionStack`、`tags`
+- 可控制正常/慢链路/报错比例，适合压测和自动诊断联调
+
 参数说明：
 - `--source/-s`：输入 trace JSON 文件
 - `--format`：`rich` 或 `json`

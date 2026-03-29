@@ -118,7 +118,11 @@ def build_span_diagnosis(span: Span, llm_executor: Optional[Any] = None) -> Span
 
 def analyze_trace(trace_doc: TraceDocument, top_n: int = 3, llm_executor: Optional[Any] = None) -> DiagnosisResult:
     spans = flatten_spans(trace_doc.root)
-    sorted_spans = sorted(spans, key=lambda s: s.duration_ms, reverse=True)
+    # ES按span文档拼接trace时会生成合成根节点trace-root，需排除以避免误判瓶颈。
+    candidates = [s for s in spans if s.service_name != "trace-root"]
+    if not candidates:
+        candidates = spans
+    sorted_spans = sorted(candidates, key=lambda s: s.duration_ms, reverse=True)
     top = sorted_spans[: max(1, top_n)]
     top_diagnosis = [build_span_diagnosis(s, llm_executor) for s in top]
     return DiagnosisResult(
