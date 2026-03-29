@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -211,3 +212,37 @@ def test_agent_analyze_llm_enabled_without_key_fallback_success(tmp_path: Path) 
 
     assert result.exit_code == 0
     assert "run_id:" in result.stdout
+
+
+def test_agent_analyze_notify_failed_degraded_not_blocking(tmp_path: Path) -> None:
+    output = tmp_path / "mock.json"
+    runs_path = tmp_path / "runs.json"
+    runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
+
+    with patch("nebula_copilot.cli.push_summary_reliable") as mocked_notify:
+        mocked_notify.return_value = type(
+            "NotifyResultStub",
+            (),
+            {"status": "failed", "deduplicated": False, "attempts": 3, "error": "webhook down"},
+        )()
+
+        result = runner.invoke(
+            app,
+            [
+                "agent-analyze",
+                DEFAULT_TRACE_ID,
+                "--source",
+                str(output),
+                "--runs-path",
+                str(runs_path),
+                "--push-webhook",
+                "https://example.com/webhook",
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert runs_path.exists()
+    records = json.loads(runs_path.read_text(encoding="utf-8"))
+    latest = records[-1]
+    assert latest["status"] == "degraded"
+    assert latest["notify"]["status"] == "failed"
