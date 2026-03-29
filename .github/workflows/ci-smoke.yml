@@ -104,6 +104,14 @@ jobs:
       - name: Run M4 runtime guard acceptance tests
         run: pytest -q tests/test_runtime_guard.py
 
+      - name: Validate deployment assets
+        run: |
+          test -f Dockerfile
+          test -f docker-compose.yml
+          test -f deploy/k8s/deployment.yaml
+          test -f deploy/k8s/secret.example.yaml
+          docker build -t nebula-copilot:ci .
+
       - name: Run full pytest
         run: pytest -q
 
