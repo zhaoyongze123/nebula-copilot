@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +21,14 @@ from nebula_copilot.notifier import NotifyError, push_summary
 from nebula_copilot.models import Span
 from nebula_copilot.report_schema import NebulaReport, SpanReport
 from nebula_copilot.repository import ESRepository, LocalJsonRepository
+from nebula_copilot.tooling import (
+    AgentContext,
+    ToolRegistry,
+    tool_analyze_trace,
+    tool_get_jvm_metrics,
+    tool_get_trace,
+    tool_search_logs,
+)
 
 app = typer.Typer(add_completion=False, help="Nebula-Copilot CLI")
 console = Console()
@@ -27,6 +36,7 @@ logger = logging.getLogger("nebula_copilot")
 
 DEFAULT_DATA_PATH = Path("data/mock_trace.json")
 SLOW_WARNING_MS = 1000
+DEFAULT_RUNS_PATH = Path("data/agent_runs.json")
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -208,6 +218,22 @@ def _print_data_error(prefix: str, exc: Exception) -> None:
         console.print("[yellow]建议：请检查文件路径和读取权限。[/yellow]")
     else:
         raise exc
+
+
+def _append_run_record(path: Path, record: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(data, list):
+                data = []
+        except (json.JSONDecodeError, OSError):
+            data = []
+    else:
+        data = []
+
+    data.append(record)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 @app.command()
@@ -407,6 +433,122 @@ def list_traces(
     except Exception as exc:  # pragma: no cover
         logger.exception("List traces failed")
         console.print(f"[red]List traces failed: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+
+@app.command("agent-analyze")
+def agent_analyze(
+    trace_id: str = typer.Argument(..., help="Trace id to analyze"),
+    source: Path = typer.Option(DEFAULT_DATA_PATH, "--source", "-s", help="Trace JSON file"),
+    push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
+    runs_path: Path = typer.Option(DEFAULT_RUNS_PATH, "--runs-path", help="run_id 持久化文件路径"),
+    verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
+) -> None:
+    """Agent 入口：执行取数→诊断→补充信息→通知，并记录 run_id。"""
+    _setup_logging(verbose)
+
+    run_id = f"run-{uuid.uuid4().hex[:12]}"
+    started_at = datetime.now().isoformat(timespec="seconds")
+
+    try:
+        repository = LocalJsonRepository(source)
+
+        ctx = AgentContext(
+            trace_id=trace_id,
+            tool_registry=ToolRegistry(
+                query_trace=lambda tid: {
+                    "trace_id": tid,
+                    "bottleneck_service": repository.get_trace(tid).root.service_name,
+                    "keyword": "timeout",
+                },
+                query_jvm=lambda service_name: {"service": service_name, "heap_used_mb": 512, "gc_count": 3},
+                query_logs=lambda service_name, keyword: {
+                    "service": service_name,
+                    "keyword": keyword,
+                    "sample": ["timeout while waiting for downstream", "retry exhausted"],
+                },
+            ),
+        )
+
+        trace_doc = repository.get_trace(trace_id)
+        trace_result = tool_get_trace(ctx.trace_id, ctx.tool_registry.query_trace)
+        diagnose_result = tool_analyze_trace(trace_doc)
+        bottleneck_service = diagnose_result["payload"]["bottleneck"]["service_name"]
+        jvm_result = tool_get_jvm_metrics(bottleneck_service, ctx.tool_registry.query_jvm)
+        logs_result = tool_search_logs(bottleneck_service, "timeout", ctx.tool_registry.query_logs)
+
+        summary = (
+            f"run_id={run_id} trace={trace_id} 诊断完成，"
+            f"瓶颈服务={bottleneck_service}；建议优先检查连接池和下游依赖可用性。"
+        )
+
+        _maybe_push_webhook(push_webhook, summary)
+
+        _append_run_record(
+            runs_path,
+            {
+                "run_id": run_id,
+                "trace_id": trace_id,
+                "status": "ok",
+                "started_at": started_at,
+                "finished_at": datetime.now().isoformat(timespec="seconds"),
+                "tools": {
+                    "trace": trace_result,
+                    "diagnose": diagnose_result,
+                    "jvm": jvm_result,
+                    "logs": logs_result,
+                },
+                "summary": summary,
+            },
+        )
+
+        console.print(Panel(summary, title="Agent Analyze 完成", border_style="green"))
+        console.print(f"[cyan]run_id: {run_id}[/cyan]")
+
+    except (TraceNotFoundError, TraceValidationError, DataSourceError) as exc:
+        _append_run_record(
+            runs_path,
+            {
+                "run_id": run_id,
+                "trace_id": trace_id,
+                "status": "failed",
+                "started_at": started_at,
+                "finished_at": datetime.now().isoformat(timespec="seconds"),
+                "error": str(exc),
+            },
+        )
+        _print_data_error("Agent analyze failed", exc)
+        raise typer.Exit(code=1) from exc
+    except NotifyError as exc:
+        _append_run_record(
+            runs_path,
+            {
+                "run_id": run_id,
+                "trace_id": trace_id,
+                "status": "failed",
+                "started_at": started_at,
+                "finished_at": datetime.now().isoformat(timespec="seconds"),
+                "error": str(exc),
+            },
+        )
+        console.print(f"[red]Agent analyze notify failed: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    except typer.Exit:
+        raise
+    except Exception as exc:  # pragma: no cover
+        _append_run_record(
+            runs_path,
+            {
+                "run_id": run_id,
+                "trace_id": trace_id,
+                "status": "failed",
+                "started_at": started_at,
+                "finished_at": datetime.now().isoformat(timespec="seconds"),
+                "error": str(exc),
+            },
+        )
+        logger.exception("Agent analyze failed")
+        console.print(f"[red]Agent analyze failed: {exc}[/red]")
         raise typer.Exit(code=1) from exc
 
 

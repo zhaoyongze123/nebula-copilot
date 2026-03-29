@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, Protocol
 
 from nebula_copilot.analyzer import analyze_trace
@@ -35,38 +37,83 @@ class AgentContext:
     tool_registry: ToolRegistry
 
 
-def _tool_response(tool_name: str, target: str, payload: Dict[str, Any], status: str = "ok") -> Dict[str, Any]:
+def _json_size(payload: Dict[str, Any]) -> int:
+    return len(json.dumps(payload, ensure_ascii=False))
+
+
+def _truncate_payload(payload: Dict[str, Any], max_bytes: int = 2048) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    raw = json.dumps(payload, ensure_ascii=False)
+    original_size = len(raw)
+    if original_size <= max_bytes:
+        return payload, {
+            "is_truncated": False,
+            "original_size": original_size,
+            "returned_size": original_size,
+        }
+
+    truncated_raw = raw[: max_bytes - 3] + "..."
+    truncated_payload = {
+        "_truncated_json": truncated_raw,
+        "_note": "payload too large, returned compact preview",
+    }
+    returned_size = _json_size(truncated_payload)
+    return truncated_payload, {
+        "is_truncated": True,
+        "original_size": original_size,
+        "returned_size": returned_size,
+    }
+
+
+def _tool_response(
+    tool_name: str,
+    target: str,
+    payload: Dict[str, Any],
+    status: str = "ok",
+    summary: str | None = None,
+) -> Dict[str, Any]:
+    payload_compact, truncation = _truncate_payload(payload)
     return {
         "status": status,
         "tool": tool_name,
         "target": target,
-        "payload": payload,
+        "payload": payload_compact,
         "error": None,
+        "meta": {
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "payload_size": _json_size(payload_compact),
+        },
+        "summary": summary or f"{tool_name} 执行完成，目标={target}",
+        "truncation": truncation,
     }
 
 
 def tool_get_trace(trace_id: str, tool: TraceTool) -> Dict[str, Any]:
     """Phase 2 tool stub: get trace payload by trace id."""
     payload = tool(trace_id)
-    return _tool_response("tool_get_trace", trace_id, payload)
+    summary = f"已获取 Trace：{trace_id}"
+    return _tool_response("tool_get_trace", trace_id, payload, summary=summary)
 
 
 def tool_analyze_trace(trace: TraceDocument) -> Dict[str, Any]:
     """Phase 2 tool stub: run deterministic diagnosis and return structured JSON."""
     result = analyze_trace(trace)
-    return _tool_response("tool_analyze_trace", trace.trace_id, result.to_dict())
+    payload = result.to_dict()
+    summary = f"诊断完成：trace={trace.trace_id}，瓶颈服务={result.bottleneck.span.service_name}"
+    return _tool_response("tool_analyze_trace", trace.trace_id, payload, summary=summary)
 
 
 def tool_get_jvm_metrics(service_name: str, tool: JVMTool) -> Dict[str, Any]:
     """Phase 2 tool stub: query JVM metrics for a service."""
     payload = tool(service_name)
-    return _tool_response("tool_get_jvm_metrics", service_name, payload)
+    summary = f"JVM 指标已获取：service={service_name}"
+    return _tool_response("tool_get_jvm_metrics", service_name, payload, summary=summary)
 
 
 def tool_search_logs(service_name: str, time_range: str, tool: LogsTool) -> Dict[str, Any]:
     """Phase 2 tool stub: query service logs by time range."""
     payload = tool(service_name, time_range)
-    return _tool_response("tool_search_logs", service_name, payload)
+    summary = f"日志检索完成：service={service_name}，keyword={time_range}"
+    return _tool_response("tool_search_logs", service_name, payload, summary=summary)
 
 
 def run_agent_poc(ctx: AgentContext) -> Dict[str, Any]:
