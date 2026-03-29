@@ -21,6 +21,8 @@ from nebula_copilot.notifier import NotifyError, push_summary
 from nebula_copilot.models import Span
 from nebula_copilot.report_schema import NebulaReport, SpanReport
 from nebula_copilot.agent.graph import run_agent_graph
+from nebula_copilot.config import load_app_config
+from nebula_copilot.llm.executor import LLMExecutor, LLMSettings
 from nebula_copilot.repository import ESRepository, LocalJsonRepository
 from nebula_copilot.tools.types import ToolRegistry
 
@@ -31,6 +33,7 @@ logger = logging.getLogger("nebula_copilot")
 DEFAULT_DATA_PATH = Path("data/mock_trace.json")
 SLOW_WARNING_MS = 1000
 DEFAULT_RUNS_PATH = Path("data/agent_runs.json")
+DEFAULT_ENV_PATH = Path(".env")
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -230,6 +233,26 @@ def _append_run_record(path: Path, record: dict[str, object]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _build_llm_executor(env_file: Path, cli_llm_enabled: bool) -> LLMExecutor:
+    cfg = load_app_config(env_file)
+    enabled = cli_llm_enabled or cfg.llm.enabled
+    if not enabled:
+        return LLMExecutor.disabled()
+
+    return LLMExecutor(
+        LLMSettings(
+            enabled=enabled,
+            provider=cfg.llm.provider,
+            model=cfg.llm.model,
+            api_key=cfg.llm.api_key,
+            base_url=cfg.llm.base_url,
+            timeout_ms=cfg.llm.timeout_ms,
+            max_retry=cfg.llm.max_retry,
+            report_polish_enabled=cfg.llm.report_polish_enabled,
+        )
+    )
+
+
 @app.command()
 def seed(
     trace_id: str = typer.Argument(DEFAULT_TRACE_ID, help="Trace id for mock data"),
@@ -259,6 +282,8 @@ def analyze(
     format: str = typer.Option("rich", "--format", help="Output format: rich/json"),
     top_n: int = typer.Option(3, "--top-n", help="Top N slow spans"),
     push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
+    env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
+    llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 建议生成"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
 ) -> None:
     """Analyze trace from local JSON file."""
@@ -269,10 +294,11 @@ def analyze(
         raise typer.Exit(code=2)
 
     try:
+        llm_executor = _build_llm_executor(env_file, llm_enabled)
         repository = LocalJsonRepository(source)
         trace_doc = repository.get_trace(trace_id)
 
-        result = analyze_trace(trace_doc, top_n=top_n)
+        result = analyze_trace(trace_doc, top_n=top_n, llm_executor=llm_executor)
         summary = _render_result(trace_doc.root, result, format)
         _maybe_push_webhook(push_webhook, summary)
 
@@ -317,6 +343,8 @@ def analyze_es(
     format: str = typer.Option("rich", "--format", help="Output format: rich/json"),
     top_n: int = typer.Option(3, "--top-n", help="Top N slow spans"),
     push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
+    env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
+    llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 建议生成"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
 ) -> None:
     """Analyze trace by querying Elasticsearch directly."""
@@ -330,6 +358,7 @@ def analyze_es(
         password = os.getenv("NEBULA_ES_PASSWORD")
 
     try:
+        llm_executor = _build_llm_executor(env_file, llm_enabled)
         repository = ESRepository(
             es_url=es_url,
             index=index,
@@ -339,7 +368,7 @@ def analyze_es(
             timeout_seconds=timeout_seconds,
         )
         trace_doc = repository.get_trace(trace_id)
-        result = analyze_trace(trace_doc, top_n=top_n)
+        result = analyze_trace(trace_doc, top_n=top_n, llm_executor=llm_executor)
         summary = _render_result(trace_doc.root, result, format)
         _maybe_push_webhook(push_webhook, summary)
 
@@ -436,6 +465,8 @@ def agent_analyze(
     source: Path = typer.Option(DEFAULT_DATA_PATH, "--source", "-s", help="Trace JSON file"),
     push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
     runs_path: Path = typer.Option(DEFAULT_RUNS_PATH, "--runs-path", help="run_id 持久化文件路径"),
+    env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
+    llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 能力"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
 ) -> None:
     """Agent 入口：执行取数→诊断→补充信息→通知，并记录 run_id。"""
@@ -445,6 +476,7 @@ def agent_analyze(
     started_at = datetime.now().isoformat(timespec="seconds")
 
     try:
+        llm_executor = _build_llm_executor(env_file, llm_enabled)
         repository = LocalJsonRepository(source)
 
         tool_registry = ToolRegistry(
@@ -462,7 +494,13 @@ def agent_analyze(
         )
 
         trace_doc = repository.get_trace(trace_id)
-        graph_result = run_agent_graph(trace_id, run_id, trace_doc, tool_registry)
+        graph_result = run_agent_graph(
+            trace_id,
+            run_id,
+            trace_doc,
+            tool_registry,
+            llm_executor=llm_executor,
+        )
         summary = str(graph_result.get("summary") or "")
 
         _maybe_push_webhook(push_webhook, summary)
