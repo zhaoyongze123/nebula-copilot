@@ -37,6 +37,10 @@ class LLMConfig:
 @dataclass
 class AppConfig:
     llm: LLMConfig
+    run_dedupe_window_seconds: int = 300
+    run_rate_limit_per_minute: int = 0
+    run_guard_path: Path = Path("data/run_guard.json")
+    metrics_enabled: bool = True
 
 
 def load_app_config(env_file: Path | None = None) -> AppConfig:
@@ -56,6 +60,10 @@ def load_app_config(env_file: Path | None = None) -> AppConfig:
     llm_timeout_ms = int(_get("LLM_TIMEOUT_MS", "8000") or "8000")
     llm_max_retry = int(_get("LLM_MAX_RETRY", "2") or "2")
     llm_report_polish = _get("LLM_REPORT_POLISH_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+    run_dedupe_window_seconds = int(_get("RUN_DEDUPE_WINDOW_SECONDS", "300") or "300")
+    run_rate_limit_per_minute = int(_get("RUN_RATE_LIMIT_PER_MINUTE", "0") or "0")
+    run_guard_path = Path(_get("RUN_GUARD_PATH", "data/run_guard.json"))
+    metrics_enabled = _get("METRICS_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
 
     return AppConfig(
         llm=LLMConfig(
@@ -67,5 +75,9 @@ def load_app_config(env_file: Path | None = None) -> AppConfig:
             timeout_ms=max(1000, llm_timeout_ms),
             max_retry=max(0, llm_max_retry),
             report_polish_enabled=llm_report_polish,
-        )
+        ),
+        run_dedupe_window_seconds=max(1, run_dedupe_window_seconds),
+        run_rate_limit_per_minute=max(0, run_rate_limit_per_minute),
+        run_guard_path=run_guard_path,
+        metrics_enabled=metrics_enabled,
     )

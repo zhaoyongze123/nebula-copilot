@@ -23,6 +23,7 @@ from nebula_copilot.report_schema import NebulaReport, SpanReport
 from nebula_copilot.agent.graph import run_agent_graph
 from nebula_copilot.config import load_app_config
 from nebula_copilot.llm.executor import LLMExecutor, LLMSettings
+from nebula_copilot.runtime_guard import evaluate_run_guard
 from nebula_copilot.repository import ESRepository, LocalJsonRepository
 from nebula_copilot.tools.types import ToolRegistry
 
@@ -273,6 +274,18 @@ def _append_run_record(path: Path, record: dict[str, object]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _load_run_records(path: Path) -> list[dict[str, object]]:
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, list):
+            return [item for item in data if isinstance(item, dict)]
+    except (OSError, json.JSONDecodeError):
+        pass
+    return []
+
+
 def _build_llm_executor(env_file: Path, cli_llm_enabled: bool) -> LLMExecutor:
     cfg = load_app_config(env_file)
     enabled = cli_llm_enabled or cfg.llm.enabled
@@ -516,6 +529,9 @@ def agent_analyze(
         help="通知去重时间窗（秒）",
     ),
     notify_max_retries: int = typer.Option(3, "--notify-max-retries", help="通知最大重试次数"),
+    run_guard_path: Path | None = typer.Option(None, "--run-guard-path", help="执行守卫缓存路径"),
+    run_dedupe_window_seconds: int | None = typer.Option(None, "--run-dedupe-window-seconds", help="执行去重时间窗（秒）"),
+    run_rate_limit_per_minute: int | None = typer.Option(None, "--run-rate-limit-per-minute", help="每分钟最大执行次数，0=不限制"),
     env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
     llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 能力"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
@@ -525,6 +541,11 @@ def agent_analyze(
 
     run_id = f"run-{uuid.uuid4().hex[:12]}"
     started_at = datetime.now().isoformat(timespec="seconds")
+    cfg = load_app_config(env_file)
+
+    effective_guard_path = run_guard_path or cfg.run_guard_path
+    effective_dedupe_window = run_dedupe_window_seconds or cfg.run_dedupe_window_seconds
+    effective_rate_limit = cfg.run_rate_limit_per_minute if run_rate_limit_per_minute is None else max(0, run_rate_limit_per_minute)
 
     try:
         llm_executor = _build_llm_executor(env_file, llm_enabled)
@@ -545,6 +566,35 @@ def agent_analyze(
         )
 
         trace_doc = repository.get_trace(trace_id)
+        guard_result = evaluate_run_guard(
+            path=effective_guard_path,
+            trace_id=trace_id,
+            run_id=run_id,
+            dedupe_window_seconds=max(1, effective_dedupe_window),
+            rate_limit_per_minute=effective_rate_limit,
+        )
+        if not guard_result["allowed"]:
+            status = str(guard_result["status"])
+            _append_run_record(
+                runs_path,
+                {
+                    "run_id": run_id,
+                    "trace_id": trace_id,
+                    "status": status,
+                    "started_at": started_at,
+                    "finished_at": datetime.now().isoformat(timespec="seconds"),
+                    "guard": guard_result,
+                    "notify": {"status": "skipped", "attempts": 0, "deduplicated": False, "error": None},
+                    "metrics": {
+                        "duration_ms": 0,
+                        "history_events": 0,
+                    },
+                },
+            )
+            console.print(f"[yellow]Agent analyze skipped: {guard_result['status']} ({guard_result['reason']})[/yellow]")
+            console.print(f"[cyan]run_id: {run_id}[/cyan]")
+            return
+
         graph_result = run_agent_graph(
             trace_id,
             run_id,
@@ -565,15 +615,27 @@ def agent_analyze(
         run_status = str(graph_result.get("status") or "failed")
         if notify_result["status"] == "failed" and run_status == "ok":
             run_status = "degraded"
+        finished_at = datetime.now().isoformat(timespec="seconds")
+        duration_ms = int((datetime.fromisoformat(finished_at) - datetime.fromisoformat(started_at)).total_seconds() * 1000)
+
+        history = graph_result.get("history") if isinstance(graph_result.get("history"), list) else []
+        failure_events = [item for item in history if isinstance(item, dict) and str(item.get("status")) in {"failed", "fallback"}]
 
         _append_run_record(
             runs_path,
             {
                 **graph_result,
                 "status": run_status,
+                "guard": guard_result,
                 "notify": notify_result,
                 "started_at": started_at,
-                "finished_at": datetime.now().isoformat(timespec="seconds"),
+                "finished_at": finished_at,
+                "metrics": {
+                    "duration_ms": duration_ms,
+                    "history_events": len(history),
+                    "failure_events": len(failure_events),
+                    "notify_status": notify_result.get("status"),
+                },
             },
         )
 
@@ -614,6 +676,57 @@ def agent_analyze(
         logger.exception("Agent analyze failed")
         console.print(f"[red]Agent analyze failed: {exc}[/red]")
         raise typer.Exit(code=1) from exc
+
+
+@app.command("query-runs")
+def query_runs(
+    runs_path: Path = typer.Option(DEFAULT_RUNS_PATH, "--runs-path", help="run_id 持久化文件路径"),
+    trace_id: str | None = typer.Option(None, "--trace-id", help="按 trace_id 过滤"),
+    status: str | None = typer.Option(None, "--status", help="按状态过滤"),
+    limit: int = typer.Option(20, "--limit", help="返回条数上限"),
+    format: str = typer.Option("rich", "--format", help="输出格式: rich/json"),
+) -> None:
+    """查询 agent 运行记录（支持 trace_id/status 过滤）。"""
+    if limit <= 0:
+        console.print("[red]--limit must be > 0[/red]")
+        raise typer.Exit(code=2)
+
+    records = _load_run_records(runs_path)
+    filtered = []
+    for item in records:
+        if trace_id and str(item.get("trace_id")) != trace_id:
+            continue
+        if status and str(item.get("status")) != status:
+            continue
+        filtered.append(item)
+
+    result = filtered[-limit:]
+    if format == "json":
+        console.print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+
+    if format != "rich":
+        console.print("[red]--format only supports rich/json[/red]")
+        raise typer.Exit(code=2)
+
+    table = Table(title="Agent Runs", header_style="bold cyan")
+    table.add_column("run_id")
+    table.add_column("trace_id")
+    table.add_column("status")
+    table.add_column("duration_ms", justify="right")
+    table.add_column("finished_at")
+
+    for item in reversed(result):
+        metrics = item.get("metrics") if isinstance(item.get("metrics"), dict) else {}
+        duration_ms = str(metrics.get("duration_ms", "-"))
+        table.add_row(
+            str(item.get("run_id", "")),
+            str(item.get("trace_id", "")),
+            str(item.get("status", "")),
+            duration_ms,
+            str(item.get("finished_at", "")),
+        )
+    console.print(table)
 
 
 if __name__ == "__main__":
