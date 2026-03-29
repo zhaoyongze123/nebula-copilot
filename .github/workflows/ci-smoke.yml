@@ -90,3 +90,9 @@ jobs:
         run: |
           python -m nebula_copilot.cli seed ci-agent-trace --output /tmp/agent_mock.json --scenario timeout
           python -m nebula_copilot.cli agent-analyze ci-agent-trace --source /tmp/agent_mock.json --runs-path /tmp/agent_runs.json
+
+      - name: Run M3 graph acceptance tests
+        run: pytest -q tests/test_agent_graph.py
+
+      - name: Run full pytest
+        run: pytest -q

@@ -161,6 +161,7 @@ def test_agent_analyze_success(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "run_id:" in result.stdout
+    assert "图执行完成" in result.stdout
     assert runs_path.exists()
 
 

@@ -11,22 +11,22 @@ from nebula_copilot.tools.types import AgentContext, JVMTool, LogsTool, ToolRegi
 
 
 def tool_get_trace(trace_id: str, tool: TraceTool) -> Dict[str, Any]:
-    """Phase 2 tool stub: get trace payload by trace id."""
+    """兼容入口：保留 tooling.py 调用方式。"""
     return get_trace_tool(trace_id, tool)
 
 
 def tool_analyze_trace(trace: TraceDocument) -> Dict[str, Any]:
-    """Phase 2 tool stub: run deterministic diagnosis and return structured JSON."""
+    """兼容入口：保留 tooling.py 调用方式。"""
     return analyze_trace_tool(trace)
 
 
 def tool_get_jvm_metrics(service_name: str, tool: JVMTool) -> Dict[str, Any]:
-    """Phase 2 tool stub: query JVM metrics for a service."""
+    """兼容入口：保留 tooling.py 调用方式。"""
     return get_jvm_metrics_tool(service_name, tool)
 
 
 def tool_search_logs(service_name: str, time_range: str, tool: LogsTool) -> Dict[str, Any]:
-    """Phase 2 tool stub: query service logs by time range."""
+    """兼容入口：保留 tooling.py 调用方式。"""
     return search_logs_tool(service_name, time_range, tool)
 
 
