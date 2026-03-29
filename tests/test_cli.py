@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import time
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -146,6 +147,7 @@ def test_analyze_es_uses_repository_abstraction() -> None:
 def test_agent_analyze_success(tmp_path: Path) -> None:
     output = tmp_path / "mock.json"
     runs_path = tmp_path / "runs.json"
+    guard_path = tmp_path / "guard.json"
     runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
 
     result = runner.invoke(
@@ -157,6 +159,8 @@ def test_agent_analyze_success(tmp_path: Path) -> None:
             str(output),
             "--runs-path",
             str(runs_path),
+            "--run-guard-path",
+            str(guard_path),
         ],
     )
 
@@ -191,6 +195,7 @@ def test_agent_analyze_trace_not_found(tmp_path: Path) -> None:
 def test_agent_analyze_llm_enabled_without_key_fallback_success(tmp_path: Path) -> None:
     output = tmp_path / "mock.json"
     runs_path = tmp_path / "runs.json"
+    guard_path = tmp_path / "guard.json"
     env_file = tmp_path / ".env"
     env_file.write_text("LLM_ENABLED=true\n", encoding="utf-8")
     runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
@@ -204,6 +209,8 @@ def test_agent_analyze_llm_enabled_without_key_fallback_success(tmp_path: Path) 
             str(output),
             "--runs-path",
             str(runs_path),
+            "--run-guard-path",
+            str(guard_path),
             "--env-file",
             str(env_file),
             "--llm-enabled",
@@ -217,6 +224,7 @@ def test_agent_analyze_llm_enabled_without_key_fallback_success(tmp_path: Path) 
 def test_agent_analyze_notify_failed_degraded_not_blocking(tmp_path: Path) -> None:
     output = tmp_path / "mock.json"
     runs_path = tmp_path / "runs.json"
+    guard_path = tmp_path / "guard.json"
     runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
 
     with patch("nebula_copilot.cli.push_summary_reliable") as mocked_notify:
@@ -235,6 +243,8 @@ def test_agent_analyze_notify_failed_degraded_not_blocking(tmp_path: Path) -> No
                 str(output),
                 "--runs-path",
                 str(runs_path),
+                "--run-guard-path",
+                str(guard_path),
                 "--push-webhook",
                 "https://example.com/webhook",
             ],
@@ -246,3 +256,136 @@ def test_agent_analyze_notify_failed_degraded_not_blocking(tmp_path: Path) -> No
     latest = records[-1]
     assert latest["status"] == "degraded"
     assert latest["notify"]["status"] == "failed"
+
+
+def test_agent_analyze_run_deduped(tmp_path: Path) -> None:
+    output = tmp_path / "mock.json"
+    runs_path = tmp_path / "runs.json"
+    guard_path = tmp_path / "guard.json"
+    runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
+
+    first = runner.invoke(
+        app,
+        [
+            "agent-analyze",
+            DEFAULT_TRACE_ID,
+            "--source",
+            str(output),
+            "--runs-path",
+            str(runs_path),
+            "--run-guard-path",
+            str(guard_path),
+            "--run-dedupe-window-seconds",
+            "300",
+        ],
+    )
+    second = runner.invoke(
+        app,
+        [
+            "agent-analyze",
+            DEFAULT_TRACE_ID,
+            "--source",
+            str(output),
+            "--runs-path",
+            str(runs_path),
+            "--run-guard-path",
+            str(guard_path),
+            "--run-dedupe-window-seconds",
+            "300",
+        ],
+    )
+
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+    records = json.loads(runs_path.read_text(encoding="utf-8"))
+    assert records[-1]["status"] == "deduped"
+
+
+def test_agent_analyze_rate_limited(tmp_path: Path) -> None:
+    output = tmp_path / "mock.json"
+    runs_path = tmp_path / "runs.json"
+    guard_path = tmp_path / "guard.json"
+    runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
+
+    first = runner.invoke(
+        app,
+        [
+            "agent-analyze",
+            DEFAULT_TRACE_ID,
+            "--source",
+            str(output),
+            "--runs-path",
+            str(runs_path),
+            "--run-guard-path",
+            str(guard_path),
+            "--run-dedupe-window-seconds",
+            "1",
+            "--run-rate-limit-per-minute",
+            "1",
+        ],
+    )
+    time.sleep(1.1)
+    second = runner.invoke(
+        app,
+        [
+            "agent-analyze",
+            DEFAULT_TRACE_ID,
+            "--source",
+            str(output),
+            "--runs-path",
+            str(runs_path),
+            "--run-guard-path",
+            str(guard_path),
+            "--run-dedupe-window-seconds",
+            "1",
+            "--run-rate-limit-per-minute",
+            "1",
+        ],
+    )
+
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+    records = json.loads(runs_path.read_text(encoding="utf-8"))
+    assert records[-1]["status"] == "rate_limited"
+
+
+def test_query_runs_json(tmp_path: Path) -> None:
+    runs_path = tmp_path / "runs.json"
+    runs_path.write_text(
+        json.dumps(
+            [
+                {
+                    "run_id": "run-1",
+                    "trace_id": "trace-1",
+                    "status": "ok",
+                    "finished_at": "2026-03-29T12:00:00",
+                    "metrics": {"duration_ms": 120},
+                },
+                {
+                    "run_id": "run-2",
+                    "trace_id": "trace-2",
+                    "status": "degraded",
+                    "finished_at": "2026-03-29T12:01:00",
+                    "metrics": {"duration_ms": 200},
+                },
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "query-runs",
+            "--runs-path",
+            str(runs_path),
+            "--status",
+            "degraded",
+            "--format",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "run-2" in result.stdout

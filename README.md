@@ -126,6 +126,15 @@ CI 自动执行（GitHub Actions）：
 - 最近 traceId 是否可查询
 - `analyze-es` 是否成功并返回 0 退出码
 
+## 部署与运维
+
+- 部署手册：`docs/DEPLOYMENT.md`
+- 运维手册：`docs/OPERATIONS.md`
+
+支持方式：
+- Docker：`Dockerfile` + `docker-compose.yml`
+- Kubernetes：`deploy/k8s/deployment.yaml` + `deploy/k8s/secret.example.yaml`
+
 ## Phase 2 预埋（Tool Calling / Agent）
 
 已提供：

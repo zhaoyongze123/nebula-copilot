@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nebula-copilot
+  labels:
+    app: nebula-copilot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nebula-copilot
+  template:
+    metadata:
+      labels:
+        app: nebula-copilot
+    spec:
+      containers:
+        - name: nebula-copilot
+          image: nebula-copilot:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LLM_ENABLED
+              value: "true"
+            - name: LLM_PROVIDER
+              value: "github"
+            - name: LLM_MODEL
+              value: "gpt-4.1-mini"
+            - name: GH_MODELS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nebula-copilot-secrets
+                  key: GH_MODELS_API_KEY
+          command: ["python", "-m", "nebula_copilot.cli"]
+          args: ["--help"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"

@@ -16,6 +16,10 @@ def test_load_app_config_from_env_file(tmp_path: Path) -> None:
                 "LLM_TIMEOUT_MS=7000",
                 "LLM_MAX_RETRY=1",
                 "LLM_REPORT_POLISH_ENABLED=true",
+                "RUN_DEDUPE_WINDOW_SECONDS=120",
+                "RUN_RATE_LIMIT_PER_MINUTE=9",
+                "RUN_GUARD_PATH=data/custom_guard.json",
+                "METRICS_ENABLED=true",
             ]
         ),
         encoding="utf-8",
@@ -27,3 +31,7 @@ def test_load_app_config_from_env_file(tmp_path: Path) -> None:
     assert cfg.llm.api_key == "test-key"
     assert cfg.llm.timeout_ms == 7000
     assert cfg.llm.max_retry == 1
+    assert cfg.run_dedupe_window_seconds == 120
+    assert cfg.run_rate_limit_per_minute == 9
+    assert str(cfg.run_guard_path) == "data/custom_guard.json"
+    assert cfg.metrics_enabled is True
