@@ -98,11 +98,14 @@ jobs:
       - name: Run M3 graph acceptance tests
         run: pytest -q tests/test_agent_graph.py
 
+      - name: Run M4 notifier acceptance tests
+        run: pytest -q tests/test_notifier.py
+
       - name: Run full pytest
         run: pytest -q
 
   llm-live-smoke:
-    if: ${{ github.event_name == 'workflow_dispatch' && secrets.GH_MODELS_API_KEY != '' }}
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     continue-on-error: true
 
@@ -128,5 +131,9 @@ jobs:
           LLM_MODEL: "gpt-4.1-mini"
           LLM_REPORT_POLISH_ENABLED: "true"
         run: |
+          if [ -z "$GH_MODELS_API_KEY" ]; then
+            echo "GH_MODELS_API_KEY is empty, skip live smoke"
+            exit 0
+          fi
           python -m nebula_copilot.cli seed ci-live-llm-trace --output /tmp/live_llm_mock.json --scenario timeout
           python -m nebula_copilot.cli agent-analyze ci-live-llm-trace --source /tmp/live_llm_mock.json --runs-path /tmp/live_llm_runs.json --llm-enabled

@@ -17,7 +17,7 @@ from nebula_copilot.analyzer import DiagnosisResult, SpanDiagnosis, analyze_trac
 from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
 from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, list_recent_trace_ids
 from nebula_copilot.mock_data import DEFAULT_TRACE_ID, write_mock_file
-from nebula_copilot.notifier import NotifyError, push_summary
+from nebula_copilot.notifier import NotifyError, push_summary, push_summary_reliable
 from nebula_copilot.models import Span
 from nebula_copilot.report_schema import NebulaReport, SpanReport
 from nebula_copilot.agent.graph import run_agent_graph
@@ -201,6 +201,46 @@ def _maybe_push_webhook(push_webhook: str | None, summary: str) -> None:
     except NotifyError as exc:
         console.print(f"[red]Webhook push failed: {exc}[/red]")
         raise typer.Exit(code=1) from exc
+
+
+def _notify_with_reliability(
+    push_webhook: str | None,
+    summary: str,
+    *,
+    dedupe_key: str,
+    dedupe_path: Path,
+    dedupe_window_seconds: int,
+    max_retries: int,
+) -> dict[str, object]:
+    if not push_webhook:
+        return {
+            "status": "skipped",
+            "deduplicated": False,
+            "attempts": 0,
+            "error": None,
+        }
+
+    result = push_summary_reliable(
+        push_webhook,
+        summary,
+        dedupe_key,
+        dedupe_cache_path=dedupe_path,
+        dedupe_window_seconds=dedupe_window_seconds,
+        max_retries=max_retries,
+    )
+    if result.status == "ok":
+        console.print("[green]Webhook push succeeded.[/green]")
+    elif result.status == "skipped" and result.deduplicated:
+        console.print("[yellow]Webhook skipped due to dedup window.[/yellow]")
+    else:
+        console.print(f"[red]Webhook push failed after retries: {result.error}[/red]")
+
+    return {
+        "status": result.status,
+        "deduplicated": result.deduplicated,
+        "attempts": result.attempts,
+        "error": result.error,
+    }
 
 
 def _print_data_error(prefix: str, exc: Exception) -> None:
@@ -465,6 +505,17 @@ def agent_analyze(
     source: Path = typer.Option(DEFAULT_DATA_PATH, "--source", "-s", help="Trace JSON file"),
     push_webhook: str | None = typer.Option(None, "--push-webhook", help="Feishu/DingTalk webhook URL"),
     runs_path: Path = typer.Option(DEFAULT_RUNS_PATH, "--runs-path", help="run_id 持久化文件路径"),
+    notify_dedupe_path: Path = typer.Option(
+        Path("data/notify_dedupe.json"),
+        "--notify-dedupe-path",
+        help="通知去重缓存文件路径",
+    ),
+    notify_dedupe_window_seconds: int = typer.Option(
+        300,
+        "--notify-dedupe-window-seconds",
+        help="通知去重时间窗（秒）",
+    ),
+    notify_max_retries: int = typer.Option(3, "--notify-max-retries", help="通知最大重试次数"),
     env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
     llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 能力"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
@@ -502,13 +553,25 @@ def agent_analyze(
             llm_executor=llm_executor,
         )
         summary = str(graph_result.get("summary") or "")
+        notify_result = _notify_with_reliability(
+            push_webhook,
+            summary,
+            dedupe_key=f"{trace_id}:{push_webhook or 'none'}",
+            dedupe_path=notify_dedupe_path,
+            dedupe_window_seconds=max(1, notify_dedupe_window_seconds),
+            max_retries=max(1, notify_max_retries),
+        )
 
-        _maybe_push_webhook(push_webhook, summary)
+        run_status = str(graph_result.get("status") or "failed")
+        if notify_result["status"] == "failed" and run_status == "ok":
+            run_status = "degraded"
 
         _append_run_record(
             runs_path,
             {
                 **graph_result,
+                "status": run_status,
+                "notify": notify_result,
                 "started_at": started_at,
                 "finished_at": datetime.now().isoformat(timespec="seconds"),
             },
@@ -517,7 +580,7 @@ def agent_analyze(
         console.print(Panel(summary, title="Agent Analyze 完成", border_style="green"))
         console.print(f"[cyan]run_id: {run_id}[/cyan]")
 
-        if graph_result.get("status") != "ok":
+        if run_status not in {"ok", "degraded"}:
             raise typer.Exit(code=1)
 
     except (TraceNotFoundError, TraceValidationError, DataSourceError) as exc:
@@ -533,20 +596,6 @@ def agent_analyze(
             },
         )
         _print_data_error("Agent analyze failed", exc)
-        raise typer.Exit(code=1) from exc
-    except NotifyError as exc:
-        _append_run_record(
-            runs_path,
-            {
-                "run_id": run_id,
-                "trace_id": trace_id,
-                "status": "failed",
-                "started_at": started_at,
-                "finished_at": datetime.now().isoformat(timespec="seconds"),
-                "error": str(exc),
-            },
-        )
-        console.print(f"[red]Agent analyze notify failed: {exc}[/red]")
         raise typer.Exit(code=1) from exc
     except typer.Exit:
         raise
