@@ -150,3 +150,24 @@ def test_run_agent_graph_retry_exhausted_then_fallback() -> None:
         if item["node"] == "enrich_jvm" and item["status"] == "retry_failed"
     ]
     assert len(retry_failed_events) == 3
+
+
+def test_run_agent_graph_report_polish_with_llm() -> None:
+    class FakeLLM:
+        def polish_summary(self, summary: str) -> str:
+            return f"LLM润色: {summary}"
+
+    trace_doc = build_mock_trace("trace-m3-polish", "timeout")
+
+    result = run_agent_graph(
+        trace_id="trace-m3-polish",
+        run_id="run-m3-006",
+        trace_doc=trace_doc,
+        tool_registry=_registry(),
+        llm_executor=FakeLLM(),
+    )
+
+    assert result["status"] == "ok"
+    assert str(result["summary"]).startswith("LLM润色")
+    polish_event = next(item for item in result["history"] if item["node"] == "report_polish")
+    assert polish_event["status"] == "ok"

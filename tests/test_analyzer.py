@@ -35,3 +35,25 @@ def test_classify_error_unknown_when_error_without_stack() -> None:
     trace = build_mock_trace("trace_t2", "timeout")
     span = trace.root  # ERROR but no exception stack
     assert classify_error(span) == "Unknown"
+
+
+def test_analyze_trace_prefers_llm_action_when_available() -> None:
+    class FakeLLM:
+        def suggest_action(self, error_type: str, service_name: str, exception_stack: str | None) -> str:
+            return f"LLM建议: {service_name} 先排查 {error_type}"
+
+    trace = build_mock_trace("trace_llm_action", "timeout")
+    result = analyze_trace(trace, top_n=1, llm_executor=FakeLLM())
+
+    assert result.bottleneck.action_suggestion.startswith("LLM建议")
+
+
+def test_analyze_trace_fallback_when_llm_fails() -> None:
+    class FailingLLM:
+        def suggest_action(self, error_type: str, service_name: str, exception_stack: str | None) -> str:
+            raise RuntimeError("model unavailable")
+
+    trace = build_mock_trace("trace_llm_fallback", "timeout")
+    result = analyze_trace(trace, top_n=1, llm_executor=FailingLLM())
+
+    assert "优先检查" in result.bottleneck.action_suggestion

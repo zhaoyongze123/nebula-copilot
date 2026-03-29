@@ -1,9 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from nebula_copilot.models import Span, TraceDocument
+
+
+def _rule_based_action_suggestion(error_type: str, service_name: str) -> str:
+    if error_type == "Timeout":
+        return f"优先检查 {service_name} 的下游网络延迟与连接池，日志关键词: timeout/read timed out"
+    if error_type == "DB":
+        return f"优先检查 {service_name} 的慢 SQL 与锁等待，日志关键词: deadlock/lock wait"
+    if error_type == "Downstream":
+        return f"优先检查 {service_name} 依赖服务健康状态，日志关键词: 503/connection refused"
+    if error_type == "Unknown":
+        return f"优先查看 {service_name} ERROR 日志上下文与最近发布记录"
+    return f"{service_name} 当前无异常，关注其子调用链路"
 
 
 @dataclass
@@ -78,32 +90,37 @@ def classify_error(span: Span) -> str:
     return "None"
 
 
-def action_suggestion(error_type: str, service_name: str) -> str:
-    if error_type == "Timeout":
-        return f"优先检查 {service_name} 的下游网络延迟与连接池，日志关键词: timeout/read timed out"
-    if error_type == "DB":
-        return f"优先检查 {service_name} 的慢 SQL 与锁等待，日志关键词: deadlock/lock wait"
-    if error_type == "Downstream":
-        return f"优先检查 {service_name} 依赖服务健康状态，日志关键词: 503/connection refused"
-    if error_type == "Unknown":
-        return f"优先查看 {service_name} ERROR 日志上下文与最近发布记录"
-    return f"{service_name} 当前无异常，关注其子调用链路"
+def action_suggestion(
+    error_type: str,
+    service_name: str,
+    exception_stack: str | None = None,
+    llm_executor: Optional[Any] = None,
+) -> str:
+    if llm_executor is not None:
+        try:
+            suggested = llm_executor.suggest_action(error_type, service_name, exception_stack)
+            if suggested:
+                return suggested
+        except Exception:
+            # LLM不可用时必须回退到规则逻辑，保证主链路稳定。
+            pass
+    return _rule_based_action_suggestion(error_type, service_name)
 
 
-def build_span_diagnosis(span: Span) -> SpanDiagnosis:
+def build_span_diagnosis(span: Span, llm_executor: Optional[Any] = None) -> SpanDiagnosis:
     err = classify_error(span)
     return SpanDiagnosis(
         span=span,
         error_type=err,
-        action_suggestion=action_suggestion(err, span.service_name),
+        action_suggestion=action_suggestion(err, span.service_name, span.exception_stack, llm_executor),
     )
 
 
-def analyze_trace(trace_doc: TraceDocument, top_n: int = 3) -> DiagnosisResult:
+def analyze_trace(trace_doc: TraceDocument, top_n: int = 3, llm_executor: Optional[Any] = None) -> DiagnosisResult:
     spans = flatten_spans(trace_doc.root)
     sorted_spans = sorted(spans, key=lambda s: s.duration_ms, reverse=True)
     top = sorted_spans[: max(1, top_n)]
-    top_diagnosis = [build_span_diagnosis(s) for s in top]
+    top_diagnosis = [build_span_diagnosis(s, llm_executor) for s in top]
     return DiagnosisResult(
         trace_id=trace_doc.trace_id,
         bottleneck=top_diagnosis[0],

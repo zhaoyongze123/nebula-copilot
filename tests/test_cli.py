@@ -185,3 +185,29 @@ def test_agent_analyze_trace_not_found(tmp_path: Path) -> None:
     assert result.exit_code == 1
     assert "未找到目标 Trace" in result.stdout
     assert runs_path.exists()
+
+
+def test_agent_analyze_llm_enabled_without_key_fallback_success(tmp_path: Path) -> None:
+    output = tmp_path / "mock.json"
+    runs_path = tmp_path / "runs.json"
+    env_file = tmp_path / ".env"
+    env_file.write_text("LLM_ENABLED=true\n", encoding="utf-8")
+    runner.invoke(app, ["seed", DEFAULT_TRACE_ID, "--output", str(output), "--scenario", "timeout"])
+
+    result = runner.invoke(
+        app,
+        [
+            "agent-analyze",
+            DEFAULT_TRACE_ID,
+            "--source",
+            str(output),
+            "--runs-path",
+            str(runs_path),
+            "--env-file",
+            str(env_file),
+            "--llm-enabled",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "run_id:" in result.stdout

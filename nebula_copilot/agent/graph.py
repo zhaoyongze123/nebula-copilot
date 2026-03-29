@@ -74,12 +74,23 @@ def _node_enrich_logs(state: AgentState, tool_registry: ToolRegistry, service_na
     state.add_event("enrich_logs", "ok", "日志补充完成", result)
 
 
-def _node_report(state: AgentState, service_name: str) -> None:
+def _node_report(state: AgentState, service_name: str, llm_executor: Any | None = None) -> None:
     error_type = state.diagnosis.get("bottleneck", {}).get("error_type", "Unknown")
-    state.summary = (
+    base_summary = (
         f"run_id={state.run_id} trace={state.trace_id} 图执行完成，瓶颈服务={service_name}，"
         f"异常类型={error_type}。建议优先检查连接池、依赖可用性与关键错误日志。"
     )
+    state.summary = base_summary
+    if llm_executor is not None:
+        try:
+            polished = llm_executor.polish_summary(base_summary)
+            if polished:
+                state.summary = polished
+                state.add_event("report_polish", "ok", "LLM 报告润色完成", {"enabled": True})
+            else:
+                state.add_event("report_polish", "skipped", "LLM 未返回可用润色结果", {"enabled": True})
+        except Exception as exc:
+            state.add_event("report_polish", "fallback", "LLM 润色失败，已降级使用规则摘要", {"error": str(exc)})
     state.add_event("report", "ok", "生成汇总报告", {"summary": state.summary})
 
 
@@ -87,7 +98,13 @@ def _node_notify(state: AgentState) -> None:
     state.add_event("notify", "ok", "通知阶段完成（由上层 CLI 控制实际发送）", {"summary": state.summary or ""})
 
 
-def run_agent_graph(trace_id: str, run_id: str, trace_doc: TraceDocument, tool_registry: ToolRegistry) -> Dict[str, Any]:
+def run_agent_graph(
+    trace_id: str,
+    run_id: str,
+    trace_doc: TraceDocument,
+    tool_registry: ToolRegistry,
+    llm_executor: Any | None = None,
+) -> Dict[str, Any]:
     state = AgentState.new(trace_id=trace_id, run_id=run_id)
 
     try:
@@ -109,7 +126,7 @@ def run_agent_graph(trace_id: str, run_id: str, trace_doc: TraceDocument, tool_r
         else:
             _node_enrich_logs(state, tool_registry, service_name, keyword)
 
-        _node_report(state, service_name)
+        _node_report(state, service_name, llm_executor=llm_executor)
         _node_notify(state)
         state.status = "ok"
 
