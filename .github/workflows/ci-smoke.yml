@@ -85,3 +85,8 @@ jobs:
         run: |
           chmod +x scripts/smoke_test.sh
           ./scripts/smoke_test.sh nebula_metrics
+
+      - name: Run agent-analyze smoke
+        run: |
+          python -m nebula_copilot.cli seed ci-agent-trace --output /tmp/agent_mock.json --scenario timeout
+          python -m nebula_copilot.cli agent-analyze ci-agent-trace --source /tmp/agent_mock.json --runs-path /tmp/agent_runs.json
