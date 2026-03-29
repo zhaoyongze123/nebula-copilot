@@ -401,17 +401,17 @@ class AgentState(TypedDict, total=False):
 
 ---
 
-## M3：从 AgentExecutor 进化到 LangGraph（待开始）
-- [ ] 引入 `agent/state.py`（统一状态定义）
-- [ ] 引入 `agent/graph.py`（显式 DAG/状态机流程）
-- [ ] 节点化执行：`get_trace -> analyze -> route -> enrich -> report -> notify`
-- [ ] 条件路由：按 `error_type` 分发 JVM / Logs / 双查策略
-- [ ] 失败重试与回退策略（超时、空数据、第三方故障）
+## M3：从 AgentExecutor 进化到 LangGraph（已完成）
+- [x] 引入 `agent/state.py`（统一状态定义）
+- [x] 引入 `agent/graph.py`（显式 DAG/状态机流程）
+- [x] 节点化执行：`get_trace -> analyze -> route -> enrich -> report -> notify`
+- [x] 条件路由：按 `error_type` 分发 JVM / Logs / 双查策略
+- [x] 失败重试与回退策略（超时、空数据、第三方故障）
 
-### M3 验收标准（目标）
-- 图中至少包含 6 个核心节点与 2 条条件分支
-- 任一节点失败可在状态中追踪并给出降级结果
-- 至少 1 组完整图集成测试（mock 工具链）通过
+### M3 验收标准（已满足）
+- 图中已包含 7 个核心节点与 3 条条件分支（dual/jvm/logs）
+- 任一节点失败可在状态 history 追踪并触发 fallback 降级结果
+- 图执行测试与全量测试通过（`tests/test_agent_graph.py` + `pytest -q`）
 
 ---
 
@@ -430,10 +430,10 @@ class AgentState(TypedDict, total=False):
 
 ## 当前阶段结论
 
-当前项目已完成 **M2（Agent 基础化）**，进入 **M3（LangGraph 演进准备）**：
-- 核心诊断链路、Agent CLI 入口与 Tool 契约已落地；
-- Tool 已完成分层并保留向后兼容入口；
-- 下一阶段将推进状态机编排、条件路由与失败回退策略。
+当前项目已完成 **M3（LangGraph 状态机落地）**，进入 **M4（生产化与可观测）准备**：
+- 已完成状态建模、图编排、条件路由与节点级重试/降级；
+- Agent CLI 已对接图执行并记录 run_id/history；
+- 下一阶段将推进通知可靠化、去重限流与运行观测治理。
 
 
 

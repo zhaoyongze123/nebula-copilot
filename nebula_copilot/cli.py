@@ -20,15 +20,9 @@ from nebula_copilot.mock_data import DEFAULT_TRACE_ID, write_mock_file
 from nebula_copilot.notifier import NotifyError, push_summary
 from nebula_copilot.models import Span
 from nebula_copilot.report_schema import NebulaReport, SpanReport
+from nebula_copilot.agent.graph import run_agent_graph
 from nebula_copilot.repository import ESRepository, LocalJsonRepository
-from nebula_copilot.tooling import (
-    AgentContext,
-    ToolRegistry,
-    tool_analyze_trace,
-    tool_get_jvm_metrics,
-    tool_get_trace,
-    tool_search_logs,
-)
+from nebula_copilot.tools.types import ToolRegistry
 
 app = typer.Typer(add_completion=False, help="Nebula-Copilot CLI")
 console = Console()
@@ -453,57 +447,40 @@ def agent_analyze(
     try:
         repository = LocalJsonRepository(source)
 
-        ctx = AgentContext(
-            trace_id=trace_id,
-            tool_registry=ToolRegistry(
-                query_trace=lambda tid: {
-                    "trace_id": tid,
-                    "bottleneck_service": repository.get_trace(tid).root.service_name,
-                    "keyword": "timeout",
-                },
-                query_jvm=lambda service_name: {"service": service_name, "heap_used_mb": 512, "gc_count": 3},
-                query_logs=lambda service_name, keyword: {
-                    "service": service_name,
-                    "keyword": keyword,
-                    "sample": ["timeout while waiting for downstream", "retry exhausted"],
-                },
-            ),
+        tool_registry = ToolRegistry(
+            query_trace=lambda tid: {
+                "trace_id": tid,
+                "bottleneck_service": repository.get_trace(tid).root.service_name,
+                "keyword": "timeout",
+            },
+            query_jvm=lambda service_name: {"service": service_name, "heap_used_mb": 512, "gc_count": 3},
+            query_logs=lambda service_name, keyword: {
+                "service": service_name,
+                "keyword": keyword,
+                "sample": ["timeout while waiting for downstream", "retry exhausted"],
+            },
         )
 
         trace_doc = repository.get_trace(trace_id)
-        trace_result = tool_get_trace(ctx.trace_id, ctx.tool_registry.query_trace)
-        diagnose_result = tool_analyze_trace(trace_doc)
-        bottleneck_service = diagnose_result["payload"]["bottleneck"]["service_name"]
-        jvm_result = tool_get_jvm_metrics(bottleneck_service, ctx.tool_registry.query_jvm)
-        logs_result = tool_search_logs(bottleneck_service, "timeout", ctx.tool_registry.query_logs)
-
-        summary = (
-            f"run_id={run_id} trace={trace_id} 诊断完成，"
-            f"瓶颈服务={bottleneck_service}；建议优先检查连接池和下游依赖可用性。"
-        )
+        graph_result = run_agent_graph(trace_id, run_id, trace_doc, tool_registry)
+        summary = str(graph_result.get("summary") or "")
 
         _maybe_push_webhook(push_webhook, summary)
 
         _append_run_record(
             runs_path,
             {
-                "run_id": run_id,
-                "trace_id": trace_id,
-                "status": "ok",
+                **graph_result,
                 "started_at": started_at,
                 "finished_at": datetime.now().isoformat(timespec="seconds"),
-                "tools": {
-                    "trace": trace_result,
-                    "diagnose": diagnose_result,
-                    "jvm": jvm_result,
-                    "logs": logs_result,
-                },
-                "summary": summary,
             },
         )
 
         console.print(Panel(summary, title="Agent Analyze 完成", border_style="green"))
         console.print(f"[cyan]run_id: {run_id}[/cyan]")
+
+        if graph_result.get("status") != "ok":
+            raise typer.Exit(code=1)
 
     except (TraceNotFoundError, TraceValidationError, DataSourceError) as exc:
         _append_run_record(
