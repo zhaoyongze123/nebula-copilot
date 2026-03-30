@@ -177,7 +177,7 @@ function renderRunDetail(page) {
 function renderTraceInspect(payload) {
   const panel = qs('tracePanel');
   if (!panel) return;
-  const tree = payload.tree || {};
+  const tree = normalizeTraceTree(payload.tree || {});
   const diagnosis = payload.diagnosis || {};
   const bottleneck = diagnosis.bottleneck?.span || {};
   panel.innerHTML = `
@@ -201,37 +201,72 @@ function renderTraceInspect(payload) {
 }
 
 let cyInstance = null;
+
+function isSyntheticRootNode(node) {
+  if (!node) return false;
+  const service = String(node.service_name || '').toLowerCase();
+  const operation = String(node.operation_name || '').toLowerCase();
+  return service === 'trace-root' || operation.startsWith('trace:');
+}
+
+function normalizeTraceTree(root) {
+  let current = root;
+  while (
+    current &&
+    isSyntheticRootNode(current) &&
+    Array.isArray(current.children) &&
+    current.children.length === 1 &&
+    isSyntheticRootNode(current.children[0])
+  ) {
+    current = current.children[0];
+  }
+  return current || root;
+}
+
 function renderTopology(treeRoot, bottleneckId) {
   const container = qs('cy');
   if (!container || typeof cytoscape === 'undefined') return;
   const elements = [];
-  
+
   function traverse(node, parentId) {
     if (!node || !node.span_id) return;
-    elements.push({
-      data: {
-        id: node.span_id,
-        label: `${node.service_name || 'unknown'}\n${node.operation_name || ''}`,
-        isBottleneck: node.span_id === bottleneckId
-      }
-    });
+    const currentNodeId = node.span_id;
+    const skipNode = isSyntheticRootNode(node);
 
-    if (parentId) {
+    if (!skipNode) {
       elements.push({
         data: {
-          id: `${parentId}-${node.span_id}`,
-          source: parentId,
-          target: node.span_id
+          id: currentNodeId,
+          label: `${node.service_name || 'unknown'}\n${node.operation_name || ''}\n${node.status || 'OK'}`,
+          status: String(node.status || 'OK').toUpperCase(),
+          isBottleneck: currentNodeId === bottleneckId
         }
       });
+
+      if (parentId) {
+        elements.push({
+          data: {
+            id: `${parentId}-${currentNodeId}`,
+            source: parentId,
+            target: currentNodeId
+          }
+        });
+      }
     }
 
+    const nextParentId = skipNode ? parentId : currentNodeId;
+
     if (Array.isArray(node.children)) {
-      node.children.forEach(child => traverse(child, node.span_id));
+      node.children.forEach(child => traverse(child, nextParentId));
     }
   }
 
   traverse(treeRoot, null);
+
+  if (!elements.length) {
+    container.innerHTML = '<div style="padding:8px;color:#5f6b73;">当前链路无可展示的服务拓扑节点</div>';
+    return;
+  }
 
   if (cyInstance) {
     cyInstance.destroy();
@@ -245,7 +280,11 @@ function renderTopology(treeRoot, bottleneckId) {
         selector: 'node',
         style: {
           'background-color': function(ele) {
-            return ele.data('isBottleneck') ? '#bf2f2f' : '#0b5ea8';
+            if (ele.data('isBottleneck')) return '#bf2f2f';
+            const status = String(ele.data('status') || 'OK').toUpperCase();
+            if (status === 'ERROR') return '#d14949';
+            if (status === 'SKIPPED') return '#c58a1b';
+            return '#0b5ea8';
           },
           'label': 'data(label)',
           'color': '#1b2b34',
@@ -254,7 +293,8 @@ function renderTopology(treeRoot, bottleneckId) {
           'text-valign': 'bottom',
           'text-margin-y': 4,
           'font-weight': function(ele) {
-            return ele.data('isBottleneck') ? 'bold' : 'normal';
+            const status = String(ele.data('status') || 'OK').toUpperCase();
+            return (ele.data('isBottleneck') || status === 'ERROR') ? 'bold' : 'normal';
           },
         }
       },

@@ -69,7 +69,60 @@ def _envelope(data: Any, *, source: str, degraded: bool, start_ms: float, error:
 
 
 def _load_runs(path: Path) -> list[dict[str, Any]]:
-    return [item for item in _load_run_records(path) if isinstance(item, dict)]
+    records = [item for item in _load_run_records(path) if isinstance(item, dict)]
+    normalized: list[dict[str, Any]] = []
+    for item in records:
+        view = dict(item)
+        view["status"] = _normalized_run_status(item)
+        normalized.append(view)
+    return normalized
+
+
+def _diagnosis_has_error(item: dict[str, Any]) -> bool:
+    diagnosis = item.get("diagnosis")
+    if not isinstance(diagnosis, dict):
+        return False
+
+    bottleneck = diagnosis.get("bottleneck")
+    if isinstance(bottleneck, dict):
+        status = str(bottleneck.get("status") or "").upper()
+        if status == "ERROR":
+            return True
+
+    top_spans = diagnosis.get("top_spans")
+    if isinstance(top_spans, list):
+        for span in top_spans:
+            if not isinstance(span, dict):
+                continue
+            if str(span.get("status") or "").upper() == "ERROR":
+                return True
+    return False
+
+
+def _normalized_run_status(item: dict[str, Any]) -> str:
+    status = str(item.get("status") or "").lower()
+    if status != "failed":
+        return status
+
+    if _diagnosis_has_error(item):
+        return status
+
+    error_text = str(item.get("error") or "").lower()
+    history = item.get("history") if isinstance(item.get("history"), list) else []
+    has_llm_fallback = any(
+        isinstance(ev, dict)
+        and "llm" in str(ev.get("node") or "").lower()
+        and str(ev.get("status") or "").lower() in {"fallback", "failed"}
+        for ev in history
+    )
+
+    if has_llm_fallback or any(
+        token in error_text
+        for token in ["rate limit", "ratelimit", "429", "llm decision required", "openai"]
+    ):
+        return "degraded"
+
+    return status
 
 
 def _status_rank(status: str) -> int:

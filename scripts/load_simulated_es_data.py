@@ -74,6 +74,11 @@ ERROR_STACKS = {
     "\tat com.nebula.order.service.OrderSubmitService.submit(OrderSubmitService.java:88)",
 }
 
+UPSTREAM_ABORT_STACK = (
+    "com.nebula.common.UpstreamCallAbortedException: request aborted due to upstream failure\n"
+    "\tat com.nebula.gateway.pipeline.FailFastHandler.handle(FailFastHandler.java:38)"
+)
+
 
 @dataclass
 class TraceBlueprint:
@@ -246,6 +251,13 @@ def _build_trace_docs(blueprint: TraceBlueprint, rng: random.Random) -> List[Dic
         error_type[idx] = et
         error_code[idx] = ec
         durations[idx] = int(durations[idx] * rng.uniform(3.0, 10.0))
+        # For demo realism: once an upstream span fails, downstream synchronous calls are skipped.
+        for j in range(idx + 1, len(SERVICES)):
+            statuses[j] = "SKIPPED"
+            error_type[j] = "UpstreamFailure"
+            error_code[j] = "ERR_UPSTREAM_ABORT"
+            exception_stack[j] = UPSTREAM_ABORT_STACK
+            durations[j] = rng.randint(1, 8)
 
     if blueprint.kind == "slow":
         total_duration = sum(durations) + rng.randint(80, 250)
@@ -354,6 +366,9 @@ def _build_trace_docs(blueprint: TraceBlueprint, rng: random.Random) -> List[Dic
         if status == "ERROR":
             log_level = "ERROR"
             message = (exc or "unexpected internal error").split("\n", 1)[0]
+        elif status == "SKIPPED":
+            log_level = "WARN"
+            message = "downstream call skipped due to upstream failure"
         elif blueprint.kind == "slow" and i == stressed_index:
             log_level = "WARN"
             message = f"slow call detected, duration={durations[i]}ms exceeded service baseline"
@@ -400,7 +415,7 @@ def _build_trace_docs(blueprint: TraceBlueprint, rng: random.Random) -> List[Dic
             "thread": f"http-nio-{rng.randint(1, 16)}",
             "httpMethod": http_method,
             "httpPath": operation_name.split(" ", 1)[-1] if " " in operation_name else operation_name,
-            "httpStatus": _random_http_status(blueprint.kind if status == "OK" else "error", rng),
+            "httpStatus": 499 if status == "SKIPPED" else _random_http_status(blueprint.kind if status == "OK" else "error", rng),
             "errorType": et,
             "errorCode": ec,
             "message": message,

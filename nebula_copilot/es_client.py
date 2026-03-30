@@ -150,6 +150,16 @@ def _build_tree_from_span_docs(trace_id: str, docs: List[Dict[str, Any]]) -> Tra
     if not docs:
         raise ESQueryError("No span documents found for trace")
 
+    # Prefer real parent-child reconstruction when span docs contain parent ids.
+    # This preserves true topology edges instead of flattening all spans under a synthetic root.
+    ordered_docs = sorted(docs, key=lambda x: _parse_ts(x.get("timestamp") or x.get("@timestamp")))
+    try:
+        root = _build_tree_from_flat_spans(ordered_docs)
+        return TraceDocument(trace_id=trace_id, root=root)
+    except ESQueryError:
+        # Fallback for incomplete docs that miss span_id/parent fields.
+        pass
+
     children = [
         Span(
             span_id=str(d.get("span_id") or d.get("spanId") or f"auto-{i}"),

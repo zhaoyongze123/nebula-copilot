@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
-from typing import Callable
+from typing import Any, Callable
 
 import typer
 from rich.console import Console
@@ -51,6 +51,55 @@ def _setup_logging(verbose: bool) -> None:
         level=level,
         format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
     )
+
+
+def _diagnosis_has_error(diagnosis: Any) -> bool:
+    if not isinstance(diagnosis, dict):
+        return False
+
+    bottleneck = diagnosis.get("bottleneck")
+    if isinstance(bottleneck, dict):
+        if str(bottleneck.get("status") or "").upper() == "ERROR":
+            return True
+
+    top_spans = diagnosis.get("top_spans")
+    if isinstance(top_spans, list):
+        for item in top_spans:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("status") or "").upper() == "ERROR":
+                return True
+    return False
+
+
+def _normalize_run_status(graph_result: dict[str, Any], notify_result: dict[str, Any]) -> str:
+    run_status = str(graph_result.get("status") or "failed")
+
+    if notify_result.get("status") == "failed" and run_status == "ok":
+        return "degraded"
+
+    if run_status != "failed":
+        return run_status
+
+    if _diagnosis_has_error(graph_result.get("diagnosis")):
+        return run_status
+
+    error_text = str(graph_result.get("error") or "").lower()
+    history = graph_result.get("history") if isinstance(graph_result.get("history"), list) else []
+    has_llm_fallback = any(
+        isinstance(ev, dict)
+        and "llm" in str(ev.get("node") or "").lower()
+        and str(ev.get("status") or "").lower() in {"fallback", "failed"}
+        for ev in history
+    )
+
+    if has_llm_fallback or any(
+        token in error_text
+        for token in ["rate limit", "ratelimit", "429", "llm decision required", "openai"]
+    ):
+        return "degraded"
+
+    return run_status
 
 
 def _span_path(root: Span, target: SpanDiagnosis) -> str:
@@ -688,9 +737,7 @@ def agent_analyze(
             max_retries=max(1, notify_max_retries),
         )
 
-        run_status = str(graph_result.get("status") or "failed")
-        if notify_result["status"] == "failed" and run_status == "ok":
-            run_status = "degraded"
+        run_status = _normalize_run_status(graph_result, notify_result)
         finished_at = datetime.now().isoformat(timespec="seconds")
         duration_ms = int((datetime.fromisoformat(finished_at) - datetime.fromisoformat(started_at)).total_seconds() * 1000)
 
@@ -914,9 +961,7 @@ def monitor_es(
                 max_retries=max(1, notify_max_retries),
             )
 
-            run_status = str(graph_result.get("status") or "failed")
-            if notify_result["status"] == "failed" and run_status == "ok":
-                run_status = "degraded"
+            run_status = _normalize_run_status(graph_result, notify_result)
 
             finished_at = datetime.now().isoformat(timespec="seconds")
             duration_ms = int((datetime.fromisoformat(finished_at) - datetime.fromisoformat(started_at)).total_seconds() * 1000)
