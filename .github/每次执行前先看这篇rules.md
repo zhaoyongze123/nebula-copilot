@@ -1,4 +1,8 @@
-# 项目协作规则（基于用户习惯）
+# 每次执行前先看这篇rules
+
+> 给 Copilot 的执行规则：每次开始任务前必须先阅读本文件，并严格按本文档执行。
+
+# 项目协作规则rules
 
 这些规则用于本仓库的日常协作与变更执行。
 
@@ -92,3 +96,35 @@ Fallback 时：[TRACE-RULE] { "status": "fallback", "module": "analyzer", "reaso
 从现在起，为了保持项目的可维护性，请在我进行任何代码提交或逻辑变更时，强制执行以下“同步流程”：
 1. 文档结构 (../docs/PROJECT_PLAN.md)
 每当我完成一个功能或修复（feat/fix）时，请你在处理完代码后，主动更新 ../docs/PROJECT_PLAN.md 中的里程碑任务清单，确保它反映当前的项目状态和下一步计划。
+
+## 11. PR 合并自动化流程
+
+### 11.1 按 PR 号合并
+
+- 运行：
+  bash scripts/merge_pr.sh <pr_number> [labels] [merge_method]
+- 示例：
+  bash scripts/merge_pr.sh 1
+  bash scripts/merge_pr.sh 1 "automerge,needs-release-note" rebase
+
+脚本会自动执行：
+- 检查最新 workflow run 状态（`gh run list`）
+- 给 PR 添加标签
+- 执行合并并删除分支（`gh pr merge`）
+
+### 11.2 按当前分支自动定位 PR 并合并
+
+- 运行：
+  bash scripts/merge_current_pr.sh [labels] [merge_method]
+- 示例：
+  bash scripts/merge_current_pr.sh
+  bash scripts/merge_current_pr.sh "automerge,ci-passed" squash
+
+脚本会先读取当前 git 分支，再自动查找该分支对应的 OPEN PR，随后复用 `merge_pr.sh` 执行完整流程。
+
+### 11.3 可选环境变量
+
+- `RUN_LIMIT`：检查 workflow run 数量，默认 20
+- `WAIT_SECONDS`：轮询间隔秒数，默认 20
+- `MAX_WAIT_SECONDS`：CI 最长等待秒数，默认 1800
+- `ALLOW_NO_RUNS`：设为 1 时，分支无 run 记录也允许继续

@@ -60,3 +60,35 @@ python -m nebula_copilot.cli query-runs --status degraded --limit 50
 - 先在 M4 分支完成模块验收
 - 观察 24 小时失败率与降级率
 - 达标后再合并主干
+
+## 6. PR 合并自动化
+
+### 6.1 按 PR 号合并
+
+- 运行：
+  bash scripts/merge_pr.sh <pr_number> [labels] [merge_method]
+- 示例：
+  bash scripts/merge_pr.sh 1
+  bash scripts/merge_pr.sh 1 "automerge,needs-release-note" rebase
+
+脚本会自动执行：
+- 检查最新 workflow run 状态（`gh run list`）
+- 给 PR 添加标签
+- 执行合并并删除分支（`gh pr merge`）
+
+### 6.2 按当前分支自动定位 PR 并合并
+
+- 运行：
+  bash scripts/merge_current_pr.sh [labels] [merge_method]
+- 示例：
+  bash scripts/merge_current_pr.sh
+  bash scripts/merge_current_pr.sh "automerge,ci-passed" squash
+
+脚本会先读取当前 git 分支，再自动查找该分支对应的 OPEN PR，随后复用 `merge_pr.sh` 执行完整流程。
+
+### 6.3 可选环境变量
+
+- `RUN_LIMIT`：检查 workflow run 数量，默认 20
+- `WAIT_SECONDS`：轮询间隔秒数，默认 20
+- `MAX_WAIT_SECONDS`：CI 最长等待秒数，默认 1800
+- `ALLOW_NO_RUNS`：设为 1 时，分支无 run 记录也允许继续
