@@ -342,11 +342,11 @@ class AgentState(TypedDict, total=False):
 
 ## 11. 近期执行清单（下一迭代）
 
-1. 建立 `agent/state.py` 与 `agent/graph.py` 最小骨架
-2. 将现有 `tooling.py` 迁移到 `tools/*_tools.py` 并补 `summary/meta`
-3. 新增 `agent-analyze` CLI 命令
-4. 新增 1 组 LangGraph 集成测试（mock 工具）
-5. 完成飞书失败重试与 run_id 落库（可先 sqlite）
+1. 增加“证据充分度评分”（trace/JVM/logs 覆盖率 + 时间窗匹配度）并写入报告
+2. 补齐决策链路结构化日志（`[TRACE-LLM]` / `[TRACE-RULE]`）并纳入回归测试
+3. 完善 LLM 严格模式观测：失败原因分类统计（依赖/配置/请求/解析）
+4. 新增真实 ES 集成测试（非 mock）用于关键查询契约回归
+5. 评估 run 记录从 JSON 文件迁移到 sqlite 的成本与收益，给出迁移方案
 
 ---
 
@@ -424,6 +424,10 @@ class AgentState(TypedDict, total=False):
 - [x] M4.2 子模块完成：通知可靠化（重试 + 去重 + 降级记录）
 - [x] M4.3 子模块完成：执行去重限流 + 运行观测 + query-runs
 - [x] M4.4 子模块完成：Docker/K8s 部署方案 + 运维手册
+- [x] M4.5 子模块完成：真实 ES JVM/日志证据接入 agent 结论生成（非 mock 验收）
+- [x] M4.6 子模块完成：告警建议去硬编码，改为按故障上下文动态生成（规则/LLM 双源）
+- [x] M4.7 子模块完成：多问题链路仿真与飞书联调实测（timeout/db/downstream/unknown/slow）
+- [x] M4.8 子模块完成：LLM 严格决策模式（required）落地与实测闭环（失败即失败，成功写入 history）
 
 ### M4 验收标准（目标）
 - 自动任务连续稳定运行（可配置重试与超时）
@@ -434,13 +438,27 @@ class AgentState(TypedDict, total=False):
 
 ## 当前阶段结论
 
-当前项目已完成 **M3（LangGraph 状态机落地）** 与 **M4（生产化与可观测）**：
+当前项目已完成 **M3（LangGraph 状态机落地）** 与 **M4（生产化与可观测）**，并在 2026-03-30 完成以下关键增强：
 - 已完成状态建模、图编排、条件路由与节点级重试/降级；
 - Agent CLI 已对接图执行并记录 run_id/history；
-- M4.1 已落地：`.env` 配置加载、LLM 开关、建议生成与报告润色的降级接入；
-- M4.2 已落地：通知可靠化（重试、时间窗去重、notify状态写入run记录）；
-- M4.3 已落地：执行去重限流、运行指标落盘、`query-runs` 记录查询；
-- M4.4 已落地：Docker/K8s 部署方案与运维手册。
+- 真实 ES 证据链路已纳入最终结论（JVM/日志不再停留在 mock 验收）；
+- 告警建议已从固定模板改为上下文驱动的动态建议（规则 + LLM）；
+- 已完成多问题类型注数与飞书联调实测，验证差异化告警可用；
+- LLM 严格模式已落地：`llm_decision_required=true` 时，LLM 失败直接失败，成功时写入 `llm_decision` 事件与置信度。
+
+### 最新进度同步（2026-03-30）
+
+- 已修复 LLM 结构化决策调用中的模板变量冲突，改为直接消息调用，避免 JSON 花括号误解析。
+- 已完成严格模式端到端验证：
+   - LLM 决策节点状态为 `ok`；
+   - 运行记录可查询到 `llm_decision` history 事件；
+   - 飞书 webhook 实测发送成功。
+- 已新增 KnowledgeBase 模块并接入 analyzer：支持典型模式比对（依赖挂掉/消费积压/配置漂移）、关联服务指标补查提示、链路排查建议输出。
+- 已扩展 Agent 报告汇总：当 LLM 怀疑链路问题时，输出中会追加“链路排查建议”，并与规则层 KnowledgeBase 归纳结果联动展示。
+- 已优化飞书通知文案版式：告警摘要调整为“事件概览 / 诊断结论 / 关键证据 / 建议动作”四段结构，减少信息堆叠并提升可读性。
+- 已升级飞书通知为 interactive 卡片：支持双列信息分栏、关键提示高亮、关键证据折叠面板（可展开查看）。
+- 已完成真实链路端到端验证（ES -> monitor-es -> agent graph -> webhook）：单轮扫描触发 5 次告警推送，通知状态与运行记录均为 `ok`。
+- 已新增可复用实测脚本 `scripts/e2e_real_es_feishu_test.sh`：支持真实 ES + 真实飞书 webhook 的单命令闭环验证与运行证据校验。
 
 
 

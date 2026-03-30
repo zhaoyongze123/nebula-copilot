@@ -1,0 +1,650 @@
+[
+  {
+    "run_id": "run-af4c3d7652b9",
+    "trace_id": "02b6e1b5fbf04ae2",
+    "status": "ok",
+    "started_at": "2026-03-29T19:14:07",
+    "finished_at": "2026-03-29T19:14:08",
+    "trace": {
+      "trace_id": "02b6e1b5fbf04ae2",
+      "bottleneck_service": "inventory-service",
+      "keyword": "downstream"
+    },
+    "diagnosis": {
+      "trace_id": "02b6e1b5fbf04ae2",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "inventory-service",
+        "operation_name": "RPC lockStock",
+        "duration_ms": 1273,
+        "status": "OK",
+        "error_type": "Downstream",
+        "exception_stack": "suspect thread pool saturation or downstream latency spike",
+        "action_suggestion": "优先检查 inventory-service 依赖服务健康状态，日志关键词: 503/connection refused"
+      },
+      "top_spans": [
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 1273,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 inventory-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 101,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 89,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        }
+      ],
+      "summary": "瓶颈节点: inventory-service, 耗时: 1273ms, 异常类型: Downstream"
+    },
+    "jvm": {
+      "service": "inventory-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 936,
+      "sample_ts": "2026-03-29T11:10:18.893000+00:00",
+      "heap_used_mb": 736.7,
+      "heap_max_mb": 2048.0,
+      "gc_count": 2,
+      "thread_count": 78,
+      "p95_duration_ms": 233.25,
+      "error_count": 6,
+      "error_rate": 0.0064
+    },
+    "logs": {
+      "service": "inventory-service",
+      "keyword": "downstream",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 222,
+      "sample": [
+        "slow call detected, duration=256ms exceeded service baseline",
+        "service call completed, duration=47ms",
+        "service call completed, duration=65ms",
+        "service call completed, duration=79ms",
+        "slow call detected, duration=465ms exceeded service baseline"
+      ],
+      "trace_ids": [
+        "1aa4f2ef9d1449e7",
+        "de59fb06f7dd488d",
+        "38733880a3d94a51",
+        "1c2161673c1a4960",
+        "cc457386519f468c"
+      ]
+    },
+    "summary": "run_id=run-af4c3d7652b9 trace=02b6e1b5fbf04ae2 图执行完成，瓶颈服务=inventory-service，异常类型=Downstream。JVM证据: p95=233.25ms, heap=736.7/2048.0MB, gc_count=2, error_rate=0.0064。日志证据: 命中222条, 示例=slow call detected, duration=256ms exceeded service baseline。建议动作: 优先检查 inventory-service 依赖服务健康状态，日志关键词: 503/connection refused",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "02b6e1b5fbf04ae2",
+          "payload": {
+            "trace_id": "02b6e1b5fbf04ae2",
+            "bottleneck_service": "inventory-service",
+            "keyword": "downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:07",
+            "payload_size": 100
+          },
+          "summary": "已获取 Trace：02b6e1b5fbf04ae2",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 100,
+            "returned_size": 100
+          }
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "02b6e1b5fbf04ae2",
+          "payload": {
+            "trace_id": "02b6e1b5fbf04ae2",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "inventory-service",
+              "operation_name": "RPC lockStock",
+              "duration_ms": 1273,
+              "status": "OK",
+              "error_type": "Downstream",
+              "exception_stack": "suspect thread pool saturation or downstream latency spike",
+              "action_suggestion": "优先检查 inventory-service 依赖服务健康状态，日志关键词: 503/connection refused"
+            },
+            "top_spans": [
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 1273,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 inventory-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 101,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 89,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              }
+            ],
+            "summary": "瓶颈节点: inventory-service, 耗时: 1273ms, 异常类型: Downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:07",
+            "payload_size": 1370
+          },
+          "summary": "诊断完成：trace=02b6e1b5fbf04ae2，瓶颈服务=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1370,
+            "returned_size": 1370
+          }
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 936,
+            "sample_ts": "2026-03-29T11:10:18.893000+00:00",
+            "heap_used_mb": 736.7,
+            "heap_max_mb": 2048.0,
+            "gc_count": 2,
+            "thread_count": 78,
+            "p95_duration_ms": 233.25,
+            "error_count": 6,
+            "error_rate": 0.0064
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:07",
+            "payload_size": 328
+          },
+          "summary": "JVM 指标已获取：service=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 328,
+            "returned_size": 328
+          }
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "keyword": "downstream",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 222,
+            "sample": [
+              "slow call detected, duration=256ms exceeded service baseline",
+              "service call completed, duration=47ms",
+              "service call completed, duration=65ms",
+              "service call completed, duration=79ms",
+              "slow call detected, duration=465ms exceeded service baseline"
+            ],
+            "trace_ids": [
+              "1aa4f2ef9d1449e7",
+              "de59fb06f7dd488d",
+              "38733880a3d94a51",
+              "1c2161673c1a4960",
+              "cc457386519f468c"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:07",
+            "payload_size": 534
+          },
+          "summary": "日志检索完成：service=inventory-service，keyword=downstream",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 534,
+            "returned_size": 534
+          }
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-af4c3d7652b9 trace=02b6e1b5fbf04ae2 图执行完成，瓶颈服务=inventory-service，异常类型=Downstream。JVM证据: p95=233.25ms, heap=736.7/2048.0MB, gc_count=2, error_rate=0.0064。日志证据: 命中222条, 示例=slow call detected, duration=256ms exceeded service baseline。建议动作: 优先检查 inventory-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-af4c3d7652b9 trace=02b6e1b5fbf04ae2 图执行完成，瓶颈服务=inventory-service，异常类型=Downstream。JVM证据: p95=233.25ms, heap=736.7/2048.0MB, gc_count=2, error_rate=0.0064。日志证据: 命中222条, 示例=slow call detected, duration=256ms exceeded service baseline。建议动作: 优先检查 inventory-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        "timestamp": "2026-03-29T19:14:07"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 1000,
+      "history_events": 8,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1273,
+      "slow_threshold_ms": 900
+    }
+  },
+  {
+    "run_id": "run-61ff60b550ba",
+    "trace_id": "00fda3caef634a10",
+    "status": "ok",
+    "started_at": "2026-03-29T19:14:08",
+    "finished_at": "2026-03-29T19:14:08",
+    "trace": {
+      "trace_id": "00fda3caef634a10",
+      "bottleneck_service": "order-service",
+      "keyword": "downstream"
+    },
+    "diagnosis": {
+      "trace_id": "00fda3caef634a10",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "order-service",
+        "operation_name": "RPC createOrder",
+        "duration_ms": 1063,
+        "status": "OK",
+        "error_type": "Downstream",
+        "exception_stack": "suspect thread pool saturation or downstream latency spike",
+        "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+      },
+      "top_spans": [
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 1063,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 96,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "gateway-service",
+          "operation_name": "HTTP GET /api/v1/order/confirm",
+          "duration_ms": 59,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 gateway-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        }
+      ],
+      "summary": "瓶颈节点: order-service, 耗时: 1063ms, 异常类型: Downstream"
+    },
+    "jvm": {
+      "service": "order-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 935,
+      "sample_ts": "2026-03-29T11:10:18.933000+00:00",
+      "heap_used_mb": 1222.7,
+      "heap_max_mb": 2048.0,
+      "gc_count": 4,
+      "thread_count": 191,
+      "p95_duration_ms": 347.0999999999997,
+      "error_count": 11,
+      "error_rate": 0.0118
+    },
+    "logs": {
+      "service": "order-service",
+      "keyword": "downstream",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 222,
+      "sample": [
+        "service call completed, duration=39ms",
+        "service call completed, duration=73ms",
+        "service call completed, duration=106ms",
+        "slow call detected, duration=1116ms exceeded service baseline",
+        "service call completed, duration=85ms"
+      ],
+      "trace_ids": [
+        "de59fb06f7dd488d",
+        "1aa4f2ef9d1449e7",
+        "38733880a3d94a51",
+        "1c2161673c1a4960",
+        "cc457386519f468c"
+      ]
+    },
+    "summary": "run_id=run-61ff60b550ba trace=00fda3caef634a10 图执行完成，瓶颈服务=order-service，异常类型=Downstream。JVM证据: p95=347.0999999999997ms, heap=1222.7/2048.0MB, gc_count=4, error_rate=0.0118。日志证据: 命中222条, 示例=service call completed, duration=39ms。建议动作: 优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "00fda3caef634a10",
+          "payload": {
+            "trace_id": "00fda3caef634a10",
+            "bottleneck_service": "order-service",
+            "keyword": "downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:08",
+            "payload_size": 96
+          },
+          "summary": "已获取 Trace：00fda3caef634a10",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 96,
+            "returned_size": 96
+          }
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "00fda3caef634a10",
+          "payload": {
+            "trace_id": "00fda3caef634a10",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "order-service",
+              "operation_name": "RPC createOrder",
+              "duration_ms": 1063,
+              "status": "OK",
+              "error_type": "Downstream",
+              "exception_stack": "suspect thread pool saturation or downstream latency spike",
+              "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+            },
+            "top_spans": [
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 1063,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 96,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "gateway-service",
+                "operation_name": "HTTP GET /api/v1/order/confirm",
+                "duration_ms": 59,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 gateway-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              }
+            ],
+            "summary": "瓶颈节点: order-service, 耗时: 1063ms, 异常类型: Downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:08",
+            "payload_size": 1372
+          },
+          "summary": "诊断完成：trace=00fda3caef634a10，瓶颈服务=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1372,
+            "returned_size": 1372
+          }
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 935,
+            "sample_ts": "2026-03-29T11:10:18.933000+00:00",
+            "heap_used_mb": 1222.7,
+            "heap_max_mb": 2048.0,
+            "gc_count": 4,
+            "thread_count": 191,
+            "p95_duration_ms": 347.0999999999997,
+            "error_count": 11,
+            "error_rate": 0.0118
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:08",
+            "payload_size": 338
+          },
+          "summary": "JVM 指标已获取：service=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 338,
+            "returned_size": 338
+          }
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "keyword": "downstream",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 222,
+            "sample": [
+              "service call completed, duration=39ms",
+              "service call completed, duration=73ms",
+              "service call completed, duration=106ms",
+              "slow call detected, duration=1116ms exceeded service baseline",
+              "service call completed, duration=85ms"
+            ],
+            "trace_ids": [
+              "de59fb06f7dd488d",
+              "1aa4f2ef9d1449e7",
+              "38733880a3d94a51",
+              "1c2161673c1a4960",
+              "cc457386519f468c"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:14:08",
+            "payload_size": 509
+          },
+          "summary": "日志检索完成：service=order-service，keyword=downstream",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 509,
+            "returned_size": 509
+          }
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-61ff60b550ba trace=00fda3caef634a10 图执行完成，瓶颈服务=order-service，异常类型=Downstream。JVM证据: p95=347.0999999999997ms, heap=1222.7/2048.0MB, gc_count=4, error_rate=0.0118。日志证据: 命中222条, 示例=service call completed, duration=39ms。建议动作: 优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-61ff60b550ba trace=00fda3caef634a10 图执行完成，瓶颈服务=order-service，异常类型=Downstream。JVM证据: p95=347.0999999999997ms, heap=1222.7/2048.0MB, gc_count=4, error_rate=0.0118。日志证据: 命中222条, 示例=service call completed, duration=39ms。建议动作: 优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        "timestamp": "2026-03-29T19:14:08"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 8,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1063,
+      "slow_threshold_ms": 900
+    }
+  }
+]

@@ -40,6 +40,9 @@ def test_run_agent_graph_dual_route_success() -> None:
     assert "JVM证据" in str(result["summary"])
     assert "日志证据" in str(result["summary"])
     assert "建议动作" in str(result["summary"])
+    assert "模式比对" in str(result["summary"])
+    assert "关联查询" in str(result["summary"])
+    assert "链路排查建议" in str(result["summary"])
     assert "优先检查 inventory-service" in str(result["summary"])
     route_event = next(item for item in result["history"] if item["node"] == "route")
     assert route_event["payload"]["route"] == "dual"
@@ -159,6 +162,16 @@ def test_run_agent_graph_retry_exhausted_then_fallback() -> None:
 
 def test_run_agent_graph_report_polish_with_llm() -> None:
     class FakeLLM:
+        def diagnose_incident(self, context: dict) -> dict:
+            return {
+                "problem_type": "Downstream",
+                "root_cause": "下游连接池耗尽导致请求堆积",
+                "action": "优先扩容连接池并检查下游实例健康",
+                "confidence": 0.92,
+                "linkage_suspected": True,
+                "linkage_action": "补查 Kafka lag 与重试队列深度，确认是否由背压传播引起",
+            }
+
         def polish_summary(self, summary: str) -> str:
             return f"LLM润色: {summary}"
 
@@ -174,8 +187,12 @@ def test_run_agent_graph_report_polish_with_llm() -> None:
 
     assert result["status"] == "ok"
     assert str(result["summary"]).startswith("LLM润色")
+    assert "优先扩容连接池并检查下游实例健康" in str(result["summary"])
+    assert "Kafka lag" in str(result["summary"])
     polish_event = next(item for item in result["history"] if item["node"] == "report_polish")
     assert polish_event["status"] == "ok"
+    decision_event = next(item for item in result["history"] if item["node"] == "llm_decision")
+    assert decision_event["status"] == "ok"
 
 
 def test_run_agent_graph_normalizes_none_keyword_for_logs_route() -> None:
@@ -235,3 +252,19 @@ def test_run_agent_graph_normalizes_none_keyword_for_logs_route() -> None:
 
     assert result["status"] == "ok"
     assert seen["keyword"] == ""
+
+
+def test_run_agent_graph_fail_when_llm_decision_required_but_unavailable() -> None:
+    trace_doc = build_mock_trace("trace-m3-required-llm", "timeout")
+
+    result = run_agent_graph(
+        trace_id="trace-m3-required-llm",
+        run_id="run-m3-008",
+        trace_doc=trace_doc,
+        tool_registry=_registry(),
+        llm_executor=None,
+        llm_decision_required=True,
+    )
+
+    assert result["status"] == "failed"
+    assert "LLM decision required" in str(result.get("error") or "")

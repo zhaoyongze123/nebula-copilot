@@ -18,3 +18,4 @@ def test_executor_disabled_when_no_key() -> None:
     assert executor.can_use() is False
     assert executor.suggest_action("Timeout", "svc", "timed out") is None
     assert executor.polish_summary("raw") is None
+    assert executor.diagnose_incident({"trace_id": "t1"}) is None

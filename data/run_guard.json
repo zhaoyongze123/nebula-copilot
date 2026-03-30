@@ -1,0 +1,16 @@
+{
+  "dedupe": {
+    "trace-llm-required-demo": {
+      "run_id": "run-64f2fb874d44",
+      "ts": "2026-03-30T15:12:28"
+    },
+    "trace_mock_2026_0001": {
+      "run_id": "run-c32b3405e859",
+      "ts": "2026-03-30T15:20:53"
+    }
+  },
+  "rate": {
+    "bucket:202603301512": 1,
+    "bucket:202603301520": 1
+  }
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from nebula_copilot.knowledge_base import KnowledgeBase, KnowledgeInsight
 from nebula_copilot.models import Span, TraceDocument
 
 
@@ -23,6 +24,7 @@ class SpanDiagnosis:
     span: Span
     error_type: str
     action_suggestion: str
+    knowledge_insight: Optional[KnowledgeInsight] = None
 
 
 @dataclass
@@ -31,6 +33,27 @@ class DiagnosisResult:
     bottleneck: SpanDiagnosis
     top_spans: List[SpanDiagnosis]
     total_spans: int
+
+    @staticmethod
+    def _compact_insight(insight: Optional[KnowledgeInsight]) -> Optional[Dict[str, Any]]:
+        if insight is None:
+            return None
+        compact_patterns: List[Dict[str, Any]] = []
+        for item in insight.matched_patterns[:2]:
+            compact_patterns.append(
+                {
+                    "name": item.get("name"),
+                    "label": item.get("label"),
+                    "confidence": item.get("confidence"),
+                    "signals": list(item.get("signals", []))[:3],
+                }
+            )
+        return {
+            "matched_patterns": compact_patterns,
+            "related_services": insight.related_services,
+            "relation_query_hint": insight.relation_query_hint,
+            "linkage_investigation_suggestion": insight.linkage_investigation_suggestion,
+        }
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -44,6 +67,7 @@ class DiagnosisResult:
                 "error_type": self.bottleneck.error_type,
                 "exception_stack": self.bottleneck.span.exception_stack,
                 "action_suggestion": self.bottleneck.action_suggestion,
+                "knowledge_insight": self._compact_insight(self.bottleneck.knowledge_insight),
             },
             "top_spans": [
                 {
@@ -54,6 +78,7 @@ class DiagnosisResult:
                     "error_type": item.error_type,
                     "exception_stack": item.span.exception_stack,
                     "action_suggestion": item.action_suggestion,
+                    "knowledge_insight": self._compact_insight(item.knowledge_insight),
                 }
                 for item in self.top_spans
             ],
@@ -107,12 +132,20 @@ def action_suggestion(
     return _rule_based_action_suggestion(error_type, service_name)
 
 
-def build_span_diagnosis(span: Span, llm_executor: Optional[Any] = None) -> SpanDiagnosis:
+def build_span_diagnosis(
+    trace_doc: TraceDocument,
+    span: Span,
+    llm_executor: Optional[Any] = None,
+    knowledge_base: Optional[KnowledgeBase] = None,
+) -> SpanDiagnosis:
     err = classify_error(span)
+    kb = knowledge_base or KnowledgeBase()
+    insight = kb.infer(trace_doc, span, err)
     return SpanDiagnosis(
         span=span,
         error_type=err,
         action_suggestion=action_suggestion(err, span.service_name, span.exception_stack, llm_executor),
+        knowledge_insight=insight,
     )
 
 
@@ -124,7 +157,8 @@ def analyze_trace(trace_doc: TraceDocument, top_n: int = 3, llm_executor: Option
         candidates = spans
     sorted_spans = sorted(candidates, key=lambda s: s.duration_ms, reverse=True)
     top = sorted_spans[: max(1, top_n)]
-    top_diagnosis = [build_span_diagnosis(s, llm_executor) for s in top]
+    kb = KnowledgeBase()
+    top_diagnosis = [build_span_diagnosis(trace_doc, s, llm_executor, kb) for s in top]
     return DiagnosisResult(
         trace_id=trace_doc.trace_id,
         bottleneck=top_diagnosis[0],
@@ -136,13 +170,34 @@ def analyze_trace(trace_doc: TraceDocument, top_n: int = 3, llm_executor: Option
 def build_alert_summary(result: DiagnosisResult) -> str:
     b = result.bottleneck
     stack_preview = (b.span.exception_stack or "无异常栈")[:180]
+    insight = b.knowledge_insight
+    pattern_text = "无"
+    relation_hint = "无"
+    linkage_hint = "无"
+    if insight:
+        patterns = insight.matched_patterns
+        if patterns:
+            pattern_text = ", ".join(str(item.get("label", "")) for item in patterns[:2] if item.get("label")) or "无"
+        relation_hint = insight.relation_query_hint or "无"
+        linkage_hint = insight.linkage_investigation_suggestion or "无"
     return (
         "【Nebula-Copilot 排障摘要】\n"
+        "\n"
+        "[事件概览]\n"
         f"TraceID: {result.trace_id}\n"
         f"瓶颈服务: {b.span.service_name}\n"
         f"操作: {b.span.operation_name}\n"
         f"耗时: {b.span.duration_ms}ms\n"
+        "\n"
+        "[诊断结论]\n"
         f"异常类型: {b.error_type}\n"
+        f"模式比对: {pattern_text}\n"
+        f"关联查询: {relation_hint}\n"
+        "\n"
+        "[关键证据]\n"
         f"异常摘要: {stack_preview}\n"
+        f"链路排查建议: {linkage_hint}\n"
+        "\n"
+        "[建议动作]\n"
         f"建议动作: {b.action_suggestion}"
     )
