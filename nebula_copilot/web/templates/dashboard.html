@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nebula Observability</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Nebula 可观测排障台</h1>
+      <p>30 秒排障闭环：异常 -> Run -> Trace -> 日志</p>
+    </div>
+    <div class="controls">
+      <label>
+        自动刷新
+        <input id="autoRefresh" type="checkbox" checked />
+      </label>
+      <button id="refreshBtn">立即刷新</button>
+      <span id="lastRefresh">-</span>
+    </div>
+  </header>
+
+  <section class="kpi-grid" id="kpiGrid"></section>
+
+  <section class="search-row">
+    <input id="traceIdInput" placeholder="按 trace_id 过滤" />
+    <select id="statusSelect">
+      <option value="">全部状态</option>
+      <option value="failed">failed</option>
+      <option value="degraded">degraded</option>
+      <option value="ok">ok</option>
+    </select>
+    <select id="sortSelect">
+      <option value="error_first">问题优先</option>
+      <option value="latest">最新优先</option>
+      <option value="slowest">最慢优先</option>
+      <option value="most_retries">重试最多</option>
+    </select>
+    <button id="filterBtn">查询</button>
+  </section>
+
+  <main class="layout">
+    <section>
+      <h2>Runs</h2>
+      <table id="runsTable">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Run ID</th>
+            <th>Trace ID</th>
+            <th>Duration(ms)</th>
+            <th>Started</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Run Detail</h2>
+      <div id="runSummary" class="card"></div>
+      <h3>Timeline</h3>
+      <ul id="timeline"></ul>
+      <h3>Diagnosis</h3>
+      <pre id="diagnosis"></pre>
+    </section>
+
+    <section>
+      <h2>Trace Inspect</h2>
+      <div id="tracePanel" class="card"></div>
+      <h3>Logs</h3>
+      <div class="logs-search">
+        <input id="spanIdInput" placeholder="span_id（可选）" />
+        <input id="keywordInput" placeholder="关键字（可选）" />
+        <button id="logSearchBtn">查日志</button>
+      </div>
+      <pre id="logsResult"></pre>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

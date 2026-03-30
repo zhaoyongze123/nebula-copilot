@@ -459,6 +459,11 @@ class AgentState(TypedDict, total=False):
 - 已升级飞书通知为 interactive 卡片：支持双列信息分栏、关键提示高亮、关键证据折叠面板（可展开查看）。
 - 已完成真实链路端到端验证（ES -> monitor-es -> agent graph -> webhook）：单轮扫描触发 5 次告警推送，通知状态与运行记录均为 `ok`。
 - 已新增可复用实测脚本 `scripts/e2e_real_es_feishu_test.sh`：支持真实 ES + 真实飞书 webhook 的单命令闭环验证与运行证据校验。
+- 已启动前端可观测界面（closure-first）实现并完成首版落地：
+   - 新增 `nebula_copilot/web/` 包：Flask app 工厂、健康检查、Dashboard 路由；
+   - 新增 API：`/api/overview`、`/api/runs`、`/api/runs/<run_id>/page`、`/api/traces/<trace_id>/inspect`、`/api/logs/search`；
+   - 新增前端页面与静态资源：`dashboard.html` + `app.js` + `app.css`，完成“Run 列表 -> Run 详情 -> Trace -> Logs”闭环链路；
+   - 新增测试 `tests/test_web.py`，覆盖核心页面与 API 路径（含 ES 查询接口的 monkeypatch 契约验证）。
 
 
 
