@@ -45,6 +45,7 @@ async function getJson(url) {
 
 function renderKpi(data) {
   const root = qs('kpiGrid');
+  if (!root) return;
   const kpi = data.kpi || {};
   const metrics = [
     ['总 Run', kpi.total ?? 0],
@@ -60,25 +61,69 @@ function renderKpi(data) {
 }
 
 function renderRuns(items) {
-  const body = qs('runsTable').querySelector('tbody');
+  const body = qs('runsAccordion');
+  if (!body) {
+    const legacyTable = qs('runsTable');
+    const legacyBody = legacyTable ? legacyTable.querySelector('tbody') : null;
+    if (!legacyBody) return;
+    legacyBody.innerHTML = '';
+    for (const run of items) {
+      const tr = document.createElement('tr');
+      tr.className = 'clickable';
+      tr.innerHTML = `
+        <td>${statusBadge(run.status)}</td>
+        <td>${run.run_id || '-'}</td>
+        <td>${run.trace_id || '-'}</td>
+        <td>${run.duration_ms ?? '-'}</td>
+        <td>${fmtTime(run.started_at || run.timestamp)}</td>
+      `;
+      tr.addEventListener('click', () => selectRun(run));
+      legacyBody.appendChild(tr);
+    }
+    return;
+  }
   body.innerHTML = '';
+
+  if (!items.length) {
+    body.innerHTML = '<div class="card">暂无符合条件的 run 记录</div>';
+    return;
+  }
+
   for (const run of items) {
-    const tr = document.createElement('tr');
-    tr.className = 'clickable';
-    tr.innerHTML = `
-      <td>${statusBadge(run.status)}</td>
-      <td>${run.run_id || '-'}</td>
-      <td>${run.trace_id || '-'}</td>
-      <td>${run.duration_ms ?? '-'}</td>
-      <td>${fmtTime(run.started_at || run.timestamp)}</td>
+    const details = document.createElement('details');
+    details.className = 'run-item';
+    details.dataset.runId = run.run_id || '';
+    details.innerHTML = `
+      <summary>
+        <span>${statusBadge(run.status)}</span>
+        <span>${run.run_id || '-'}</span>
+        <span class="run-meta">trace: ${run.trace_id || '-'}</span>
+        <span class="run-meta">${fmtTime(run.started_at || run.timestamp)}</span>
+      </summary>
+      <div class="run-body">
+        <div><strong>duration:</strong> ${run.duration_ms ?? '-'} ms</div>
+        <div><strong>notify:</strong> ${(run.notify || {}).status || '-'}</div>
+      </div>
     `;
-    tr.addEventListener('click', () => selectRun(run));
-    body.appendChild(tr);
+
+    details.addEventListener('toggle', () => {
+      if (details.open) {
+        selectRun(run);
+      }
+    });
+
+    if (state.selectedRunId && state.selectedRunId === run.run_id) {
+      details.open = true;
+      details.classList.add('active');
+    }
+
+    body.appendChild(details);
   }
 }
 
 function renderRunDetail(page) {
   const summary = qs('runSummary');
+  if (!summary) return;
   const run = page.summary || {};
   summary.innerHTML = `
     <div><strong>run_id:</strong> ${run.run_id || '-'}</div>
@@ -89,6 +134,7 @@ function renderRunDetail(page) {
   `;
 
   const timeline = qs('timeline');
+  if (!timeline) return;
   timeline.innerHTML = '';
   const events = page.timeline || [];
   for (const ev of events) {
@@ -101,11 +147,36 @@ function renderRunDetail(page) {
   }
 
   const diagnosis = qs('diagnosis');
-  diagnosis.textContent = page.diagnosis?.summary || JSON.stringify(page.diagnosis || {}, null, 2);
+  if (diagnosis) {
+    diagnosis.textContent = page.diagnosis?.summary || JSON.stringify(page.diagnosis || {}, null, 2);
+  }
+
+  const llmResult = qs('llmResult');
+  if (!llmResult) return;
+  const raw = page.raw || {};
+  const history = Array.isArray(raw.history) ? raw.history : [];
+  const llmEvents = history.filter((ev) => {
+    const node = String(ev.node || '').toLowerCase();
+    return node.includes('llm') || node.includes('report_polish');
+  });
+
+  const llmSummary = raw.summary || '';
+  if (llmSummary || llmEvents.length) {
+    const eventText = llmEvents.map((ev) => {
+      return `[${ev.node || '-'}|${ev.status || '-'}] ${ev.message || ''}`;
+    }).join('\n');
+    llmResult.textContent = [
+      llmSummary ? `摘要:\n${llmSummary}` : '',
+      eventText ? `\nLLM事件:\n${eventText}` : ''
+    ].filter(Boolean).join('\n');
+  } else {
+    llmResult.textContent = '本次运行无 LLM 分析结果（可能使用规则分析或未启用 LLM）。';
+  }
 }
 
 function renderTraceInspect(payload) {
   const panel = qs('tracePanel');
+  if (!panel) return;
   const tree = payload.tree || {};
   const diagnosis = payload.diagnosis || {};
   const bottleneck = diagnosis.bottleneck?.span || {};
@@ -117,12 +188,122 @@ function renderTraceInspect(payload) {
   `;
 
   const treeBox = qs('traceTree');
+  if (!treeBox) return;
   treeBox.innerHTML = '';
   if (tree && tree.span_id) {
     treeBox.appendChild(renderSpanNode(tree));
+    renderTopology(tree, bottleneck.span_id);
   } else {
     treeBox.textContent = '无可展示的 trace 树';
+    const cyBox = qs('cy');
+    if (cyBox) cyBox.innerHTML = '';
   }
+}
+
+let cyInstance = null;
+function renderTopology(treeRoot, bottleneckId) {
+  const container = qs('cy');
+  if (!container || typeof cytoscape === 'undefined') return;
+  const elements = [];
+  
+  function traverse(node, parentId) {
+    if (!node || !node.span_id) return;
+    elements.push({
+      data: {
+        id: node.span_id,
+        label: `${node.service_name || 'unknown'}\n${node.operation_name || ''}`,
+        isBottleneck: node.span_id === bottleneckId
+      }
+    });
+
+    if (parentId) {
+      elements.push({
+        data: {
+          id: `${parentId}-${node.span_id}`,
+          source: parentId,
+          target: node.span_id
+        }
+      });
+    }
+
+    if (Array.isArray(node.children)) {
+      node.children.forEach(child => traverse(child, node.span_id));
+    }
+  }
+
+  traverse(treeRoot, null);
+
+  if (cyInstance) {
+    cyInstance.destroy();
+  }
+
+  cyInstance = cytoscape({
+    container,
+    elements: elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': function(ele) {
+            return ele.data('isBottleneck') ? '#bf2f2f' : '#0b5ea8';
+          },
+          'label': 'data(label)',
+          'color': '#1b2b34',
+          'font-size': '10px',
+          'text-wrap': 'wrap',
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'font-weight': function(ele) {
+            return ele.data('isBottleneck') ? 'bold' : 'normal';
+          },
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 2,
+          'line-color': '#d7e0e6',
+          'target-arrow-color': '#d7e0e6',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'taxi',
+          'taxi-direction': 'downward'
+        }
+      },
+      {
+        selector: 'node.highlight',
+        style: {
+          'background-color': '#0f8f4f',
+          'border-width': 2,
+          'border-color': '#0f8f4f'
+        }
+      },
+      {
+        selector: 'edge.highlight',
+        style: {
+          'line-color': '#0f8f4f',
+          'target-arrow-color': '#0f8f4f',
+          'width': 3
+        }
+      }
+    ],
+    layout: {
+      name: 'breadthfirst',
+      directed: true,
+      padding: 10
+    }
+  });
+
+  cyInstance.on('mouseover', 'node', function(e){
+    const sel = e.target;
+    cyInstance.elements().removeClass('highlight');
+    sel.addClass('highlight');
+    sel.predecessors().addClass('highlight');
+    sel.successors().addClass('highlight');
+  });
+
+  cyInstance.on('mouseout', 'node', function(e){
+    cyInstance.elements().removeClass('highlight');
+  });
 }
 
 function renderSpanNode(node) {
@@ -211,6 +392,16 @@ async function loadRuns() {
 async function selectRun(run) {
   state.selectedRunId = run.run_id;
   state.selectedTraceId = run.trace_id;
+
+  document.querySelectorAll('.run-item').forEach((el) => {
+    const runId = el.dataset.runId || '';
+    const active = runId === run.run_id;
+    el.classList.toggle('active', active);
+    if (active) {
+      el.open = true;
+    }
+  });
+
   const page = await getJson(`/api/runs/${encodeURIComponent(run.run_id)}/page`);
   renderRunDetail(page.data || {});
   setSource('sourceRunDetail', page.meta?.source);
@@ -219,7 +410,9 @@ async function selectRun(run) {
       await loadTraceInspect(run.trace_id);
     } catch (err) {
       const panel = qs('tracePanel');
-      panel.innerHTML = `<div><strong>trace_id:</strong> ${run.trace_id}</div><div><strong>提示:</strong> Trace 检查暂不可用：${err.message}</div>`;
+      if (panel) {
+        panel.innerHTML = `<div><strong>trace_id:</strong> ${run.trace_id}</div><div><strong>提示:</strong> Trace 检查暂不可用：${err.message}</div>`;
+      }
       setSource('sourceTrace', 'error');
     }
   }

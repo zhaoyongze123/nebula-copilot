@@ -63,6 +63,15 @@ ERROR_STACKS = {
     "Downstream": "feign.FeignException$ServiceUnavailable: [503] during [POST] to [http://payment-service/charge]\n"
     "\tat feign.FeignException.errorStatus(FeignException.java:249)\n"
     "\tat com.nebula.order.client.PaymentFeign.charge(PaymentFeign.java:44)",
+    "Redis": "redis.clients.jedis.exceptions.JedisConnectionException: Failed connecting to redis-cache:6379\n"
+    "\tat redis.clients.jedis.Connection.connect(Connection.java:230)\n"
+    "\tat com.nebula.cart.cache.RedisCartStore.get(RedisCartStore.java:61)",
+    "CircuitOpen": "io.github.resilience4j.circuitbreaker.CallNotPermittedException: CircuitBreaker 'payment-service' is OPEN\n"
+    "\tat io.github.resilience4j.circuitbreaker.CircuitBreaker.decorateCallable(CircuitBreaker.java:180)\n"
+    "\tat com.nebula.order.client.PaymentGatewayClient.charge(PaymentGatewayClient.java:52)",
+    "NullPointer": "java.lang.NullPointerException: Cannot invoke \"OrderContext.getUserId()\" because \"ctx\" is null\n"
+    "\tat com.nebula.order.service.OrderSubmitService.buildRequest(OrderSubmitService.java:142)\n"
+    "\tat com.nebula.order.service.OrderSubmitService.submit(OrderSubmitService.java:88)",
 }
 
 
@@ -198,6 +207,9 @@ def _error_profile(rng: random.Random) -> Tuple[str, str, str]:
         "Timeout": "ERR_TIMEOUT",
         "DB": "ERR_DB_DEADLOCK",
         "Downstream": "ERR_DOWNSTREAM_503",
+        "Redis": "ERR_REDIS_CONN",
+        "CircuitOpen": "ERR_CIRCUIT_OPEN",
+        "NullPointer": "ERR_NPE",
     }[error_type]
     return error_type, code, stack
 

@@ -140,6 +140,51 @@ h2, h3 {
   margin: 6px 0 10px;
 }
 
+.runs-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.run-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.run-item summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.run-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.run-item.active {
+  border-color: #9fc6ea;
+  box-shadow: 0 0 0 2px #eaf4ff;
+}
+
+.run-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.run-body {
+  border-top: 1px solid var(--line);
+  padding: 8px 10px 10px;
+  font-size: 12px;
+  color: var(--ink);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -213,6 +258,18 @@ tr.clickable:hover {
 #diagnosis, #logsResult {
   background: #0f1720;
   color: #d9e2ef;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+#llmResult {
+  background: #101a14;
+  color: #d8f4df;
   border-radius: 10px;
   padding: 10px;
   font-size: 12px;

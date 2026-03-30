@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Nebula Observability</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.0/cytoscape.min.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -44,18 +45,7 @@
   <main class="layout">
     <section>
       <h2>Runs <span id="sourceRuns" class="source-chip">source:-</span></h2>
-      <table id="runsTable">
-        <thead>
-          <tr>
-            <th>Status</th>
-            <th>Run ID</th>
-            <th>Trace ID</th>
-            <th>Duration(ms)</th>
-            <th>Started</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div id="runsAccordion" class="runs-accordion"></div>
     </section>
 
     <section>
@@ -65,6 +55,8 @@
       <ul id="timeline" class="timeline"></ul>
       <h3>Diagnosis</h3>
       <pre id="diagnosis"></pre>
+      <h3>LLM 分析结果</h3>
+      <pre id="llmResult"></pre>
     </section>
 
     <section>
@@ -72,6 +64,8 @@
       <div id="tracePanel" class="card"></div>
       <h3>Trace Tree</h3>
       <div id="traceTree" class="tree card"></div>
+      <h3>Topology <span id="sourceTopology" class="source-chip">auto</span></h3>
+      <div id="cy" class="card" style="height: 300px; width: 100%; position: relative;"></div>
       <h3>Logs <span id="sourceLogs" class="source-chip">source:-</span></h3>
       <div class="logs-search">
         <input id="spanIdInput" placeholder="span_id（可选）" />
