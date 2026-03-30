@@ -8,6 +8,8 @@ Requires-Dist: typer>=0.13.0
 Requires-Dist: rich>=13.9.0
 Requires-Dist: pydantic>=2.9.0
 Requires-Dist: elasticsearch<9.0.0,>=8.14.0
+Requires-Dist: langchain>=0.3.0
+Requires-Dist: langchain-openai>=0.2.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
 
@@ -17,7 +19,7 @@ Nebula-Copilot 是一个终端排障助手：
 - 生成本地 mock trace 数据
 - 使用 `nebula-cli analyze <trace_id>` 分析链路
 - 自动输出瓶颈节点、耗时、异常分类和行动建议
-- 支持 `table/json` 双格式输出，方便机器人推送
+- 支持 `rich/json` 双格式输出，方便机器人推送
 - 支持接入真实 Elasticsearch，直接按 TraceID 查询并分析
 
 ## 目录结构
@@ -51,11 +53,18 @@ nebula-cli seed trace_mock_ds_0001 --scenario downstream --output data/mock_ds.j
 ### 2) 分析本地链路
 
 ```bash
-nebula-cli analyze trace_mock_2026_0001 --source data/mock_trace.json --top-n 3 --format table
+nebula-cli analyze trace_mock_2026_0001 --source data/mock_trace.json --top-n 3 --format rich
 nebula-cli analyze trace_mock_2026_0001 --source data/mock_trace.json --top-n 3 --format json
 ```
 
-### 3) 接入真实 ES 查询
+### 3) 查询最近 TraceID（高频排障入口）
+
+```bash
+nebula-cli list-traces --index nebula_metrics --last-minutes 30 --limit 20 --format rich
+nebula-cli list-traces --index nebula_metrics --last-minutes 30 --limit 20 --format json
+```
+
+### 4) 接入真实 ES 查询
 
 先配置环境变量（推荐）：
 
@@ -68,8 +77,14 @@ export NEBULA_ES_PASSWORD="your_password"
 然后按 TraceID 直接查询并分析：
 
 ```bash
-nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --top-n 5 --format table
+nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --top-n 5 --format rich
 nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --format json
+```
+
+支持自动推送摘要到飞书/钉钉 webhook：
+
+```bash
+nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --push-webhook "https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
 ```
 
 可选参数：
@@ -77,10 +92,57 @@ nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --format json
 - `--username` / `--password`：认证信息（默认读环境变量）
 - `--verify-certs/--no-verify-certs`：是否校验 TLS 证书
 - `--timeout-seconds`：查询超时秒数
+- `--push-webhook`：将排障摘要推送到群机器人
+
+### 5) 自动监控 ES 慢链路并触发诊断
+
+`monitor-es` 会按固定间隔轮询 ES，发现慢链路后自动触发诊断并推送飞书/钉钉：
+
+```bash
+nebula-cli monitor-es \
+  --index nebula_metrics \
+  --poll-interval-seconds 5 \
+  --slow-threshold-ms 1000 \
+  --last-minutes 5 \
+  --limit 20 \
+  --push-webhook "https://open.feishu.cn/open-apis/bot/v2/hook/xxx" \
+  --llm-enabled
+```
+
+关键参数：
+- `--poll-interval-seconds`：轮询间隔（默认 5 秒）
+- `--slow-threshold-ms`：慢链路阈值（默认 1000ms）
+- `--trigger-dedupe-seconds`：同一 trace 触发去重窗口
+- `--max-iterations`：最大轮询次数（0 表示持续运行）
+
+### 6) 向 ES 批量写入高仿真链路监控数据（正常/慢链路/报错）
+
+脚本：`scripts/load_simulated_es_data.py`
+
+示例：
+
+```bash
+python scripts/load_simulated_es_data.py \
+  --es-url http://localhost:9200 \
+  --index nebula_metrics \
+  --traces 2000 \
+  --time-window-minutes 120 \
+  --normal-ratio 0.72 \
+  --slow-ratio 0.22 \
+  --error-ratio 0.06 \
+  --create-index \
+  --refresh wait_for
+```
+
+特点：
+- 生成完整分布式调用链（gateway -> user -> cart -> inventory -> pricing -> order -> payment）
+- 同时写入 `traceId/trace_id`、`spanId/span_id` 等兼容字段
+- 覆盖真实字段：`@timestamp`、`httpStatus`、`instanceId`、`podName`、`errorType`、`exceptionStack`、`tags`
+- 可控制正常/慢链路/报错比例，适合压测和自动诊断联调
 
 参数说明：
 - `--source/-s`：输入 trace JSON 文件
-- `--format`：`table` 或 `json`
+- `--format`：`rich` 或 `json`
 - `--top-n`：输出最慢的前 N 个 span
 - `--verbose`：开启调试日志
 
@@ -93,7 +155,7 @@ nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --format json
 
 ## 排障摘要模板（可贴群）
 
-命令 `analyze --format table` 会自动输出：
+命令 `analyze --format rich` 会自动输出：
 - 瓶颈服务
 - 耗时
 - 异常类型
@@ -106,14 +168,64 @@ nebula-cli analyze-es 1f9b2f0d9a6a --index "nebula-trace-*" --format json
 /Users/mac/Documents/python/venv/bin/python -m pytest -q
 ```
 
+## 发布前冒烟检查
+
+本地执行：
+
+```bash
+NEBULA_ES_URL="http://localhost:9200" ./scripts/smoke_test.sh nebula_metrics
+```
+
+CI 自动执行（GitHub Actions）：
+- 工作流文件：`.github/workflows/ci-smoke.yml`
+- 触发方式：`push` / `pull_request` / `workflow_dispatch`
+- 流程：拉起 ES 8.10.2 -> 写入示例 trace -> 执行 `smoke_test.sh`
+
+该脚本会依次检查：
+- venv 是否可用
+- ES 连通性（ping）
+- 最近 traceId 是否可查询
+- `analyze-es` 是否成功并返回 0 退出码
+
+## 部署与运维
+
+- 部署手册：`docs/DEPLOYMENT.md`
+- 运维手册：`docs/OPERATIONS.md`
+
+支持方式：
+- Docker：`Dockerfile` + `docker-compose.yml`
+- Kubernetes：`deploy/k8s/deployment.yaml` + `deploy/k8s/secret.example.yaml`
+
 ## Phase 2 预埋（Tool Calling / Agent）
 
 已提供：
 - `query_trace`
 - `query_jvm`
 - `query_logs`
+- `tool_get_trace`
+- `tool_analyze_trace`
+- `tool_get_jvm_metrics`
+- `tool_search_logs`
 
 以及 `run_agent_poc` 演示链路：
 `trace_id -> query_trace -> query_jvm -> query_logs -> agent_report`
 
 后续接入线上 ES/JVM/日志系统时，只需替换 `ToolRegistry` 的具体实现。
+
+另外新增了 `nebula_copilot/repository.py`：
+- `TraceRepository`（协议）
+- `LocalJsonRepository`（当前实现）
+- `ESRepository` / `HTTPRepository`（占位实现）
+
+可以在不改 CLI 主流程的前提下替换数据源。
+
+## 下一阶段 TODO（Phase 2 / 3）
+
+- Phase 2
+  - 将 `LocalJsonRepository` 替换为 `ESRepository` 真实现
+  - 统一 Tool 返回 JSON schema（trace/jvm/logs）
+  - 接入大模型进行“工具调用编排 + 结论生成”
+- Phase 3
+  - 引入故障知识库（Runbook/SOP/复盘）
+  - 增加相似案例检索与引用
+  - 输出建议中附“参考案例”来源

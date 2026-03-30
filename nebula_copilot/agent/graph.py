@@ -21,6 +21,28 @@ def _normalize_log_keyword(raw_keyword: str) -> str:
     return keyword
 
 
+def _alert_level(error_type: str, duration_ms: int) -> str:
+    et = (error_type or "").strip()
+    if et in {"DB", "Downstream", "Timeout"}:
+        return "P1"
+    if et in {"Unknown"}:
+        return "P2"
+    if duration_ms >= 1500:
+        return "P2"
+    return "P3"
+
+
+def _alert_type_label(error_type: str) -> str:
+    mapping = {
+        "Timeout": "下游超时",
+        "DB": "数据库异常",
+        "Downstream": "依赖不可用",
+        "Unknown": "未知异常",
+        "None": "慢调用",
+    }
+    return mapping.get(error_type, "链路异常")
+
+
 def _run_with_retry(state: AgentState, node: str, fn: Any, *args: Any, **kwargs: Any) -> Dict[str, Any]:
     attempt = 0
     while True:
@@ -81,12 +103,95 @@ def _node_enrich_logs(state: AgentState, tool_registry: ToolRegistry, service_na
     state.add_event("enrich_logs", "ok", "日志补充完成", result)
 
 
-def _node_report(state: AgentState, service_name: str, llm_executor: Any | None = None) -> None:
+def _node_report(
+    state: AgentState,
+    service_name: str,
+    llm_executor: Any | None = None,
+    *,
+    llm_decision_required: bool = False,
+) -> None:
     bottleneck = state.diagnosis.get("bottleneck", {}) if isinstance(state.diagnosis, dict) else {}
     error_type = bottleneck.get("error_type", "Unknown")
     action_hint = str(bottleneck.get("action_suggestion") or "").strip()
+    operation_name = str(bottleneck.get("operation_name") or "unknown-operation")
+    duration_ms = int(bottleneck.get("duration_ms") or 0)
+    level = _alert_level(str(error_type), duration_ms)
+    type_label = _alert_type_label(str(error_type))
     jvm = state.jvm_metrics if isinstance(state.jvm_metrics, dict) else {}
     logs = state.logs if isinstance(state.logs, dict) else {}
+    llm_root_cause = ""
+    llm_confidence: float | None = None
+    llm_linkage_suspected = False
+    llm_linkage_suggestion = ""
+    knowledge_insight = bottleneck.get("knowledge_insight") if isinstance(bottleneck, dict) else None
+    kb_pattern_text = "无"
+    kb_relation_hint = "无"
+    kb_linkage_hint = ""
+
+    if isinstance(knowledge_insight, dict):
+        patterns = knowledge_insight.get("matched_patterns")
+        if isinstance(patterns, list) and patterns:
+            labels = [str(item.get("label", "")).strip() for item in patterns if isinstance(item, dict)]
+            labels = [label for label in labels if label]
+            if labels:
+                kb_pattern_text = "、".join(labels[:2])
+        relation_hint = str(knowledge_insight.get("relation_query_hint") or "").strip()
+        if relation_hint:
+            kb_relation_hint = relation_hint
+        kb_linkage_hint = str(knowledge_insight.get("linkage_investigation_suggestion") or "").strip()
+
+    if llm_executor is None and llm_decision_required:
+        raise RuntimeError("LLM decision required but executor is not configured")
+
+    if llm_executor is not None:
+        try:
+            diagnose_fn = getattr(llm_executor, "diagnose_incident", None)
+            if callable(diagnose_fn):
+                decision = diagnose_fn(
+                    {
+                        "trace_id": state.trace_id,
+                        "service_name": service_name,
+                        "error_type": error_type,
+                        "operation_name": operation_name,
+                        "duration_ms": duration_ms,
+                        "jvm": jvm,
+                        "logs": logs,
+                        "rule_action": action_hint,
+                    }
+                )
+                if isinstance(decision, dict) and decision:
+                    decided_type = str(decision.get("problem_type") or "").strip()
+                    if decided_type:
+                        error_type = decided_type
+                    decided_action = str(decision.get("action") or "").strip()
+                    if decided_action:
+                        action_hint = decided_action
+                    llm_root_cause = str(decision.get("root_cause") or "").strip()
+                    conf = decision.get("confidence")
+                    if isinstance(conf, (int, float)):
+                        llm_confidence = max(0.0, min(1.0, float(conf)))
+                    llm_linkage_suspected = bool(decision.get("linkage_suspected") is True)
+                    llm_linkage_suggestion = str(decision.get("linkage_action") or "").strip()
+                    if not llm_linkage_suspected and not llm_linkage_suggestion:
+                        root_lower = llm_root_cause.lower()
+                        if any(token in root_lower for token in ("链路", "backpressure", "积压", "依赖", "下游")):
+                            llm_linkage_suspected = True
+                    state.add_event("llm_decision", "ok", "LLM 根因决策完成", {"decision": decision})
+                else:
+                    state.add_event("llm_decision", "skipped", "LLM 未返回可用决策", {"enabled": True})
+                    if llm_decision_required:
+                        raise RuntimeError("LLM decision required but no valid decision returned")
+            else:
+                state.add_event("llm_decision", "skipped", "LLM 不支持结构化决策接口", {"enabled": True})
+                if llm_decision_required:
+                    raise RuntimeError("LLM decision required but diagnose_incident is unavailable")
+        except Exception as exc:
+            state.add_event("llm_decision", "fallback", "LLM 决策失败，已回退规则结论", {"error": str(exc)})
+            if llm_decision_required:
+                raise RuntimeError(f"LLM decision required but failed: {exc}") from exc
+
+    level = _alert_level(str(error_type), duration_ms)
+    type_label = _alert_type_label(str(error_type))
 
     jvm_status = str(jvm.get("status") or "not_queried")
     if jvm_status == "ok":
@@ -115,16 +220,42 @@ def _node_report(state: AgentState, service_name: str, llm_executor: Any | None 
         logs_hint = "日志证据: 暂不可用"
 
     base_summary = (
-        f"run_id={state.run_id} trace={state.trace_id} 图执行完成，瓶颈服务={service_name}，"
-        f"异常类型={error_type}。{jvm_hint}。{logs_hint}。"
-        f"建议动作: {action_hint or '优先检查关键错误日志与依赖可用性。'}"
+        f"【Nebula 告警】[{level}] {type_label}\n"
+        f"- Trace: {state.trace_id}\n"
+        f"- Run: {state.run_id}\n"
+        f"- 瓶颈服务: {service_name}\n"
+        f"- 操作: {operation_name}\n"
+        f"- 耗时: {duration_ms}ms\n"
+        f"- 异常类型: {error_type}\n"
+        f"- 模式比对: {kb_pattern_text}\n"
+        f"- 关联查询: {kb_relation_hint}\n"
+        f"- {jvm_hint}\n"
+        f"- {logs_hint}\n"
+        f"- LLM根因: {llm_root_cause or '无（规则结论）'}\n"
+        f"- LLM置信度: {f'{llm_confidence:.2f}' if llm_confidence is not None else 'N/A'}\n"
+        f"- 链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}\n"
+        f"- 建议动作: {action_hint or '优先检查关键错误日志与依赖可用性。'}"
     )
-    state.summary = base_summary
+    mandatory_lines = [
+        f"- 模式比对: {kb_pattern_text}",
+        f"- 关联查询: {kb_relation_hint}",
+        f"- 链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}",
+    ]
+
+    def _ensure_mandatory_lines(summary_text: str) -> str:
+        text = summary_text or ""
+        missing = [line for line in mandatory_lines if line not in text]
+        if not missing:
+            return text
+        append_block = "\n" + "\n".join(missing)
+        return f"{text}{append_block}" if text else "\n".join(missing)
+
+    state.summary = _ensure_mandatory_lines(base_summary)
     if llm_executor is not None:
         try:
             polished = llm_executor.polish_summary(base_summary)
             if polished:
-                state.summary = polished
+                state.summary = _ensure_mandatory_lines(polished)
                 state.add_event("report_polish", "ok", "LLM 报告润色完成", {"enabled": True})
             else:
                 state.add_event("report_polish", "skipped", "LLM 未返回可用润色结果", {"enabled": True})
@@ -143,6 +274,7 @@ def run_agent_graph(
     trace_doc: TraceDocument,
     tool_registry: ToolRegistry,
     llm_executor: Any | None = None,
+    llm_decision_required: bool = False,
 ) -> Dict[str, Any]:
     state = AgentState.new(trace_id=trace_id, run_id=run_id)
 
@@ -165,7 +297,12 @@ def run_agent_graph(
         else:
             _node_enrich_logs(state, tool_registry, service_name, keyword)
 
-        _node_report(state, service_name, llm_executor=llm_executor)
+        _node_report(
+            state,
+            service_name,
+            llm_executor=llm_executor,
+            llm_decision_required=llm_decision_required,
+        )
         _node_notify(state)
         state.status = "ok"
 

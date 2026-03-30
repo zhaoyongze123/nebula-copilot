@@ -601,6 +601,11 @@ def agent_analyze(
     run_rate_limit_per_minute: int | None = typer.Option(None, "--run-rate-limit-per-minute", help="每分钟最大执行次数，0=不限制"),
     env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
     llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 能力"),
+    llm_decision_required: bool = typer.Option(
+        False,
+        "--llm-decision-required/--no-llm-decision-required",
+        help="要求LLM参与决策，失败则本次执行失败",
+    ),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
 ) -> None:
     """Agent 入口：执行取数→诊断→补充信息→通知，并记录 run_id。"""
@@ -671,6 +676,7 @@ def agent_analyze(
             trace_doc,
             tool_registry,
             llm_executor=llm_executor,
+            llm_decision_required=llm_decision_required,
         )
         summary = str(graph_result.get("summary") or "")
         notify_result = _notify_with_reliability(
@@ -781,6 +787,11 @@ def monitor_es(
     notify_max_retries: int = typer.Option(3, "--notify-max-retries", help="通知最大重试次数"),
     env_file: Path = typer.Option(DEFAULT_ENV_PATH, "--env-file", help=".env 文件路径"),
     llm_enabled: bool = typer.Option(False, "--llm-enabled/--no-llm-enabled", help="启用 LLM 能力"),
+    llm_decision_required: bool = typer.Option(
+        False,
+        "--llm-decision-required/--no-llm-decision-required",
+        help="要求LLM参与决策，失败则本次执行记为failed",
+    ),
     verbose: bool = typer.Option(False, "--verbose", help="Enable debug logs"),
 ) -> None:
     """持续监控 ES，发现慢链路后自动触发诊断并推送通知。"""
@@ -890,6 +901,7 @@ def monitor_es(
                 trace_doc,
                 tool_registry,
                 llm_executor=llm_executor,
+                llm_decision_required=llm_decision_required,
             )
             summary = str(graph_result.get("summary") or "")
 

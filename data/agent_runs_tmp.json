@@ -1,0 +1,2435 @@
+[
+  {
+    "run_id": "run-f47be0259968",
+    "trace_id": "001ae2bd820043ec",
+    "status": "ok",
+    "started_at": "2026-03-29T19:03:59",
+    "finished_at": "2026-03-29T19:03:59",
+    "trace": {
+      "trace_id": "001ae2bd820043ec",
+      "bottleneck_service": "cart-service",
+      "keyword": "downstream"
+    },
+    "diagnosis": {
+      "trace_id": "001ae2bd820043ec",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "cart-service",
+        "operation_name": "RPC getCartItems",
+        "duration_ms": 341,
+        "status": "OK",
+        "error_type": "Downstream",
+        "exception_stack": "suspect thread pool saturation or downstream latency spike",
+        "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+      },
+      "top_spans": [
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 341,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 157,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 96,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        }
+      ],
+      "summary": "瓶颈节点: cart-service, 耗时: 341ms, 异常类型: Downstream"
+    },
+    "jvm": {
+      "service": "cart-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2606,
+      "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+      "heap_used_mb": 619.2,
+      "heap_max_mb": 1024.0,
+      "gc_count": 1,
+      "thread_count": 129,
+      "p95_duration_ms": 261.61810035842205,
+      "error_count": 18,
+      "error_rate": 0.0069
+    },
+    "logs": {
+      "service": "cart-service",
+      "keyword": "downstream",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 81,
+      "sample": [
+        "slow call detected, duration=558ms exceeded service baseline",
+        "slow call detected, duration=434ms exceeded service baseline",
+        "service call completed, duration=59ms",
+        "slow call detected, duration=750ms exceeded service baseline",
+        "slow call detected, duration=341ms exceeded service baseline"
+      ],
+      "trace_ids": [
+        "bad38e953bbd4e28",
+        "5537ea6e5d3144e6",
+        "69f7659fb0854043",
+        "53fbc6210d7a421c",
+        "001ae2bd820043ec"
+      ]
+    },
+    "summary": "run_id=run-f47be0259968 trace=001ae2bd820043ec 图执行完成，瓶颈服务=cart-service，异常类型=Downstream。JVM证据: p95=261.61810035842205ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.0069。日志证据: 命中81条, 示例=slow call detected, duration=558ms exceeded service baseline。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "001ae2bd820043ec",
+          "payload": {
+            "trace_id": "001ae2bd820043ec",
+            "bottleneck_service": "cart-service",
+            "keyword": "downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 95
+          },
+          "summary": "已获取 Trace：001ae2bd820043ec",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 95,
+            "returned_size": 95
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "001ae2bd820043ec",
+          "payload": {
+            "trace_id": "001ae2bd820043ec",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "cart-service",
+              "operation_name": "RPC getCartItems",
+              "duration_ms": 341,
+              "status": "OK",
+              "error_type": "Downstream",
+              "exception_stack": "suspect thread pool saturation or downstream latency spike",
+              "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+            },
+            "top_spans": [
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 341,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 157,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 96,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              }
+            ],
+            "summary": "瓶颈节点: cart-service, 耗时: 341ms, 异常类型: Downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 1348
+          },
+          "summary": "诊断完成：trace=001ae2bd820043ec，瓶颈服务=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1348,
+            "returned_size": 1348
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2606,
+            "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+            "heap_used_mb": 619.2,
+            "heap_max_mb": 1024.0,
+            "gc_count": 1,
+            "thread_count": 129,
+            "p95_duration_ms": 261.61810035842205,
+            "error_count": 18,
+            "error_rate": 0.0069
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 338
+          },
+          "summary": "JVM 指标已获取：service=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 338,
+            "returned_size": 338
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "keyword": "downstream",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 81,
+            "sample": [
+              "slow call detected, duration=558ms exceeded service baseline",
+              "slow call detected, duration=434ms exceeded service baseline",
+              "service call completed, duration=59ms",
+              "slow call detected, duration=750ms exceeded service baseline",
+              "slow call detected, duration=341ms exceeded service baseline"
+            ],
+            "trace_ids": [
+              "bad38e953bbd4e28",
+              "5537ea6e5d3144e6",
+              "69f7659fb0854043",
+              "53fbc6210d7a421c",
+              "001ae2bd820043ec"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 574
+          },
+          "summary": "日志检索完成：service=cart-service，keyword=downstream",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 574,
+            "returned_size": 574
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-f47be0259968 trace=001ae2bd820043ec 图执行完成，瓶颈服务=cart-service，异常类型=Downstream。JVM证据: p95=261.61810035842205ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.0069。日志证据: 命中81条, 示例=slow call detected, duration=558ms exceeded service baseline。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-f47be0259968 trace=001ae2bd820043ec 图执行完成，瓶颈服务=cart-service，异常类型=Downstream。JVM证据: p95=261.61810035842205ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.0069。日志证据: 命中81条, 示例=slow call detected, duration=558ms exceeded service baseline。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 8,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 341,
+      "slow_threshold_ms": 250
+    }
+  },
+  {
+    "run_id": "run-ca43e030fd34",
+    "trace_id": "00a37b897a464cfb",
+    "status": "ok",
+    "started_at": "2026-03-29T19:03:59",
+    "finished_at": "2026-03-29T19:03:59",
+    "trace": {
+      "trace_id": "00a37b897a464cfb",
+      "bottleneck_service": "cart-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "00a37b897a464cfb",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "cart-service",
+        "operation_name": "RPC getCartItems",
+        "duration_ms": 843,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 843,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 159,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 62,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: cart-service, 耗时: 843ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "cart-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2606,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "670b3d2290b84e80",
+        "05dea982fe3b4f25",
+        "a34287c9ba8e47fc",
+        "9301da34efa44178",
+        "eb6f2640272043dd"
+      ]
+    },
+    "summary": "run_id=run-ca43e030fd34 trace=00a37b897a464cfb 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "00a37b897a464cfb",
+          "payload": {
+            "trace_id": "00a37b897a464cfb",
+            "bottleneck_service": "cart-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 89
+          },
+          "summary": "已获取 Trace：00a37b897a464cfb",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 89,
+            "returned_size": 89
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "00a37b897a464cfb",
+          "payload": {
+            "trace_id": "00a37b897a464cfb",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "cart-service",
+              "operation_name": "RPC getCartItems",
+              "duration_ms": 843,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 843,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 159,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 62,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: cart-service, 耗时: 843ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 978
+          },
+          "summary": "诊断完成：trace=00a37b897a464cfb，瓶颈服务=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 978,
+            "returned_size": 978
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2606,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "670b3d2290b84e80",
+              "05dea982fe3b4f25",
+              "a34287c9ba8e47fc",
+              "9301da34efa44178",
+              "eb6f2640272043dd"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 434
+          },
+          "summary": "日志检索完成：service=cart-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 434,
+            "returned_size": 434
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-ca43e030fd34 trace=00a37b897a464cfb 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-ca43e030fd34 trace=00a37b897a464cfb 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 843,
+      "slow_threshold_ms": 250
+    }
+  },
+  {
+    "run_id": "run-83cb6b7f6c2b",
+    "trace_id": "002ddfb2019a44b3",
+    "status": "ok",
+    "started_at": "2026-03-29T19:03:59",
+    "finished_at": "2026-03-29T19:03:59",
+    "trace": {
+      "trace_id": "002ddfb2019a44b3",
+      "bottleneck_service": "cart-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "002ddfb2019a44b3",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "cart-service",
+        "operation_name": "RPC getCartItems",
+        "duration_ms": 986,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 986,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 119,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 39,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: cart-service, 耗时: 986ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "cart-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2606,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "670b3d2290b84e80",
+        "05dea982fe3b4f25",
+        "a34287c9ba8e47fc",
+        "9301da34efa44178",
+        "eb6f2640272043dd"
+      ]
+    },
+    "summary": "run_id=run-83cb6b7f6c2b trace=002ddfb2019a44b3 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "002ddfb2019a44b3",
+          "payload": {
+            "trace_id": "002ddfb2019a44b3",
+            "bottleneck_service": "cart-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 89
+          },
+          "summary": "已获取 Trace：002ddfb2019a44b3",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 89,
+            "returned_size": 89
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "002ddfb2019a44b3",
+          "payload": {
+            "trace_id": "002ddfb2019a44b3",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "cart-service",
+              "operation_name": "RPC getCartItems",
+              "duration_ms": 986,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 986,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 119,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 39,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: cart-service, 耗时: 986ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 984
+          },
+          "summary": "诊断完成：trace=002ddfb2019a44b3，瓶颈服务=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 984,
+            "returned_size": 984
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2606,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "670b3d2290b84e80",
+              "05dea982fe3b4f25",
+              "a34287c9ba8e47fc",
+              "9301da34efa44178",
+              "eb6f2640272043dd"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 434
+          },
+          "summary": "日志检索完成：service=cart-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 434,
+            "returned_size": 434
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-83cb6b7f6c2b trace=002ddfb2019a44b3 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-83cb6b7f6c2b trace=002ddfb2019a44b3 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 986,
+      "slow_threshold_ms": 250
+    }
+  },
+  {
+    "run_id": "run-6b6ff3eb51e7",
+    "trace_id": "00291bff35a44c64",
+    "status": "ok",
+    "started_at": "2026-03-29T19:03:59",
+    "finished_at": "2026-03-29T19:03:59",
+    "trace": {
+      "trace_id": "00291bff35a44c64",
+      "bottleneck_service": "inventory-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "00291bff35a44c64",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "inventory-service",
+        "operation_name": "RPC lockStock",
+        "duration_ms": 631,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 631,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 69,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "pricing-service",
+          "operation_name": "RPC calculatePromotion",
+          "duration_ms": 61,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: inventory-service, 耗时: 631ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "inventory-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2606,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "a34287c9ba8e47fc",
+        "670b3d2290b84e80",
+        "05dea982fe3b4f25",
+        "9301da34efa44178",
+        "eb6f2640272043dd"
+      ]
+    },
+    "summary": "run_id=run-6b6ff3eb51e7 trace=00291bff35a44c64 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "00291bff35a44c64",
+          "payload": {
+            "trace_id": "00291bff35a44c64",
+            "bottleneck_service": "inventory-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 94
+          },
+          "summary": "已获取 Trace：00291bff35a44c64",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 94,
+            "returned_size": 94
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "00291bff35a44c64",
+          "payload": {
+            "trace_id": "00291bff35a44c64",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "inventory-service",
+              "operation_name": "RPC lockStock",
+              "duration_ms": 631,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 631,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 69,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "pricing-service",
+                "operation_name": "RPC calculatePromotion",
+                "duration_ms": 61,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: inventory-service, 耗时: 631ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 1007
+          },
+          "summary": "诊断完成：trace=00291bff35a44c64，瓶颈服务=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1007,
+            "returned_size": 1007
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2606,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "a34287c9ba8e47fc",
+              "670b3d2290b84e80",
+              "05dea982fe3b4f25",
+              "9301da34efa44178",
+              "eb6f2640272043dd"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:03:59",
+            "payload_size": 439
+          },
+          "summary": "日志检索完成：service=inventory-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 439,
+            "returned_size": 439
+          }
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-6b6ff3eb51e7 trace=00291bff35a44c64 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-6b6ff3eb51e7 trace=00291bff35a44c64 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: 命中2606条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:03:59"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 631,
+      "slow_threshold_ms": 250
+    }
+  },
+  {
+    "run_id": "run-26f8a84f5d61",
+    "trace_id": "001ae2bd820043ec",
+    "status": "ok",
+    "started_at": "2026-03-29T19:04:29",
+    "finished_at": "2026-03-29T19:04:29",
+    "trace": {
+      "trace_id": "001ae2bd820043ec",
+      "bottleneck_service": "cart-service",
+      "keyword": "downstream"
+    },
+    "diagnosis": {
+      "trace_id": "001ae2bd820043ec",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "cart-service",
+        "operation_name": "RPC getCartItems",
+        "duration_ms": 341,
+        "status": "OK",
+        "error_type": "Downstream",
+        "exception_stack": "suspect thread pool saturation or downstream latency spike",
+        "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+      },
+      "top_spans": [
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 341,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 157,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 96,
+          "status": "OK",
+          "error_type": "Downstream",
+          "exception_stack": "suspect thread pool saturation or downstream latency spike",
+          "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+        }
+      ],
+      "summary": "瓶颈节点: cart-service, 耗时: 341ms, 异常类型: Downstream"
+    },
+    "jvm": {
+      "service": "cart-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2566,
+      "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+      "heap_used_mb": 619.2,
+      "heap_max_mb": 1024.0,
+      "gc_count": 1,
+      "thread_count": 129,
+      "p95_duration_ms": 262.370805314088,
+      "error_count": 18,
+      "error_rate": 0.007
+    },
+    "logs": {
+      "service": "cart-service",
+      "keyword": "downstream",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 80,
+      "sample": [
+        "slow call detected, duration=558ms exceeded service baseline",
+        "slow call detected, duration=434ms exceeded service baseline",
+        "service call completed, duration=59ms",
+        "slow call detected, duration=750ms exceeded service baseline",
+        "slow call detected, duration=341ms exceeded service baseline"
+      ],
+      "trace_ids": [
+        "bad38e953bbd4e28",
+        "5537ea6e5d3144e6",
+        "69f7659fb0854043",
+        "53fbc6210d7a421c",
+        "001ae2bd820043ec"
+      ]
+    },
+    "summary": "run_id=run-26f8a84f5d61 trace=001ae2bd820043ec 图执行完成，瓶颈服务=cart-service，异常类型=Downstream。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中80条, 示例=slow call detected, duration=558ms exceeded service baseline。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "001ae2bd820043ec",
+          "payload": {
+            "trace_id": "001ae2bd820043ec",
+            "bottleneck_service": "cart-service",
+            "keyword": "downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 95
+          },
+          "summary": "已获取 Trace：001ae2bd820043ec",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 95,
+            "returned_size": 95
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "001ae2bd820043ec",
+          "payload": {
+            "trace_id": "001ae2bd820043ec",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "cart-service",
+              "operation_name": "RPC getCartItems",
+              "duration_ms": 341,
+              "status": "OK",
+              "error_type": "Downstream",
+              "exception_stack": "suspect thread pool saturation or downstream latency spike",
+              "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+            },
+            "top_spans": [
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 341,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 157,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 payment-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 96,
+                "status": "OK",
+                "error_type": "Downstream",
+                "exception_stack": "suspect thread pool saturation or downstream latency spike",
+                "action_suggestion": "优先检查 order-service 依赖服务健康状态，日志关键词: 503/connection refused"
+              }
+            ],
+            "summary": "瓶颈节点: cart-service, 耗时: 341ms, 异常类型: Downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 1348
+          },
+          "summary": "诊断完成：trace=001ae2bd820043ec，瓶颈服务=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1348,
+            "returned_size": 1348
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2566,
+            "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+            "heap_used_mb": 619.2,
+            "heap_max_mb": 1024.0,
+            "gc_count": 1,
+            "thread_count": 129,
+            "p95_duration_ms": 262.370805314088,
+            "error_count": 18,
+            "error_rate": 0.007
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 335
+          },
+          "summary": "JVM 指标已获取：service=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 335,
+            "returned_size": 335
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "keyword": "downstream",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 80,
+            "sample": [
+              "slow call detected, duration=558ms exceeded service baseline",
+              "slow call detected, duration=434ms exceeded service baseline",
+              "service call completed, duration=59ms",
+              "slow call detected, duration=750ms exceeded service baseline",
+              "slow call detected, duration=341ms exceeded service baseline"
+            ],
+            "trace_ids": [
+              "bad38e953bbd4e28",
+              "5537ea6e5d3144e6",
+              "69f7659fb0854043",
+              "53fbc6210d7a421c",
+              "001ae2bd820043ec"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 574
+          },
+          "summary": "日志检索完成：service=cart-service，keyword=downstream",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 574,
+            "returned_size": 574
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-26f8a84f5d61 trace=001ae2bd820043ec 图执行完成，瓶颈服务=cart-service，异常类型=Downstream。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中80条, 示例=slow call detected, duration=558ms exceeded service baseline。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-26f8a84f5d61 trace=001ae2bd820043ec 图执行完成，瓶颈服务=cart-service，异常类型=Downstream。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中80条, 示例=slow call detected, duration=558ms exceeded service baseline。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 8,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 341,
+      "slow_threshold_ms": 250
+    }
+  },
+  {
+    "run_id": "run-34fb160df080",
+    "trace_id": "00a37b897a464cfb",
+    "status": "ok",
+    "started_at": "2026-03-29T19:04:29",
+    "finished_at": "2026-03-29T19:04:29",
+    "trace": {
+      "trace_id": "00a37b897a464cfb",
+      "bottleneck_service": "cart-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "00a37b897a464cfb",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "cart-service",
+        "operation_name": "RPC getCartItems",
+        "duration_ms": 843,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 843,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 159,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 62,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: cart-service, 耗时: 843ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "cart-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2566,
+      "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+      "heap_used_mb": 619.2,
+      "heap_max_mb": 1024.0,
+      "gc_count": 1,
+      "thread_count": 129,
+      "p95_duration_ms": 262.370805314088,
+      "error_count": 18,
+      "error_rate": 0.007
+    },
+    "logs": {
+      "service": "cart-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2566,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "670b3d2290b84e80",
+        "05dea982fe3b4f25",
+        "a34287c9ba8e47fc",
+        "9301da34efa44178",
+        "eb6f2640272043dd"
+      ]
+    },
+    "summary": "run_id=run-34fb160df080 trace=00a37b897a464cfb 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "00a37b897a464cfb",
+          "payload": {
+            "trace_id": "00a37b897a464cfb",
+            "bottleneck_service": "cart-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 89
+          },
+          "summary": "已获取 Trace：00a37b897a464cfb",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 89,
+            "returned_size": 89
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "00a37b897a464cfb",
+          "payload": {
+            "trace_id": "00a37b897a464cfb",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "cart-service",
+              "operation_name": "RPC getCartItems",
+              "duration_ms": 843,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 843,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 159,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 62,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: cart-service, 耗时: 843ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 978
+          },
+          "summary": "诊断完成：trace=00a37b897a464cfb，瓶颈服务=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 978,
+            "returned_size": 978
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2566,
+            "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+            "heap_used_mb": 619.2,
+            "heap_max_mb": 1024.0,
+            "gc_count": 1,
+            "thread_count": 129,
+            "p95_duration_ms": 262.370805314088,
+            "error_count": 18,
+            "error_rate": 0.007
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 335
+          },
+          "summary": "JVM 指标已获取：service=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 335,
+            "returned_size": 335
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2566,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "670b3d2290b84e80",
+              "05dea982fe3b4f25",
+              "a34287c9ba8e47fc",
+              "9301da34efa44178",
+              "eb6f2640272043dd"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 434
+          },
+          "summary": "日志检索完成：service=cart-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 434,
+            "returned_size": 434
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-34fb160df080 trace=00a37b897a464cfb 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-34fb160df080 trace=00a37b897a464cfb 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 8,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 843,
+      "slow_threshold_ms": 250
+    }
+  },
+  {
+    "run_id": "run-4cd216b873d6",
+    "trace_id": "002ddfb2019a44b3",
+    "status": "ok",
+    "started_at": "2026-03-29T19:04:29",
+    "finished_at": "2026-03-29T19:04:29",
+    "trace": {
+      "trace_id": "002ddfb2019a44b3",
+      "bottleneck_service": "cart-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "002ddfb2019a44b3",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "cart-service",
+        "operation_name": "RPC getCartItems",
+        "duration_ms": 986,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 986,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 119,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 39,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: cart-service, 耗时: 986ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "cart-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2566,
+      "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+      "heap_used_mb": 619.2,
+      "heap_max_mb": 1024.0,
+      "gc_count": 1,
+      "thread_count": 129,
+      "p95_duration_ms": 262.370805314088,
+      "error_count": 18,
+      "error_rate": 0.007
+    },
+    "logs": {
+      "service": "cart-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2566,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "670b3d2290b84e80",
+        "05dea982fe3b4f25",
+        "a34287c9ba8e47fc",
+        "9301da34efa44178",
+        "eb6f2640272043dd"
+      ]
+    },
+    "summary": "run_id=run-4cd216b873d6 trace=002ddfb2019a44b3 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "002ddfb2019a44b3",
+          "payload": {
+            "trace_id": "002ddfb2019a44b3",
+            "bottleneck_service": "cart-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 89
+          },
+          "summary": "已获取 Trace：002ddfb2019a44b3",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 89,
+            "returned_size": 89
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "002ddfb2019a44b3",
+          "payload": {
+            "trace_id": "002ddfb2019a44b3",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "cart-service",
+              "operation_name": "RPC getCartItems",
+              "duration_ms": 986,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 986,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 119,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 39,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: cart-service, 耗时: 986ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 984
+          },
+          "summary": "诊断完成：trace=002ddfb2019a44b3，瓶颈服务=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 984,
+            "returned_size": 984
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2566,
+            "sample_ts": "2026-03-29T11:03:35.162000+00:00",
+            "heap_used_mb": 619.2,
+            "heap_max_mb": 1024.0,
+            "gc_count": 1,
+            "thread_count": 129,
+            "p95_duration_ms": 262.370805314088,
+            "error_count": 18,
+            "error_rate": 0.007
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 335
+          },
+          "summary": "JVM 指标已获取：service=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 335,
+            "returned_size": 335
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2566,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "670b3d2290b84e80",
+              "05dea982fe3b4f25",
+              "a34287c9ba8e47fc",
+              "9301da34efa44178",
+              "eb6f2640272043dd"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:29",
+            "payload_size": 434
+          },
+          "summary": "日志检索完成：service=cart-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 434,
+            "returned_size": 434
+          }
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-4cd216b873d6 trace=002ddfb2019a44b3 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-4cd216b873d6 trace=002ddfb2019a44b3 图执行完成，瓶颈服务=cart-service，异常类型=None。JVM证据: p95=262.370805314088ms, heap=619.2/1024.0MB, gc_count=1, error_rate=0.007。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:29"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 8,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 986,
+      "slow_threshold_ms": 250
+    }
+  },
+  {
+    "run_id": "run-d61f2c670e1c",
+    "trace_id": "00291bff35a44c64",
+    "status": "ok",
+    "started_at": "2026-03-29T19:04:30",
+    "finished_at": "2026-03-29T19:04:30",
+    "trace": {
+      "trace_id": "00291bff35a44c64",
+      "bottleneck_service": "inventory-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "00291bff35a44c64",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "inventory-service",
+        "operation_name": "RPC lockStock",
+        "duration_ms": 631,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 631,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 69,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "pricing-service",
+          "operation_name": "RPC calculatePromotion",
+          "duration_ms": 61,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: inventory-service, 耗时: 631ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "inventory-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2566,
+      "sample_ts": "2026-03-29T11:03:35.168000+00:00",
+      "heap_used_mb": 1192.7,
+      "heap_max_mb": 2048.0,
+      "gc_count": 3,
+      "thread_count": 152,
+      "p95_duration_ms": 338.25679012345546,
+      "error_count": 32,
+      "error_rate": 0.0125
+    },
+    "logs": {
+      "service": "inventory-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 30,
+      "status": "ok",
+      "doc_count": 2566,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "a34287c9ba8e47fc",
+        "670b3d2290b84e80",
+        "05dea982fe3b4f25",
+        "9301da34efa44178",
+        "eb6f2640272043dd"
+      ]
+    },
+    "summary": "run_id=run-d61f2c670e1c trace=00291bff35a44c64 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: p95=338.25679012345546ms, heap=1192.7/2048.0MB, gc_count=3, error_rate=0.0125。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "00291bff35a44c64",
+          "payload": {
+            "trace_id": "00291bff35a44c64",
+            "bottleneck_service": "inventory-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:30",
+            "payload_size": 94
+          },
+          "summary": "已获取 Trace：00291bff35a44c64",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 94,
+            "returned_size": 94
+          }
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "00291bff35a44c64",
+          "payload": {
+            "trace_id": "00291bff35a44c64",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "inventory-service",
+              "operation_name": "RPC lockStock",
+              "duration_ms": 631,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 631,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 69,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "pricing-service",
+                "operation_name": "RPC calculatePromotion",
+                "duration_ms": 61,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: inventory-service, 耗时: 631ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:30",
+            "payload_size": 1007
+          },
+          "summary": "诊断完成：trace=00291bff35a44c64，瓶颈服务=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1007,
+            "returned_size": 1007
+          }
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2566,
+            "sample_ts": "2026-03-29T11:03:35.168000+00:00",
+            "heap_used_mb": 1192.7,
+            "heap_max_mb": 2048.0,
+            "gc_count": 3,
+            "thread_count": 152,
+            "p95_duration_ms": 338.25679012345546,
+            "error_count": 32,
+            "error_rate": 0.0125
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:30",
+            "payload_size": 344
+          },
+          "summary": "JVM 指标已获取：service=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 344,
+            "returned_size": 344
+          }
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 30,
+            "status": "ok",
+            "doc_count": 2566,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "a34287c9ba8e47fc",
+              "670b3d2290b84e80",
+              "05dea982fe3b4f25",
+              "9301da34efa44178",
+              "eb6f2640272043dd"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:04:30",
+            "payload_size": 439
+          },
+          "summary": "日志检索完成：service=inventory-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 439,
+            "returned_size": 439
+          }
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-d61f2c670e1c trace=00291bff35a44c64 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: p95=338.25679012345546ms, heap=1192.7/2048.0MB, gc_count=3, error_rate=0.0125。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-d61f2c670e1c trace=00291bff35a44c64 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: p95=338.25679012345546ms, heap=1192.7/2048.0MB, gc_count=3, error_rate=0.0125。日志证据: 命中2566条, 示例=request finished successfully。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:04:30"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 8,
+      "failure_events": 1,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 631,
+      "slow_threshold_ms": 250
+    }
+  }
+]

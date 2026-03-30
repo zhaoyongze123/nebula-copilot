@@ -1,0 +1,2677 @@
+[
+  {
+    "run_id": "run-f40e846647cd",
+    "trace_id": "0c1c328beb4a4e08",
+    "status": "ok",
+    "started_at": "2026-03-29T18:45:35",
+    "finished_at": "2026-03-29T18:45:36",
+    "trace": {
+      "trace_id": "0c1c328beb4a4e08",
+      "bottleneck_service": "trace-root",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "0c1c328beb4a4e08",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "trace-root",
+        "operation_name": "trace:0c1c328beb4a4e08",
+        "duration_ms": 1055,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:0c1c328beb4a4e08",
+          "duration_ms": 1055,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:0c1c328beb4a4e08",
+          "duration_ms": 1055,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 638,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: trace-root, 耗时: 1055ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "trace-root",
+      "keyword": "none",
+      "sample": [
+        "monitor-es auto trigger",
+        "slow trace detected"
+      ]
+    },
+    "summary": "run_id=run-f40e846647cd trace=0c1c328beb4a4e08 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0c1c328beb4a4e08",
+          "payload": {
+            "trace_id": "0c1c328beb4a4e08",
+            "bottleneck_service": "trace-root",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:35",
+            "payload_size": 87
+          },
+          "summary": "已获取 Trace：0c1c328beb4a4e08",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 87,
+            "returned_size": 87
+          }
+        },
+        "timestamp": "2026-03-29T18:45:35"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0c1c328beb4a4e08",
+          "payload": {
+            "trace_id": "0c1c328beb4a4e08",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "trace-root",
+              "operation_name": "trace:0c1c328beb4a4e08",
+              "duration_ms": 1055,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:0c1c328beb4a4e08",
+                "duration_ms": 1055,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:0c1c328beb4a4e08",
+                "duration_ms": 1055,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 638,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: trace-root, 耗时: 1055ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:35",
+            "payload_size": 978
+          },
+          "summary": "诊断完成：trace=0c1c328beb4a4e08，瓶颈服务=trace-root",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 978,
+            "returned_size": 978
+          }
+        },
+        "timestamp": "2026-03-29T18:45:35"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:45:35"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "trace-root",
+          "payload": {
+            "service": "trace-root",
+            "keyword": "none",
+            "sample": [
+              "monitor-es auto trigger",
+              "slow trace detected"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:35",
+            "payload_size": 106
+          },
+          "summary": "日志检索完成：service=trace-root，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 106,
+            "returned_size": 106
+          }
+        },
+        "timestamp": "2026-03-29T18:45:35"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:45:35"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-f40e846647cd trace=0c1c328beb4a4e08 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:35"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-f40e846647cd trace=0c1c328beb4a4e08 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:35"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 1000,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1055,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-57ab0dc46178",
+    "trace_id": "0829567fb0b14a8b",
+    "status": "ok",
+    "started_at": "2026-03-29T18:45:36",
+    "finished_at": "2026-03-29T18:45:36",
+    "trace": {
+      "trace_id": "0829567fb0b14a8b",
+      "bottleneck_service": "trace-root",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "0829567fb0b14a8b",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "trace-root",
+        "operation_name": "trace:0829567fb0b14a8b",
+        "duration_ms": 1720,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:0829567fb0b14a8b",
+          "duration_ms": 1720,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:0829567fb0b14a8b",
+          "duration_ms": 1720,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "pricing-service",
+          "operation_name": "RPC calculatePromotion",
+          "duration_ms": 1091,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: trace-root, 耗时: 1720ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "trace-root",
+      "keyword": "none",
+      "sample": [
+        "monitor-es auto trigger",
+        "slow trace detected"
+      ]
+    },
+    "summary": "run_id=run-57ab0dc46178 trace=0829567fb0b14a8b 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0829567fb0b14a8b",
+          "payload": {
+            "trace_id": "0829567fb0b14a8b",
+            "bottleneck_service": "trace-root",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:36",
+            "payload_size": 87
+          },
+          "summary": "已获取 Trace：0829567fb0b14a8b",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 87,
+            "returned_size": 87
+          }
+        },
+        "timestamp": "2026-03-29T18:45:36"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0829567fb0b14a8b",
+          "payload": {
+            "trace_id": "0829567fb0b14a8b",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "trace-root",
+              "operation_name": "trace:0829567fb0b14a8b",
+              "duration_ms": 1720,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:0829567fb0b14a8b",
+                "duration_ms": 1720,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:0829567fb0b14a8b",
+                "duration_ms": 1720,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "pricing-service",
+                "operation_name": "RPC calculatePromotion",
+                "duration_ms": 1091,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: trace-root, 耗时: 1720ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:36",
+            "payload_size": 984
+          },
+          "summary": "诊断完成：trace=0829567fb0b14a8b，瓶颈服务=trace-root",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 984,
+            "returned_size": 984
+          }
+        },
+        "timestamp": "2026-03-29T18:45:36"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:45:36"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "trace-root",
+          "payload": {
+            "service": "trace-root",
+            "keyword": "none",
+            "sample": [
+              "monitor-es auto trigger",
+              "slow trace detected"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:36",
+            "payload_size": 106
+          },
+          "summary": "日志检索完成：service=trace-root，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 106,
+            "returned_size": 106
+          }
+        },
+        "timestamp": "2026-03-29T18:45:36"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:45:36"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-57ab0dc46178 trace=0829567fb0b14a8b 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:36"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-57ab0dc46178 trace=0829567fb0b14a8b 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:36"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1720,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-247b43c541c5",
+    "trace_id": "12e4511992aa49b0",
+    "status": "ok",
+    "started_at": "2026-03-29T18:45:37",
+    "finished_at": "2026-03-29T18:45:37",
+    "trace": {
+      "trace_id": "12e4511992aa49b0",
+      "bottleneck_service": "trace-root",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "12e4511992aa49b0",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "trace-root",
+        "operation_name": "trace:12e4511992aa49b0",
+        "duration_ms": 1057,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:12e4511992aa49b0",
+          "duration_ms": 1057,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:12e4511992aa49b0",
+          "duration_ms": 1057,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 724,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: trace-root, 耗时: 1057ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "trace-root",
+      "keyword": "none",
+      "sample": [
+        "monitor-es auto trigger",
+        "slow trace detected"
+      ]
+    },
+    "summary": "run_id=run-247b43c541c5 trace=12e4511992aa49b0 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "12e4511992aa49b0",
+          "payload": {
+            "trace_id": "12e4511992aa49b0",
+            "bottleneck_service": "trace-root",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:37",
+            "payload_size": 87
+          },
+          "summary": "已获取 Trace：12e4511992aa49b0",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 87,
+            "returned_size": 87
+          }
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "12e4511992aa49b0",
+          "payload": {
+            "trace_id": "12e4511992aa49b0",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "trace-root",
+              "operation_name": "trace:12e4511992aa49b0",
+              "duration_ms": 1057,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:12e4511992aa49b0",
+                "duration_ms": 1057,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:12e4511992aa49b0",
+                "duration_ms": 1057,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 724,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: trace-root, 耗时: 1057ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:37",
+            "payload_size": 972
+          },
+          "summary": "诊断完成：trace=12e4511992aa49b0，瓶颈服务=trace-root",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 972,
+            "returned_size": 972
+          }
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "trace-root",
+          "payload": {
+            "service": "trace-root",
+            "keyword": "none",
+            "sample": [
+              "monitor-es auto trigger",
+              "slow trace detected"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:37",
+            "payload_size": 106
+          },
+          "summary": "日志检索完成：service=trace-root，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 106,
+            "returned_size": 106
+          }
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-247b43c541c5 trace=12e4511992aa49b0 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-247b43c541c5 trace=12e4511992aa49b0 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1057,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-70b553f7cbbd",
+    "trace_id": "0b3d40b571994eae",
+    "status": "ok",
+    "started_at": "2026-03-29T18:45:37",
+    "finished_at": "2026-03-29T18:45:38",
+    "trace": {
+      "trace_id": "0b3d40b571994eae",
+      "bottleneck_service": "trace-root",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "0b3d40b571994eae",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "trace-root",
+        "operation_name": "trace:0b3d40b571994eae",
+        "duration_ms": 1079,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:0b3d40b571994eae",
+          "duration_ms": 1079,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:0b3d40b571994eae",
+          "duration_ms": 1079,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 644,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: trace-root, 耗时: 1079ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "trace-root",
+      "keyword": "none",
+      "sample": [
+        "monitor-es auto trigger",
+        "slow trace detected"
+      ]
+    },
+    "summary": "run_id=run-70b553f7cbbd trace=0b3d40b571994eae 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0b3d40b571994eae",
+          "payload": {
+            "trace_id": "0b3d40b571994eae",
+            "bottleneck_service": "trace-root",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:37",
+            "payload_size": 87
+          },
+          "summary": "已获取 Trace：0b3d40b571994eae",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 87,
+            "returned_size": 87
+          }
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0b3d40b571994eae",
+          "payload": {
+            "trace_id": "0b3d40b571994eae",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "trace-root",
+              "operation_name": "trace:0b3d40b571994eae",
+              "duration_ms": 1079,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:0b3d40b571994eae",
+                "duration_ms": 1079,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:0b3d40b571994eae",
+                "duration_ms": 1079,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 644,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: trace-root, 耗时: 1079ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:37",
+            "payload_size": 986
+          },
+          "summary": "诊断完成：trace=0b3d40b571994eae，瓶颈服务=trace-root",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 986,
+            "returned_size": 986
+          }
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "trace-root",
+          "payload": {
+            "service": "trace-root",
+            "keyword": "none",
+            "sample": [
+              "monitor-es auto trigger",
+              "slow trace detected"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:37",
+            "payload_size": 106
+          },
+          "summary": "日志检索完成：service=trace-root，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 106,
+            "returned_size": 106
+          }
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-70b553f7cbbd trace=0b3d40b571994eae 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-70b553f7cbbd trace=0b3d40b571994eae 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:37"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 1000,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1079,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-ec67cc40ff11",
+    "trace_id": "1422b18c4bc549ff",
+    "status": "ok",
+    "started_at": "2026-03-29T18:45:43",
+    "finished_at": "2026-03-29T18:45:43",
+    "trace": {
+      "trace_id": "1422b18c4bc549ff",
+      "bottleneck_service": "trace-root",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "1422b18c4bc549ff",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "trace-root",
+        "operation_name": "trace:1422b18c4bc549ff",
+        "duration_ms": 1014,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:1422b18c4bc549ff",
+          "duration_ms": 1014,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "trace-root",
+          "operation_name": "trace:1422b18c4bc549ff",
+          "duration_ms": 1014,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 364,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: trace-root, 耗时: 1014ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "trace-root",
+      "keyword": "none",
+      "sample": [
+        "monitor-es auto trigger",
+        "slow trace detected"
+      ]
+    },
+    "summary": "run_id=run-ec67cc40ff11 trace=1422b18c4bc549ff 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "1422b18c4bc549ff",
+          "payload": {
+            "trace_id": "1422b18c4bc549ff",
+            "bottleneck_service": "trace-root",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:43",
+            "payload_size": 87
+          },
+          "summary": "已获取 Trace：1422b18c4bc549ff",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 87,
+            "returned_size": 87
+          }
+        },
+        "timestamp": "2026-03-29T18:45:43"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "1422b18c4bc549ff",
+          "payload": {
+            "trace_id": "1422b18c4bc549ff",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "trace-root",
+              "operation_name": "trace:1422b18c4bc549ff",
+              "duration_ms": 1014,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:1422b18c4bc549ff",
+                "duration_ms": 1014,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "trace-root",
+                "operation_name": "trace:1422b18c4bc549ff",
+                "duration_ms": 1014,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "trace-root 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 364,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "cart-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: trace-root, 耗时: 1014ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:43",
+            "payload_size": 971
+          },
+          "summary": "诊断完成：trace=1422b18c4bc549ff，瓶颈服务=trace-root",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 971,
+            "returned_size": 971
+          }
+        },
+        "timestamp": "2026-03-29T18:45:43"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:45:43"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "trace-root",
+          "payload": {
+            "service": "trace-root",
+            "keyword": "none",
+            "sample": [
+              "monitor-es auto trigger",
+              "slow trace detected"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:45:43",
+            "payload_size": 106
+          },
+          "summary": "日志检索完成：service=trace-root，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 106,
+            "returned_size": 106
+          }
+        },
+        "timestamp": "2026-03-29T18:45:43"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:45:43"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-ec67cc40ff11 trace=1422b18c4bc549ff 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:43"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-ec67cc40ff11 trace=1422b18c4bc549ff 图执行完成，瓶颈服务=trace-root，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:45:43"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1014,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-3ff2105d879e",
+    "trace_id": "32d3a8bf0dd744d9",
+    "status": "ok",
+    "started_at": "2026-03-29T18:51:01",
+    "finished_at": "2026-03-29T18:51:02",
+    "trace": {
+      "trace_id": "32d3a8bf0dd744d9",
+      "bottleneck_service": "trace-root",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "32d3a8bf0dd744d9",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "pricing-service",
+        "operation_name": "RPC calculatePromotion",
+        "duration_ms": 1022,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "pricing-service",
+          "operation_name": "RPC calculatePromotion",
+          "duration_ms": 1022,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 120,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 114,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: pricing-service, 耗时: 1022ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "pricing-service",
+      "keyword": "none",
+      "sample": [
+        "monitor-es auto trigger",
+        "slow trace detected"
+      ]
+    },
+    "summary": "run_id=run-3ff2105d879e trace=32d3a8bf0dd744d9 图执行完成，瓶颈服务=pricing-service，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "32d3a8bf0dd744d9",
+          "payload": {
+            "trace_id": "32d3a8bf0dd744d9",
+            "bottleneck_service": "trace-root",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:51:01",
+            "payload_size": 87
+          },
+          "summary": "已获取 Trace：32d3a8bf0dd744d9",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 87,
+            "returned_size": 87
+          }
+        },
+        "timestamp": "2026-03-29T18:51:01"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "32d3a8bf0dd744d9",
+          "payload": {
+            "trace_id": "32d3a8bf0dd744d9",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "pricing-service",
+              "operation_name": "RPC calculatePromotion",
+              "duration_ms": 1022,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "pricing-service",
+                "operation_name": "RPC calculatePromotion",
+                "duration_ms": 1022,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 120,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 114,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: pricing-service, 耗时: 1022ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:51:01",
+            "payload_size": 1009
+          },
+          "summary": "诊断完成：trace=32d3a8bf0dd744d9，瓶颈服务=pricing-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1009,
+            "returned_size": 1009
+          }
+        },
+        "timestamp": "2026-03-29T18:51:01"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:51:01"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "pricing-service",
+          "payload": {
+            "service": "pricing-service",
+            "keyword": "none",
+            "sample": [
+              "monitor-es auto trigger",
+              "slow trace detected"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:51:01",
+            "payload_size": 111
+          },
+          "summary": "日志检索完成：service=pricing-service，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 111,
+            "returned_size": 111
+          }
+        },
+        "timestamp": "2026-03-29T18:51:01"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:51:01"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-3ff2105d879e trace=32d3a8bf0dd744d9 图执行完成，瓶颈服务=pricing-service，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:51:01"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-3ff2105d879e trace=32d3a8bf0dd744d9 图执行完成，瓶颈服务=pricing-service，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:51:01"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 1000,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1022,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-7ddaf939a299",
+    "trace_id": "100759ebf6384a6a",
+    "status": "ok",
+    "started_at": "2026-03-29T18:51:07",
+    "finished_at": "2026-03-29T18:51:07",
+    "trace": {
+      "trace_id": "100759ebf6384a6a",
+      "bottleneck_service": "trace-root",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "100759ebf6384a6a",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "inventory-service",
+        "operation_name": "RPC lockStock",
+        "duration_ms": 1149,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 1149,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "gateway-service",
+          "operation_name": "HTTP GET /api/v1/order/confirm",
+          "duration_ms": 74,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "gateway-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 70,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: inventory-service, 耗时: 1149ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "inventory-service",
+      "keyword": "none",
+      "sample": [
+        "monitor-es auto trigger",
+        "slow trace detected"
+      ]
+    },
+    "summary": "run_id=run-7ddaf939a299 trace=100759ebf6384a6a 图执行完成，瓶颈服务=inventory-service，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "100759ebf6384a6a",
+          "payload": {
+            "trace_id": "100759ebf6384a6a",
+            "bottleneck_service": "trace-root",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:51:07",
+            "payload_size": 87
+          },
+          "summary": "已获取 Trace：100759ebf6384a6a",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 87,
+            "returned_size": 87
+          }
+        },
+        "timestamp": "2026-03-29T18:51:07"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "100759ebf6384a6a",
+          "payload": {
+            "trace_id": "100759ebf6384a6a",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "inventory-service",
+              "operation_name": "RPC lockStock",
+              "duration_ms": 1149,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 1149,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "gateway-service",
+                "operation_name": "HTTP GET /api/v1/order/confirm",
+                "duration_ms": 74,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "gateway-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 70,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: inventory-service, 耗时: 1149ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:51:07",
+            "payload_size": 1004
+          },
+          "summary": "诊断完成：trace=100759ebf6384a6a，瓶颈服务=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1004,
+            "returned_size": 1004
+          }
+        },
+        "timestamp": "2026-03-29T18:51:07"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:51:07"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "keyword": "none",
+            "sample": [
+              "monitor-es auto trigger",
+              "slow trace detected"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:51:07",
+            "payload_size": 113
+          },
+          "summary": "日志检索完成：service=inventory-service，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 113,
+            "returned_size": 113
+          }
+        },
+        "timestamp": "2026-03-29T18:51:07"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:51:07"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-7ddaf939a299 trace=100759ebf6384a6a 图执行完成，瓶颈服务=inventory-service，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:51:07"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-7ddaf939a299 trace=100759ebf6384a6a 图执行完成，瓶颈服务=inventory-service，异常类型=None。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:51:07"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1149,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-8803603bfec8",
+    "trace_id": "0e4fb954752843c2",
+    "status": "ok",
+    "started_at": "2026-03-29T18:59:56",
+    "finished_at": "2026-03-29T18:59:56",
+    "trace": {
+      "trace_id": "0e4fb954752843c2",
+      "bottleneck_service": "order-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "0e4fb954752843c2",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "order-service",
+        "operation_name": "RPC createOrder",
+        "duration_ms": 1624,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 1624,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 90,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 81,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: order-service, 耗时: 1624ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "order-service",
+      "keyword": "none",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 5,
+      "status": "no_data",
+      "doc_count": 0,
+      "sample": [],
+      "trace_ids": []
+    },
+    "summary": "run_id=run-8803603bfec8 trace=0e4fb954752843c2 图执行完成，瓶颈服务=order-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0e4fb954752843c2",
+          "payload": {
+            "trace_id": "0e4fb954752843c2",
+            "bottleneck_service": "order-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:56",
+            "payload_size": 90
+          },
+          "summary": "已获取 Trace：0e4fb954752843c2",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 90,
+            "returned_size": 90
+          }
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0e4fb954752843c2",
+          "payload": {
+            "trace_id": "0e4fb954752843c2",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "order-service",
+              "operation_name": "RPC createOrder",
+              "duration_ms": 1624,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 1624,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 90,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 81,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: order-service, 耗时: 1624ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:56",
+            "payload_size": 989
+          },
+          "summary": "诊断完成：trace=0e4fb954752843c2，瓶颈服务=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 989,
+            "returned_size": 989
+          }
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "keyword": "none",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 5,
+            "status": "no_data",
+            "doc_count": 0,
+            "sample": [],
+            "trace_ids": []
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:56",
+            "payload_size": 179
+          },
+          "summary": "日志检索完成：service=order-service，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 179,
+            "returned_size": 179
+          }
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-8803603bfec8 trace=0e4fb954752843c2 图执行完成，瓶颈服务=order-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-8803603bfec8 trace=0e4fb954752843c2 图执行完成，瓶颈服务=order-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1624,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-df27eb6d68cc",
+    "trace_id": "070d8ff8c87c4b36",
+    "status": "ok",
+    "started_at": "2026-03-29T18:59:56",
+    "finished_at": "2026-03-29T18:59:57",
+    "trace": {
+      "trace_id": "070d8ff8c87c4b36",
+      "bottleneck_service": "inventory-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "070d8ff8c87c4b36",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "inventory-service",
+        "operation_name": "RPC lockStock",
+        "duration_ms": 1296,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 1296,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 83,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 65,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: inventory-service, 耗时: 1296ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "inventory-service",
+      "keyword": "none",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 5,
+      "status": "no_data",
+      "doc_count": 0,
+      "sample": [],
+      "trace_ids": []
+    },
+    "summary": "run_id=run-df27eb6d68cc trace=070d8ff8c87c4b36 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "070d8ff8c87c4b36",
+          "payload": {
+            "trace_id": "070d8ff8c87c4b36",
+            "bottleneck_service": "inventory-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:56",
+            "payload_size": 94
+          },
+          "summary": "已获取 Trace：070d8ff8c87c4b36",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 94,
+            "returned_size": 94
+          }
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "070d8ff8c87c4b36",
+          "payload": {
+            "trace_id": "070d8ff8c87c4b36",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "inventory-service",
+              "operation_name": "RPC lockStock",
+              "duration_ms": 1296,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 1296,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 83,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 65,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: inventory-service, 耗时: 1296ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:56",
+            "payload_size": 999
+          },
+          "summary": "诊断完成：trace=070d8ff8c87c4b36，瓶颈服务=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 999,
+            "returned_size": 999
+          }
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "keyword": "none",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 5,
+            "status": "no_data",
+            "doc_count": 0,
+            "sample": [],
+            "trace_ids": []
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:56",
+            "payload_size": 183
+          },
+          "summary": "日志检索完成：service=inventory-service，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 183,
+            "returned_size": 183
+          }
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-df27eb6d68cc trace=070d8ff8c87c4b36 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-df27eb6d68cc trace=070d8ff8c87c4b36 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:59:56"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 1000,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1296,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-e977a176d893",
+    "trace_id": "2152f4109ba04a69",
+    "status": "ok",
+    "started_at": "2026-03-29T18:59:57",
+    "finished_at": "2026-03-29T18:59:57",
+    "trace": {
+      "trace_id": "2152f4109ba04a69",
+      "bottleneck_service": "inventory-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "2152f4109ba04a69",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "inventory-service",
+        "operation_name": "RPC lockStock",
+        "duration_ms": 1069,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 1069,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 103,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 99,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: inventory-service, 耗时: 1069ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "inventory-service",
+      "keyword": "none",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 5,
+      "status": "no_data",
+      "doc_count": 0,
+      "sample": [],
+      "trace_ids": []
+    },
+    "summary": "run_id=run-e977a176d893 trace=2152f4109ba04a69 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "2152f4109ba04a69",
+          "payload": {
+            "trace_id": "2152f4109ba04a69",
+            "bottleneck_service": "inventory-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:57",
+            "payload_size": 94
+          },
+          "summary": "已获取 Trace：2152f4109ba04a69",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 94,
+            "returned_size": 94
+          }
+        },
+        "timestamp": "2026-03-29T18:59:57"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "2152f4109ba04a69",
+          "payload": {
+            "trace_id": "2152f4109ba04a69",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "inventory-service",
+              "operation_name": "RPC lockStock",
+              "duration_ms": 1069,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 1069,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "inventory-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 103,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 99,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: inventory-service, 耗时: 1069ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:57",
+            "payload_size": 1000
+          },
+          "summary": "诊断完成：trace=2152f4109ba04a69，瓶颈服务=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1000,
+            "returned_size": 1000
+          }
+        },
+        "timestamp": "2026-03-29T18:59:57"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T18:59:57"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "keyword": "none",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 5,
+            "status": "no_data",
+            "doc_count": 0,
+            "sample": [],
+            "trace_ids": []
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T18:59:57",
+            "payload_size": 183
+          },
+          "summary": "日志检索完成：service=inventory-service，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 183,
+            "returned_size": 183
+          }
+        },
+        "timestamp": "2026-03-29T18:59:57"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T18:59:57"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-e977a176d893 trace=2152f4109ba04a69 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:59:57"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-e977a176d893 trace=2152f4109ba04a69 图执行完成，瓶颈服务=inventory-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T18:59:57"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 0,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1069,
+      "slow_threshold_ms": 1000
+    }
+  },
+  {
+    "run_id": "run-6d1e117f6d6a",
+    "trace_id": "05a2f548774d494d",
+    "status": "ok",
+    "started_at": "2026-03-29T19:00:02",
+    "finished_at": "2026-03-29T19:00:04",
+    "trace": {
+      "trace_id": "05a2f548774d494d",
+      "bottleneck_service": "pricing-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "05a2f548774d494d",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "pricing-service",
+        "operation_name": "RPC calculatePromotion",
+        "duration_ms": 1091,
+        "status": "OK",
+        "error_type": "None",
+        "exception_stack": null,
+        "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+      },
+      "top_spans": [
+        {
+          "service_name": "pricing-service",
+          "operation_name": "RPC calculatePromotion",
+          "duration_ms": 1091,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 132,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 107,
+          "status": "OK",
+          "error_type": "None",
+          "exception_stack": null,
+          "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+        }
+      ],
+      "summary": "瓶颈节点: pricing-service, 耗时: 1091ms, 异常类型: None"
+    },
+    "jvm": {},
+    "logs": {
+      "service": "pricing-service",
+      "keyword": "none",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 5,
+      "status": "no_data",
+      "doc_count": 0,
+      "sample": [],
+      "trace_ids": []
+    },
+    "summary": "run_id=run-6d1e117f6d6a trace=05a2f548774d494d 图执行完成，瓶颈服务=pricing-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "05a2f548774d494d",
+          "payload": {
+            "trace_id": "05a2f548774d494d",
+            "bottleneck_service": "pricing-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:00:02",
+            "payload_size": 92
+          },
+          "summary": "已获取 Trace：05a2f548774d494d",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 92,
+            "returned_size": 92
+          }
+        },
+        "timestamp": "2026-03-29T19:00:02"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "05a2f548774d494d",
+          "payload": {
+            "trace_id": "05a2f548774d494d",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "pricing-service",
+              "operation_name": "RPC calculatePromotion",
+              "duration_ms": 1091,
+              "status": "OK",
+              "error_type": "None",
+              "exception_stack": null,
+              "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+            },
+            "top_spans": [
+              {
+                "service_name": "pricing-service",
+                "operation_name": "RPC calculatePromotion",
+                "duration_ms": 1091,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "pricing-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 132,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "payment-service 当前无异常，关注其子调用链路"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 107,
+                "status": "OK",
+                "error_type": "None",
+                "exception_stack": null,
+                "action_suggestion": "order-service 当前无异常，关注其子调用链路"
+              }
+            ],
+            "summary": "瓶颈节点: pricing-service, 耗时: 1091ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:00:02",
+            "payload_size": 1009
+          },
+          "summary": "诊断完成：trace=05a2f548774d494d，瓶颈服务=pricing-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1009,
+            "returned_size": 1009
+          }
+        },
+        "timestamp": "2026-03-29T19:00:02"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "logs"
+        },
+        "timestamp": "2026-03-29T19:00:02"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "pricing-service",
+          "payload": {
+            "service": "pricing-service",
+            "keyword": "none",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 5,
+            "status": "no_data",
+            "doc_count": 0,
+            "sample": [],
+            "trace_ids": []
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-29T19:00:02",
+            "payload_size": 181
+          },
+          "summary": "日志检索完成：service=pricing-service，keyword=none",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 181,
+            "returned_size": 181
+          }
+        },
+        "timestamp": "2026-03-29T19:00:02"
+      },
+      {
+        "node": "report_polish",
+        "status": "fallback",
+        "detail": "LLM 润色失败，已降级使用规则摘要",
+        "payload": {
+          "error": "LangChain dependencies are not installed"
+        },
+        "timestamp": "2026-03-29T19:00:02"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "run_id=run-6d1e117f6d6a trace=05a2f548774d494d 图执行完成，瓶颈服务=pricing-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:00:02"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "run_id=run-6d1e117f6d6a trace=05a2f548774d494d 图执行完成，瓶颈服务=pricing-service，异常类型=None。JVM证据: 暂不可用。日志证据: ES中未检索到匹配日志。建议优先检查连接池、依赖可用性与关键错误日志。"
+        },
+        "timestamp": "2026-03-29T19:00:02"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "ok",
+      "deduplicated": false,
+      "attempts": 1,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 2000,
+      "history_events": 7,
+      "failure_events": 1,
+      "notify_status": "ok",
+      "bottleneck_duration_ms": 1091,
+      "slow_threshold_ms": 1000
+    }
+  }
+]
