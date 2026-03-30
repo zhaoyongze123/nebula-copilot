@@ -19,6 +19,13 @@ function statusBadge(status) {
   return `<span class="badge ${s}">${s}</span>`;
 }
 
+function eventClass(text) {
+  const raw = String(text || '').toLowerCase();
+  if (/error|failed|exception|timeout/.test(raw)) return 'error';
+  if (/warn|degraded|retry|fallback/.test(raw)) return 'warn';
+  return 'info';
+}
+
 async function getJson(url) {
   const res = await fetch(url);
   const payload = await res.json();
@@ -79,6 +86,7 @@ function renderRunDetail(page) {
   const events = page.timeline || [];
   for (const ev of events) {
     const li = document.createElement('li');
+    li.className = eventClass(`${ev.phase || ''} ${ev.message || ''}`);
     li.textContent = `${fmtTime(ev.ts || ev.timestamp)} | ${ev.phase || ev.name || 'event'} | ${ev.message || ''}`;
     timeline.appendChild(li);
   }
@@ -98,6 +106,50 @@ function renderTraceInspect(payload) {
     <div><strong>bottleneck:</strong> ${bottleneck.service_name || '-'}</div>
     <div><strong>duration:</strong> ${bottleneck.duration_ms ?? tree.duration_ms ?? '-'} ms</div>
   `;
+
+  const treeBox = qs('traceTree');
+  treeBox.innerHTML = '';
+  if (tree && tree.span_id) {
+    treeBox.appendChild(renderSpanNode(tree));
+  } else {
+    treeBox.textContent = '无可展示的 trace 树';
+  }
+}
+
+function renderSpanNode(node) {
+  const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+  const wrapper = document.createElement(hasChildren ? 'details' : 'div');
+  if (hasChildren) {
+    wrapper.open = true;
+  }
+
+  const line = document.createElement('div');
+  line.className = 'span-line';
+  line.innerHTML = `<strong>${node.service_name}</strong> / ${node.operation_name} / ${node.duration_ms}ms / ${node.status}`;
+
+  const pickBtn = document.createElement('button');
+  pickBtn.className = 'pick-btn';
+  pickBtn.textContent = '查日志';
+  pickBtn.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    qs('spanIdInput').value = node.span_id;
+    await loadLogs();
+  });
+  line.appendChild(pickBtn);
+
+  if (!hasChildren) {
+    wrapper.appendChild(line);
+    return wrapper;
+  }
+
+  const summary = document.createElement('summary');
+  summary.appendChild(line);
+  wrapper.appendChild(summary);
+
+  for (const child of node.children) {
+    wrapper.appendChild(renderSpanNode(child));
+  }
+  return wrapper;
 }
 
 async function loadOverview() {

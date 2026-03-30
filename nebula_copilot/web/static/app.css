@@ -165,6 +165,29 @@ tr.clickable:hover {
   overflow: auto;
 }
 
+.timeline li {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e8edf2;
+  background: #fbfcfe;
+}
+
+.timeline li.error {
+  border-color: #f0c3c3;
+  background: #fff1f1;
+}
+
+.timeline li.warn {
+  border-color: #f4dfb4;
+  background: #fff8e9;
+}
+
+.timeline li.info {
+  border-color: #d8e8fb;
+  background: #f3f9ff;
+}
+
 #diagnosis, #logsResult {
   background: #0f1720;
   color: #d9e2ef;
@@ -181,6 +204,32 @@ tr.clickable:hover {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 8px;
+}
+
+.tree {
+  max-height: 240px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.tree details {
+  margin: 4px 0 4px 10px;
+}
+
+.tree summary {
+  cursor: pointer;
+}
+
+.tree .span-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tree .pick-btn {
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
 }
 
 @media (max-width: 1200px) {
