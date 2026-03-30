@@ -131,6 +131,27 @@ python scripts/load_simulated_es_data.py \
 - `--top-n`：输出最慢的前 N 个 span
 - `--verbose`：开启调试日志
 
+### 7) 启动前端可观测排障台（Web）
+
+安装依赖后可直接启动：
+
+```bash
+nebula-web --host 0.0.0.0 --port 8080
+```
+
+打开浏览器访问：
+
+```text
+http://127.0.0.1:8080/dashboard
+```
+
+核心接口：
+- `GET /api/overview`：总体 KPI 与最近异常
+- `GET /api/runs`：运行记录列表（支持状态/trace/sort 过滤）
+- `GET /api/runs/<run_id>/page`：单次运行详情
+- `GET /api/traces/<trace_id>/inspect`：trace 树 + 诊断结果
+- `GET /api/logs/search`：按 trace/span 反查服务日志
+
 ## 错误分级规则
 
 - `Timeout`：异常栈含 `timeout` / `timed out`
@@ -176,6 +197,10 @@ CI 自动执行（GitHub Actions）：
 
 - 部署手册：`docs/DEPLOYMENT.md`
 - 运维手册：`docs/OPERATIONS.md`
+
+PR 自动合并脚本：
+- 按 PR 号执行：`bash scripts/merge_pr.sh <pr_number>`
+- 按当前分支自动定位 PR：`bash scripts/merge_current_pr.sh`
 
 支持方式：
 - Docker：`Dockerfile` + `docker-compose.yml`
