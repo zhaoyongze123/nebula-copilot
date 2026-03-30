@@ -2673,5 +2673,2724 @@
       "bottleneck_duration_ms": 1091,
       "slow_threshold_ms": 1000
     }
+  },
+  {
+    "run_id": "run-01103256398f",
+    "trace_id": "0028234f197a4e67",
+    "status": "ok",
+    "started_at": "2026-03-30T19:31:33",
+    "finished_at": "2026-03-30T19:31:40",
+    "trace": {
+      "trace_id": "0028234f197a4e67",
+      "bottleneck_service": "order-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "0028234f197a4e67",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "order-service",
+        "operation_name": "RPC createOrder",
+        "duration_ms": 97,
+        "status": "OK",
+        "error_type": "None",
+        "action_suggestion": "order-service 当前无异常，关注其子调用链路",
+        "knowledge_insight": {
+          "matched_patterns": [],
+          "related_services": [],
+          "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+          "linkage_investigation_suggestion": null
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 97,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 88,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "gateway-service",
+          "operation_name": "HTTP GET /api/v1/order/confirm",
+          "duration_ms": 78,
+          "status": "OK",
+          "error_type": "None"
+        }
+      ],
+      "summary": "瓶颈节点: order-service, 耗时: 97ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "order-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.275000+00:00",
+      "heap_used_mb": 1235.8,
+      "heap_max_mb": 2048.0,
+      "gc_count": 0,
+      "thread_count": 130,
+      "p95_duration_ms": 1255.8901298913374,
+      "error_count": 270,
+      "error_rate": 0.0678
+    },
+    "logs": {
+      "service": "order-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "service call completed, duration=63ms"
+      ],
+      "trace_ids": [
+        "c24b2a01bc7d4c1d",
+        "05dd16e37e1746a2",
+        "cf84f552aa584877",
+        "8df6ad4739bb4e89",
+        "6724038d0ef94c41"
+      ]
+    },
+    "summary": "【Nebula 告警】[P3] 慢调用事件，涉及Trace 0028234f197a4e67，Run run-01103256398f，瓶颈服务为order-service，操作为RPC createOrder，耗时97ms。诊断显示无异常，order-service服务状态正常，JVM指标良好，日志均显示请求成功完成。关键证据包括JVM p95响应时间1255.89ms，堆内存使用1235.8MB，GC次数为0，错误率0.0678，日志命中3980条，均为成功请求。建议继续监控order-service及其子调用链路，补充调用链证据以便后续定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0028234f197a4e67",
+          "payload": {
+            "trace_id": "0028234f197a4e67",
+            "bottleneck_service": "order-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:33",
+            "payload_size": 90
+          },
+          "summary": "已获取 Trace：0028234f197a4e67",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 90,
+            "returned_size": 90
+          }
+        },
+        "timestamp": "2026-03-30T19:31:33"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0028234f197a4e67",
+          "payload": {
+            "trace_id": "0028234f197a4e67",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "order-service",
+              "operation_name": "RPC createOrder",
+              "duration_ms": 97,
+              "status": "OK",
+              "error_type": "None",
+              "action_suggestion": "order-service 当前无异常，关注其子调用链路",
+              "knowledge_insight": {
+                "matched_patterns": [],
+                "related_services": [],
+                "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+                "linkage_investigation_suggestion": null
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 97,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 88,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "gateway-service",
+                "operation_name": "HTTP GET /api/v1/order/confirm",
+                "duration_ms": 78,
+                "status": "OK",
+                "error_type": "None"
+              }
+            ],
+            "summary": "瓶颈节点: order-service, 耗时: 97ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:33",
+            "payload_size": 883
+          },
+          "summary": "诊断完成：trace=0028234f197a4e67，瓶颈服务=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 883,
+            "returned_size": 883
+          }
+        },
+        "timestamp": "2026-03-30T19:31:33"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:31:33"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.275000+00:00",
+            "heap_used_mb": 1235.8,
+            "heap_max_mb": 2048.0,
+            "gc_count": 0,
+            "thread_count": 130,
+            "p95_duration_ms": 1255.8901298913374,
+            "error_count": 270,
+            "error_rate": 0.0678
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:33",
+            "payload_size": 344
+          },
+          "summary": "JVM 指标已获取：service=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 344,
+            "returned_size": 344
+          }
+        },
+        "timestamp": "2026-03-30T19:31:33"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "service call completed, duration=63ms"
+            ],
+            "trace_ids": [
+              "c24b2a01bc7d4c1d",
+              "05dd16e37e1746a2",
+              "cf84f552aa584877",
+              "8df6ad4739bb4e89",
+              "6724038d0ef94c41"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:33",
+            "payload_size": 446
+          },
+          "summary": "日志检索完成：service=order-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 446,
+            "returned_size": 446
+          }
+        },
+        "timestamp": "2026-03-30T19:31:33"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "None",
+            "root_cause": "order-service服务当前无异常，JVM指标正常，日志显示请求均成功完成",
+            "action": "继续监控order-service及其子调用链路，确保无异常发生",
+            "confidence": 1.0,
+            "linkage_suspected": false
+          }
+        },
+        "timestamp": "2026-03-30T19:31:35"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:31:40"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，涉及Trace 0028234f197a4e67，Run run-01103256398f，瓶颈服务为order-service，操作为RPC createOrder，耗时97ms。诊断显示无异常，order-service服务状态正常，JVM指标良好，日志均显示请求成功完成。关键证据包括JVM p95响应时间1255.89ms，堆内存使用1235.8MB，GC次数为0，错误率0.0678，日志命中3980条，均为成功请求。建议继续监控order-service及其子调用链路，补充调用链证据以便后续定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:31:40"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，涉及Trace 0028234f197a4e67，Run run-01103256398f，瓶颈服务为order-service，操作为RPC createOrder，耗时97ms。诊断显示无异常，order-service服务状态正常，JVM指标良好，日志均显示请求成功完成。关键证据包括JVM p95响应时间1255.89ms，堆内存使用1235.8MB，GC次数为0，错误率0.0678，日志命中3980条，均为成功请求。建议继续监控order-service及其子调用链路，补充调用链证据以便后续定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:31:40"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 7000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 97,
+      "slow_threshold_ms": 1
+    }
+  },
+  {
+    "run_id": "run-8a00bab54eaf",
+    "trace_id": "00a16f5ee3d645c5",
+    "status": "ok",
+    "started_at": "2026-03-30T19:31:43",
+    "finished_at": "2026-03-30T19:31:48",
+    "trace": {
+      "trace_id": "00a16f5ee3d645c5",
+      "bottleneck_service": "order-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "00a16f5ee3d645c5",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "order-service",
+        "operation_name": "RPC createOrder",
+        "duration_ms": 100,
+        "status": "OK",
+        "error_type": "None",
+        "action_suggestion": "order-service 当前无异常，关注其子调用链路",
+        "knowledge_insight": {
+          "matched_patterns": [],
+          "related_services": [],
+          "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+          "linkage_investigation_suggestion": null
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 100,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 77,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 63,
+          "status": "OK",
+          "error_type": "None"
+        }
+      ],
+      "summary": "瓶颈节点: order-service, 耗时: 100ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "order-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.275000+00:00",
+      "heap_used_mb": 1235.8,
+      "heap_max_mb": 2048.0,
+      "gc_count": 0,
+      "thread_count": 130,
+      "p95_duration_ms": 1255.8901298913374,
+      "error_count": 270,
+      "error_rate": 0.0678
+    },
+    "logs": {
+      "service": "order-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "service call completed, duration=63ms"
+      ],
+      "trace_ids": [
+        "c24b2a01bc7d4c1d",
+        "05dd16e37e1746a2",
+        "cf84f552aa584877",
+        "8df6ad4739bb4e89",
+        "6724038d0ef94c41"
+      ]
+    },
+    "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 00a16f5ee3d645c5，涉及 order-service 服务的 RPC createOrder 操作，耗时 100ms。诊断显示无异常，JVM 指标正常，日志无错误，LLM 置信度为 1.00。关键证据包括 JVM p95 响应时间约 1255.9ms，堆内存使用 1235.8MB，GC 计数为 0，错误率 0.0678，日志命中 3980 条且请求成功。建议继续监控 order-service 及其调用链，补充调用链证据以便定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "00a16f5ee3d645c5",
+          "payload": {
+            "trace_id": "00a16f5ee3d645c5",
+            "bottleneck_service": "order-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:43",
+            "payload_size": 90
+          },
+          "summary": "已获取 Trace：00a16f5ee3d645c5",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 90,
+            "returned_size": 90
+          }
+        },
+        "timestamp": "2026-03-30T19:31:43"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "00a16f5ee3d645c5",
+          "payload": {
+            "trace_id": "00a16f5ee3d645c5",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "order-service",
+              "operation_name": "RPC createOrder",
+              "duration_ms": 100,
+              "status": "OK",
+              "error_type": "None",
+              "action_suggestion": "order-service 当前无异常，关注其子调用链路",
+              "knowledge_insight": {
+                "matched_patterns": [],
+                "related_services": [],
+                "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+                "linkage_investigation_suggestion": null
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 100,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 77,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 63,
+                "status": "OK",
+                "error_type": "None"
+              }
+            ],
+            "summary": "瓶颈节点: order-service, 耗时: 100ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:43",
+            "payload_size": 881
+          },
+          "summary": "诊断完成：trace=00a16f5ee3d645c5，瓶颈服务=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 881,
+            "returned_size": 881
+          }
+        },
+        "timestamp": "2026-03-30T19:31:43"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:31:43"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.275000+00:00",
+            "heap_used_mb": 1235.8,
+            "heap_max_mb": 2048.0,
+            "gc_count": 0,
+            "thread_count": 130,
+            "p95_duration_ms": 1255.8901298913374,
+            "error_count": 270,
+            "error_rate": 0.0678
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:43",
+            "payload_size": 344
+          },
+          "summary": "JVM 指标已获取：service=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 344,
+            "returned_size": 344
+          }
+        },
+        "timestamp": "2026-03-30T19:31:43"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "service call completed, duration=63ms"
+            ],
+            "trace_ids": [
+              "c24b2a01bc7d4c1d",
+              "05dd16e37e1746a2",
+              "cf84f552aa584877",
+              "8df6ad4739bb4e89",
+              "6724038d0ef94c41"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:43",
+            "payload_size": 446
+          },
+          "summary": "日志检索完成：service=order-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 446,
+            "returned_size": 446
+          }
+        },
+        "timestamp": "2026-03-30T19:31:43"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "None",
+            "root_cause": "order-service 当前无异常，JVM指标正常，日志无错误信息",
+            "action": "继续监控order-service及其子调用链路，确保无异常发生",
+            "confidence": 1.0,
+            "linkage_suspected": false
+          }
+        },
+        "timestamp": "2026-03-30T19:31:44"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:31:48"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 00a16f5ee3d645c5，涉及 order-service 服务的 RPC createOrder 操作，耗时 100ms。诊断显示无异常，JVM 指标正常，日志无错误，LLM 置信度为 1.00。关键证据包括 JVM p95 响应时间约 1255.9ms，堆内存使用 1235.8MB，GC 计数为 0，错误率 0.0678，日志命中 3980 条且请求成功。建议继续监控 order-service 及其调用链，补充调用链证据以便定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:31:48"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 00a16f5ee3d645c5，涉及 order-service 服务的 RPC createOrder 操作，耗时 100ms。诊断显示无异常，JVM 指标正常，日志无错误，LLM 置信度为 1.00。关键证据包括 JVM p95 响应时间约 1255.9ms，堆内存使用 1235.8MB，GC 计数为 0，错误率 0.0678，日志命中 3980 条且请求成功。建议继续监控 order-service 及其调用链，补充调用链证据以便定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:31:48"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 5000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 100,
+      "slow_threshold_ms": 1
+    }
+  },
+  {
+    "run_id": "run-891c520857bc",
+    "trace_id": "002ebf475acd452c",
+    "status": "ok",
+    "started_at": "2026-03-30T19:31:50",
+    "finished_at": "2026-03-30T19:31:55",
+    "trace": {
+      "trace_id": "002ebf475acd452c",
+      "bottleneck_service": "pricing-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "002ebf475acd452c",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "pricing-service",
+        "operation_name": "RPC calculatePromotion",
+        "duration_ms": 2574,
+        "status": "OK",
+        "error_type": "None",
+        "action_suggestion": "pricing-service 当前无异常，关注其子调用链路",
+        "knowledge_insight": {
+          "matched_patterns": [],
+          "related_services": [],
+          "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+          "linkage_investigation_suggestion": null
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "pricing-service",
+          "operation_name": "RPC calculatePromotion",
+          "duration_ms": 2574,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "gateway-service",
+          "operation_name": "HTTP GET /api/v1/order/confirm",
+          "duration_ms": 130,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 89,
+          "status": "OK",
+          "error_type": "None"
+        }
+      ],
+      "summary": "瓶颈节点: pricing-service, 耗时: 2574ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "pricing-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.251000+00:00",
+      "heap_used_mb": 649.3,
+      "heap_max_mb": 1024.0,
+      "gc_count": 6,
+      "thread_count": 94,
+      "p95_duration_ms": 1405.2880036630036,
+      "error_count": 35,
+      "error_rate": 0.0088
+    },
+    "logs": {
+      "service": "pricing-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "c24b2a01bc7d4c1d",
+        "05dd16e37e1746a2",
+        "8df6ad4739bb4e89",
+        "cf84f552aa584877",
+        "efd0fadb6a4c4540"
+      ]
+    },
+    "summary": "【Nebula 告警】[P2] 慢调用，Trace 002ebf475acd452c，Run run-891c520857bc，瓶颈服务为 pricing-service，操作为 RPC calculatePromotion，耗时 2574ms。诊断结果显示无异常，基于 JVM 指标和日志未发现 pricing-service 异常，操作成功完成，置信度 1.00。关键证据包括 JVM p95 响应时间 1405ms，堆内存使用 649.3MB，GC 次数 6，错误率 0.0088，日志命中 3980 条，示例日志显示请求成功。建议继续监控 pricing-service 及其下游依赖，补齐调用链证据后再定位首个失败节点。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "002ebf475acd452c",
+          "payload": {
+            "trace_id": "002ebf475acd452c",
+            "bottleneck_service": "pricing-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:50",
+            "payload_size": 92
+          },
+          "summary": "已获取 Trace：002ebf475acd452c",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 92,
+            "returned_size": 92
+          }
+        },
+        "timestamp": "2026-03-30T19:31:50"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "002ebf475acd452c",
+          "payload": {
+            "trace_id": "002ebf475acd452c",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "pricing-service",
+              "operation_name": "RPC calculatePromotion",
+              "duration_ms": 2574,
+              "status": "OK",
+              "error_type": "None",
+              "action_suggestion": "pricing-service 当前无异常，关注其子调用链路",
+              "knowledge_insight": {
+                "matched_patterns": [],
+                "related_services": [],
+                "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+                "linkage_investigation_suggestion": null
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "pricing-service",
+                "operation_name": "RPC calculatePromotion",
+                "duration_ms": 2574,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "gateway-service",
+                "operation_name": "HTTP GET /api/v1/order/confirm",
+                "duration_ms": 130,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 89,
+                "status": "OK",
+                "error_type": "None"
+              }
+            ],
+            "summary": "瓶颈节点: pricing-service, 耗时: 2574ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:50",
+            "payload_size": 912
+          },
+          "summary": "诊断完成：trace=002ebf475acd452c，瓶颈服务=pricing-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 912,
+            "returned_size": 912
+          }
+        },
+        "timestamp": "2026-03-30T19:31:50"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:31:50"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "pricing-service",
+          "payload": {
+            "service": "pricing-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.251000+00:00",
+            "heap_used_mb": 649.3,
+            "heap_max_mb": 1024.0,
+            "gc_count": 6,
+            "thread_count": 94,
+            "p95_duration_ms": 1405.2880036630036,
+            "error_count": 35,
+            "error_rate": 0.0088
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:50",
+            "payload_size": 343
+          },
+          "summary": "JVM 指标已获取：service=pricing-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 343,
+            "returned_size": 343
+          }
+        },
+        "timestamp": "2026-03-30T19:31:50"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "pricing-service",
+          "payload": {
+            "service": "pricing-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "c24b2a01bc7d4c1d",
+              "05dd16e37e1746a2",
+              "8df6ad4739bb4e89",
+              "cf84f552aa584877",
+              "efd0fadb6a4c4540"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:50",
+            "payload_size": 440
+          },
+          "summary": "日志检索完成：service=pricing-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 440,
+            "returned_size": 440
+          }
+        },
+        "timestamp": "2026-03-30T19:31:50"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "None",
+            "root_cause": "No abnormalities detected in pricing-service based on JVM metrics and logs; operation completed successfully.",
+            "action": "Continue monitoring pricing-service and its downstream dependencies for any emerging issues.",
+            "confidence": 1.0,
+            "linkage_suspected": false
+          }
+        },
+        "timestamp": "2026-03-30T19:31:52"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:31:55"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "【Nebula 告警】[P2] 慢调用，Trace 002ebf475acd452c，Run run-891c520857bc，瓶颈服务为 pricing-service，操作为 RPC calculatePromotion，耗时 2574ms。诊断结果显示无异常，基于 JVM 指标和日志未发现 pricing-service 异常，操作成功完成，置信度 1.00。关键证据包括 JVM p95 响应时间 1405ms，堆内存使用 649.3MB，GC 次数 6，错误率 0.0088，日志命中 3980 条，示例日志显示请求成功。建议继续监控 pricing-service 及其下游依赖，补齐调用链证据后再定位首个失败节点。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:31:55"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "【Nebula 告警】[P2] 慢调用，Trace 002ebf475acd452c，Run run-891c520857bc，瓶颈服务为 pricing-service，操作为 RPC calculatePromotion，耗时 2574ms。诊断结果显示无异常，基于 JVM 指标和日志未发现 pricing-service 异常，操作成功完成，置信度 1.00。关键证据包括 JVM p95 响应时间 1405ms，堆内存使用 649.3MB，GC 次数 6，错误率 0.0088，日志命中 3980 条，示例日志显示请求成功。建议继续监控 pricing-service 及其下游依赖，补齐调用链证据后再定位首个失败节点。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:31:55"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 5000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 2574,
+      "slow_threshold_ms": 1
+    }
+  },
+  {
+    "run_id": "run-e52a99189bcf",
+    "trace_id": "00113436161d4e5a",
+    "status": "ok",
+    "started_at": "2026-03-30T19:31:57",
+    "finished_at": "2026-03-30T19:32:02",
+    "trace": {
+      "trace_id": "00113436161d4e5a",
+      "bottleneck_service": "pricing-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "00113436161d4e5a",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "pricing-service",
+        "operation_name": "RPC calculatePromotion",
+        "duration_ms": 1169,
+        "status": "OK",
+        "error_type": "None",
+        "action_suggestion": "pricing-service 当前无异常，关注其子调用链路",
+        "knowledge_insight": {
+          "matched_patterns": [],
+          "related_services": [],
+          "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+          "linkage_investigation_suggestion": null
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "pricing-service",
+          "operation_name": "RPC calculatePromotion",
+          "duration_ms": 1169,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 159,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "user-service",
+          "operation_name": "RPC getUserProfile",
+          "duration_ms": 149,
+          "status": "OK",
+          "error_type": "None"
+        }
+      ],
+      "summary": "瓶颈节点: pricing-service, 耗时: 1169ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "pricing-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.251000+00:00",
+      "heap_used_mb": 649.3,
+      "heap_max_mb": 1024.0,
+      "gc_count": 6,
+      "thread_count": 94,
+      "p95_duration_ms": 1405.2880036630036,
+      "error_count": 35,
+      "error_rate": 0.0088
+    },
+    "logs": {
+      "service": "pricing-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "c24b2a01bc7d4c1d",
+        "05dd16e37e1746a2",
+        "8df6ad4739bb4e89",
+        "cf84f552aa584877",
+        "efd0fadb6a4c4540"
+      ]
+    },
+    "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 00113436161d4e5a，涉及pricing-service的RPC操作calculatePromotion，耗时1169ms。诊断显示无异常，服务运行正常，LLM置信度1.00。JVM指标显示p95响应时间约1405ms，堆内存使用649.3MB，GC次数6次，错误率0.0088。日志中无异常，建议继续监控pricing-service及其调用链，补充调用链证据以便后续定位。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "00113436161d4e5a",
+          "payload": {
+            "trace_id": "00113436161d4e5a",
+            "bottleneck_service": "pricing-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:57",
+            "payload_size": 92
+          },
+          "summary": "已获取 Trace：00113436161d4e5a",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 92,
+            "returned_size": 92
+          }
+        },
+        "timestamp": "2026-03-30T19:31:57"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "00113436161d4e5a",
+          "payload": {
+            "trace_id": "00113436161d4e5a",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "pricing-service",
+              "operation_name": "RPC calculatePromotion",
+              "duration_ms": 1169,
+              "status": "OK",
+              "error_type": "None",
+              "action_suggestion": "pricing-service 当前无异常，关注其子调用链路",
+              "knowledge_insight": {
+                "matched_patterns": [],
+                "related_services": [],
+                "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+                "linkage_investigation_suggestion": null
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "pricing-service",
+                "operation_name": "RPC calculatePromotion",
+                "duration_ms": 1169,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 159,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "user-service",
+                "operation_name": "RPC getUserProfile",
+                "duration_ms": 149,
+                "status": "OK",
+                "error_type": "None"
+              }
+            ],
+            "summary": "瓶颈节点: pricing-service, 耗时: 1169ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:57",
+            "payload_size": 896
+          },
+          "summary": "诊断完成：trace=00113436161d4e5a，瓶颈服务=pricing-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 896,
+            "returned_size": 896
+          }
+        },
+        "timestamp": "2026-03-30T19:31:57"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:31:57"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "pricing-service",
+          "payload": {
+            "service": "pricing-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.251000+00:00",
+            "heap_used_mb": 649.3,
+            "heap_max_mb": 1024.0,
+            "gc_count": 6,
+            "thread_count": 94,
+            "p95_duration_ms": 1405.2880036630036,
+            "error_count": 35,
+            "error_rate": 0.0088
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:57",
+            "payload_size": 343
+          },
+          "summary": "JVM 指标已获取：service=pricing-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 343,
+            "returned_size": 343
+          }
+        },
+        "timestamp": "2026-03-30T19:31:57"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "pricing-service",
+          "payload": {
+            "service": "pricing-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "c24b2a01bc7d4c1d",
+              "05dd16e37e1746a2",
+              "8df6ad4739bb4e89",
+              "cf84f552aa584877",
+              "efd0fadb6a4c4540"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:31:57",
+            "payload_size": 440
+          },
+          "summary": "日志检索完成：service=pricing-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 440,
+            "returned_size": 440
+          }
+        },
+        "timestamp": "2026-03-30T19:31:57"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "None",
+            "root_cause": "pricing-service服务运行正常，无异常发现",
+            "action": "继续监控pricing-service及其子调用链路，确保无异常发生",
+            "confidence": 1.0,
+            "linkage_suspected": false
+          }
+        },
+        "timestamp": "2026-03-30T19:31:59"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:32:02"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 00113436161d4e5a，涉及pricing-service的RPC操作calculatePromotion，耗时1169ms。诊断显示无异常，服务运行正常，LLM置信度1.00。JVM指标显示p95响应时间约1405ms，堆内存使用649.3MB，GC次数6次，错误率0.0088。日志中无异常，建议继续监控pricing-service及其调用链，补充调用链证据以便后续定位。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:02"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 00113436161d4e5a，涉及pricing-service的RPC操作calculatePromotion，耗时1169ms。诊断显示无异常，服务运行正常，LLM置信度1.00。JVM指标显示p95响应时间约1405ms，堆内存使用649.3MB，GC次数6次，错误率0.0088。日志中无异常，建议继续监控pricing-service及其调用链，补充调用链证据以便后续定位。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:02"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 5000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 1169,
+      "slow_threshold_ms": 1
+    }
+  },
+  {
+    "run_id": "run-67d7ca3198d6",
+    "trace_id": "0048d1282be74229",
+    "status": "ok",
+    "started_at": "2026-03-30T19:32:04",
+    "finished_at": "2026-03-30T19:32:08",
+    "trace": {
+      "trace_id": "0048d1282be74229",
+      "bottleneck_service": "cart-service",
+      "keyword": "downstream"
+    },
+    "diagnosis": {
+      "trace_id": "0048d1282be74229",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "cart-service",
+        "operation_name": "RPC getCartItems",
+        "duration_ms": 145,
+        "status": "OK",
+        "error_type": "Downstream",
+        "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused",
+        "knowledge_insight": {
+          "matched_patterns": [
+            {
+              "name": "dependency_outage",
+              "label": "依赖挂掉",
+              "confidence": 0.52,
+              "signals": [
+                "downstream"
+              ]
+            }
+          ],
+          "related_services": [
+            "trace-root"
+          ],
+          "relation_query_hint": "建议补查关联服务指标: trace-root；重点关注: 下游服务 error_rate 与 p95 延迟; 调用方连接池使用率与超时率; 网关 5xx 与重试次数",
+          "linkage_investigation_suggestion": "沿调用链逐跳核对下游实例健康、连接池与重试策略，确认是否出现级联超时。"
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "cart-service",
+          "operation_name": "RPC getCartItems",
+          "duration_ms": 145,
+          "status": "OK",
+          "error_type": "Downstream"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 77,
+          "status": "OK",
+          "error_type": "Downstream"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 63,
+          "status": "OK",
+          "error_type": "Downstream"
+        }
+      ],
+      "summary": "瓶颈节点: cart-service, 耗时: 145ms, 异常类型: Downstream"
+    },
+    "jvm": {
+      "service": "cart-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.216000+00:00",
+      "heap_used_mb": 684.3,
+      "heap_max_mb": 1024.0,
+      "gc_count": 5,
+      "thread_count": 95,
+      "p95_duration_ms": 173.2121552604699,
+      "error_count": 29,
+      "error_rate": 0.0073
+    },
+    "logs": {
+      "service": "cart-service",
+      "keyword": "downstream",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 853,
+      "sample": [
+        "service call completed, duration=17ms",
+        "service call completed, duration=26ms",
+        "service call completed, duration=29ms",
+        "service call completed, duration=55ms",
+        "slow call detected, duration=542ms exceeded service baseline"
+      ],
+      "trace_ids": [
+        "6724038d0ef94c41",
+        "40565a2964234902",
+        "e348ab8508ef43cf",
+        "a6e89806daf343d3",
+        "5a426f10fed84234"
+      ]
+    },
+    "summary": "Nebula告警显示cart-service在执行RPC getCartItems操作时出现依赖不可用问题，耗时145ms。诊断结果表明下游服务响应异常，存在503错误或连接拒绝，导致调用失败。建议重点检查cart-service依赖的下游服务健康状态，关注下游服务的错误率和延迟，以及调用方连接池和网关的相关指标，防止故障扩散。\n模式比对: 依赖挂掉\n关联查询: 建议补查关联服务指标: trace-root；重点关注: 下游服务 error_rate 与 p95 延迟; 调用方连接池使用率与超时率; 网关 5xx 与重试次数\n链路排查建议: 排查下游服务异常是否引发上游服务调用积压，监控链路调用延迟和错误率，防止级联故障扩散。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0048d1282be74229",
+          "payload": {
+            "trace_id": "0048d1282be74229",
+            "bottleneck_service": "cart-service",
+            "keyword": "downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:04",
+            "payload_size": 95
+          },
+          "summary": "已获取 Trace：0048d1282be74229",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 95,
+            "returned_size": 95
+          }
+        },
+        "timestamp": "2026-03-30T19:32:04"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0048d1282be74229",
+          "payload": {
+            "trace_id": "0048d1282be74229",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "cart-service",
+              "operation_name": "RPC getCartItems",
+              "duration_ms": 145,
+              "status": "OK",
+              "error_type": "Downstream",
+              "action_suggestion": "优先检查 cart-service 依赖服务健康状态，日志关键词: 503/connection refused",
+              "knowledge_insight": {
+                "matched_patterns": [
+                  {
+                    "name": "dependency_outage",
+                    "label": "依赖挂掉",
+                    "confidence": 0.52,
+                    "signals": [
+                      "downstream"
+                    ]
+                  }
+                ],
+                "related_services": [
+                  "trace-root"
+                ],
+                "relation_query_hint": "建议补查关联服务指标: trace-root；重点关注: 下游服务 error_rate 与 p95 延迟; 调用方连接池使用率与超时率; 网关 5xx 与重试次数",
+                "linkage_investigation_suggestion": "沿调用链逐跳核对下游实例健康、连接池与重试策略，确认是否出现级联超时。"
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "cart-service",
+                "operation_name": "RPC getCartItems",
+                "duration_ms": 145,
+                "status": "OK",
+                "error_type": "Downstream"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 77,
+                "status": "OK",
+                "error_type": "Downstream"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 63,
+                "status": "OK",
+                "error_type": "Downstream"
+              }
+            ],
+            "summary": "瓶颈节点: cart-service, 耗时: 145ms, 异常类型: Downstream"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:04",
+            "payload_size": 1136
+          },
+          "summary": "诊断完成：trace=0048d1282be74229，瓶颈服务=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 1136,
+            "returned_size": 1136
+          }
+        },
+        "timestamp": "2026-03-30T19:32:04"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:32:04"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.216000+00:00",
+            "heap_used_mb": 684.3,
+            "heap_max_mb": 1024.0,
+            "gc_count": 5,
+            "thread_count": 95,
+            "p95_duration_ms": 173.2121552604699,
+            "error_count": 29,
+            "error_rate": 0.0073
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:04",
+            "payload_size": 339
+          },
+          "summary": "JVM 指标已获取：service=cart-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 339,
+            "returned_size": 339
+          }
+        },
+        "timestamp": "2026-03-30T19:32:04"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "cart-service",
+          "payload": {
+            "service": "cart-service",
+            "keyword": "downstream",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 853,
+            "sample": [
+              "service call completed, duration=17ms",
+              "service call completed, duration=26ms",
+              "service call completed, duration=29ms",
+              "service call completed, duration=55ms",
+              "slow call detected, duration=542ms exceeded service baseline"
+            ],
+            "trace_ids": [
+              "6724038d0ef94c41",
+              "40565a2964234902",
+              "e348ab8508ef43cf",
+              "a6e89806daf343d3",
+              "5a426f10fed84234"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:04",
+            "payload_size": 509
+          },
+          "summary": "日志检索完成：service=cart-service，keyword=downstream",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 509,
+            "returned_size": 509
+          }
+        },
+        "timestamp": "2026-03-30T19:32:04"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "Downstream",
+            "root_cause": "cart-service调用的下游服务响应异常，存在503或连接拒绝错误，导致RPC调用失败。",
+            "action": "优先检查cart-service依赖的下游服务健康状态，查看是否存在503错误或连接拒绝，修复下游服务异常。",
+            "confidence": 0.9,
+            "linkage_suspected": true,
+            "linkage_action": "排查下游服务异常是否引发上游服务调用积压，监控链路调用延迟和错误率，防止级联故障扩散。"
+          }
+        },
+        "timestamp": "2026-03-30T19:32:06"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:32:08"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "Nebula告警显示cart-service在执行RPC getCartItems操作时出现依赖不可用问题，耗时145ms。诊断结果表明下游服务响应异常，存在503错误或连接拒绝，导致调用失败。建议重点检查cart-service依赖的下游服务健康状态，关注下游服务的错误率和延迟，以及调用方连接池和网关的相关指标，防止故障扩散。\n模式比对: 依赖挂掉\n关联查询: 建议补查关联服务指标: trace-root；重点关注: 下游服务 error_rate 与 p95 延迟; 调用方连接池使用率与超时率; 网关 5xx 与重试次数\n链路排查建议: 排查下游服务异常是否引发上游服务调用积压，监控链路调用延迟和错误率，防止级联故障扩散。"
+        },
+        "timestamp": "2026-03-30T19:32:08"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "Nebula告警显示cart-service在执行RPC getCartItems操作时出现依赖不可用问题，耗时145ms。诊断结果表明下游服务响应异常，存在503错误或连接拒绝，导致调用失败。建议重点检查cart-service依赖的下游服务健康状态，关注下游服务的错误率和延迟，以及调用方连接池和网关的相关指标，防止故障扩散。\n模式比对: 依赖挂掉\n关联查询: 建议补查关联服务指标: trace-root；重点关注: 下游服务 error_rate 与 p95 延迟; 调用方连接池使用率与超时率; 网关 5xx 与重试次数\n链路排查建议: 排查下游服务异常是否引发上游服务调用积压，监控链路调用延迟和错误率，防止级联故障扩散。"
+        },
+        "timestamp": "2026-03-30T19:32:08"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 4000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 145,
+      "slow_threshold_ms": 1
+    }
+  },
+  {
+    "run_id": "run-999b1e28cd60",
+    "trace_id": "0038f5d54fc34a60",
+    "status": "ok",
+    "started_at": "2026-03-30T19:32:35",
+    "finished_at": "2026-03-30T19:32:40",
+    "trace": {
+      "trace_id": "0038f5d54fc34a60",
+      "bottleneck_service": "payment-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "0038f5d54fc34a60",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "payment-service",
+        "operation_name": "HTTP POST /payment/charge",
+        "duration_ms": 125,
+        "status": "OK",
+        "error_type": "None",
+        "action_suggestion": "payment-service 当前无异常，关注其子调用链路",
+        "knowledge_insight": {
+          "matched_patterns": [],
+          "related_services": [],
+          "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+          "linkage_investigation_suggestion": null
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 125,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 118,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "gateway-service",
+          "operation_name": "HTTP GET /api/v1/order/confirm",
+          "duration_ms": 69,
+          "status": "OK",
+          "error_type": "None"
+        }
+      ],
+      "summary": "瓶颈节点: payment-service, 耗时: 125ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "payment-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.286000+00:00",
+      "heap_used_mb": 1980.0,
+      "heap_max_mb": 3072.0,
+      "gc_count": 4,
+      "thread_count": 227,
+      "p95_duration_ms": 1623.016098600122,
+      "error_count": 272,
+      "error_rate": 0.0683
+    },
+    "logs": {
+      "service": "payment-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "service call completed, duration=103ms"
+      ],
+      "trace_ids": [
+        "c24b2a01bc7d4c1d",
+        "cf84f552aa584877",
+        "05dd16e37e1746a2",
+        "8df6ad4739bb4e89",
+        "6724038d0ef94c41"
+      ]
+    },
+    "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 0038f5d54fc34a60，涉及 payment-service 服务的 HTTP POST /payment/charge 操作，耗时125ms。诊断显示无异常，JVM指标正常，日志均显示请求成功完成，LLM置信度为1.00。关键证据包括JVM p95响应时间1623ms，堆内存使用1980MB，GC次数4次，错误率0.0683，日志命中3980条，均无异常。建议继续监控 payment-service 及其子调用链路，补齐调用链证据后再定位首个失败节点。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0038f5d54fc34a60",
+          "payload": {
+            "trace_id": "0038f5d54fc34a60",
+            "bottleneck_service": "payment-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:35",
+            "payload_size": 92
+          },
+          "summary": "已获取 Trace：0038f5d54fc34a60",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 92,
+            "returned_size": 92
+          }
+        },
+        "timestamp": "2026-03-30T19:32:35"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0038f5d54fc34a60",
+          "payload": {
+            "trace_id": "0038f5d54fc34a60",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "payment-service",
+              "operation_name": "HTTP POST /payment/charge",
+              "duration_ms": 125,
+              "status": "OK",
+              "error_type": "None",
+              "action_suggestion": "payment-service 当前无异常，关注其子调用链路",
+              "knowledge_insight": {
+                "matched_patterns": [],
+                "related_services": [],
+                "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+                "linkage_investigation_suggestion": null
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 125,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 118,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "gateway-service",
+                "operation_name": "HTTP GET /api/v1/order/confirm",
+                "duration_ms": 69,
+                "status": "OK",
+                "error_type": "None"
+              }
+            ],
+            "summary": "瓶颈节点: payment-service, 耗时: 125ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:35",
+            "payload_size": 913
+          },
+          "summary": "诊断完成：trace=0038f5d54fc34a60，瓶颈服务=payment-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 913,
+            "returned_size": 913
+          }
+        },
+        "timestamp": "2026-03-30T19:32:35"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:32:35"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "payment-service",
+          "payload": {
+            "service": "payment-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.286000+00:00",
+            "heap_used_mb": 1980.0,
+            "heap_max_mb": 3072.0,
+            "gc_count": 4,
+            "thread_count": 227,
+            "p95_duration_ms": 1623.016098600122,
+            "error_count": 272,
+            "error_rate": 0.0683
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:35",
+            "payload_size": 345
+          },
+          "summary": "JVM 指标已获取：service=payment-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 345,
+            "returned_size": 345
+          }
+        },
+        "timestamp": "2026-03-30T19:32:35"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "payment-service",
+          "payload": {
+            "service": "payment-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "service call completed, duration=103ms"
+            ],
+            "trace_ids": [
+              "c24b2a01bc7d4c1d",
+              "cf84f552aa584877",
+              "05dd16e37e1746a2",
+              "8df6ad4739bb4e89",
+              "6724038d0ef94c41"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:35",
+            "payload_size": 449
+          },
+          "summary": "日志检索完成：service=payment-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 449,
+            "returned_size": 449
+          }
+        },
+        "timestamp": "2026-03-30T19:32:35"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "None",
+            "root_cause": "payment-service服务当前无异常，JVM指标正常，日志显示请求均成功完成",
+            "action": "继续监控payment-service及其子调用链路，确保无异常发生",
+            "confidence": 1.0,
+            "linkage_suspected": false
+          }
+        },
+        "timestamp": "2026-03-30T19:32:37"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:32:40"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 0038f5d54fc34a60，涉及 payment-service 服务的 HTTP POST /payment/charge 操作，耗时125ms。诊断显示无异常，JVM指标正常，日志均显示请求成功完成，LLM置信度为1.00。关键证据包括JVM p95响应时间1623ms，堆内存使用1980MB，GC次数4次，错误率0.0683，日志命中3980条，均无异常。建议继续监控 payment-service 及其子调用链路，补齐调用链证据后再定位首个失败节点。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:40"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 0038f5d54fc34a60，涉及 payment-service 服务的 HTTP POST /payment/charge 操作，耗时125ms。诊断显示无异常，JVM指标正常，日志均显示请求成功完成，LLM置信度为1.00。关键证据包括JVM p95响应时间1623ms，堆内存使用1980MB，GC次数4次，错误率0.0683，日志命中3980条，均无异常。建议继续监控 payment-service 及其子调用链路，补齐调用链证据后再定位首个失败节点。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:40"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 5000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 125,
+      "slow_threshold_ms": 1
+    }
+  },
+  {
+    "run_id": "run-0bba250b05d0",
+    "trace_id": "006e77a928fb4d09",
+    "status": "ok",
+    "started_at": "2026-03-30T19:32:42",
+    "finished_at": "2026-03-30T19:32:46",
+    "trace": {
+      "trace_id": "006e77a928fb4d09",
+      "bottleneck_service": "order-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "006e77a928fb4d09",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "order-service",
+        "operation_name": "RPC createOrder",
+        "duration_ms": 109,
+        "status": "OK",
+        "error_type": "None",
+        "action_suggestion": "order-service 当前无异常，关注其子调用链路",
+        "knowledge_insight": {
+          "matched_patterns": [],
+          "related_services": [],
+          "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+          "linkage_investigation_suggestion": null
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 109,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 82,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "gateway-service",
+          "operation_name": "HTTP GET /api/v1/order/confirm",
+          "duration_ms": 64,
+          "status": "OK",
+          "error_type": "None"
+        }
+      ],
+      "summary": "瓶颈节点: order-service, 耗时: 109ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "order-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.275000+00:00",
+      "heap_used_mb": 1235.8,
+      "heap_max_mb": 2048.0,
+      "gc_count": 0,
+      "thread_count": 130,
+      "p95_duration_ms": 1255.8901298913374,
+      "error_count": 270,
+      "error_rate": 0.0678
+    },
+    "logs": {
+      "service": "order-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "service call completed, duration=63ms"
+      ],
+      "trace_ids": [
+        "c24b2a01bc7d4c1d",
+        "05dd16e37e1746a2",
+        "cf84f552aa584877",
+        "8df6ad4739bb4e89",
+        "6724038d0ef94c41"
+      ]
+    },
+    "summary": "【Nebula 告警】[P3] 慢调用事件，涉及订单服务（order-service）中的RPC操作createOrder，耗时109ms。诊断显示无异常，JVM指标正常，日志均显示请求成功完成。关键证据包括JVM p95响应时间1255.89ms，堆内存使用1235.8MB，GC次数为0，错误率0.0678，日志命中3980条，均无异常。建议继续监控order-service及其调用链路，补充调用链证据以便后续定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "006e77a928fb4d09",
+          "payload": {
+            "trace_id": "006e77a928fb4d09",
+            "bottleneck_service": "order-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:42",
+            "payload_size": 90
+          },
+          "summary": "已获取 Trace：006e77a928fb4d09",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 90,
+            "returned_size": 90
+          }
+        },
+        "timestamp": "2026-03-30T19:32:42"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "006e77a928fb4d09",
+          "payload": {
+            "trace_id": "006e77a928fb4d09",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "order-service",
+              "operation_name": "RPC createOrder",
+              "duration_ms": 109,
+              "status": "OK",
+              "error_type": "None",
+              "action_suggestion": "order-service 当前无异常，关注其子调用链路",
+              "knowledge_insight": {
+                "matched_patterns": [],
+                "related_services": [],
+                "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+                "linkage_investigation_suggestion": null
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 109,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 82,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "gateway-service",
+                "operation_name": "HTTP GET /api/v1/order/confirm",
+                "duration_ms": 64,
+                "status": "OK",
+                "error_type": "None"
+              }
+            ],
+            "summary": "瓶颈节点: order-service, 耗时: 109ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:42",
+            "payload_size": 896
+          },
+          "summary": "诊断完成：trace=006e77a928fb4d09，瓶颈服务=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 896,
+            "returned_size": 896
+          }
+        },
+        "timestamp": "2026-03-30T19:32:42"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:32:42"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.275000+00:00",
+            "heap_used_mb": 1235.8,
+            "heap_max_mb": 2048.0,
+            "gc_count": 0,
+            "thread_count": 130,
+            "p95_duration_ms": 1255.8901298913374,
+            "error_count": 270,
+            "error_rate": 0.0678
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:42",
+            "payload_size": 344
+          },
+          "summary": "JVM 指标已获取：service=order-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 344,
+            "returned_size": 344
+          }
+        },
+        "timestamp": "2026-03-30T19:32:42"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "order-service",
+          "payload": {
+            "service": "order-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "service call completed, duration=63ms"
+            ],
+            "trace_ids": [
+              "c24b2a01bc7d4c1d",
+              "05dd16e37e1746a2",
+              "cf84f552aa584877",
+              "8df6ad4739bb4e89",
+              "6724038d0ef94c41"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:42",
+            "payload_size": 446
+          },
+          "summary": "日志检索完成：service=order-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 446,
+            "returned_size": 446
+          }
+        },
+        "timestamp": "2026-03-30T19:32:42"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "None",
+            "root_cause": "order-service服务当前无异常，JVM指标正常，日志显示请求均成功完成",
+            "action": "继续监控order-service及其子调用链路，确保无异常发生",
+            "confidence": 1.0,
+            "linkage_suspected": false
+          }
+        },
+        "timestamp": "2026-03-30T19:32:44"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:32:46"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，涉及订单服务（order-service）中的RPC操作createOrder，耗时109ms。诊断显示无异常，JVM指标正常，日志均显示请求成功完成。关键证据包括JVM p95响应时间1255.89ms，堆内存使用1235.8MB，GC次数为0，错误率0.0678，日志命中3980条，均无异常。建议继续监控order-service及其调用链路，补充调用链证据以便后续定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:46"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，涉及订单服务（order-service）中的RPC操作createOrder，耗时109ms。诊断显示无异常，JVM指标正常，日志均显示请求成功完成。关键证据包括JVM p95响应时间1255.89ms，堆内存使用1235.8MB，GC次数为0，错误率0.0678，日志命中3980条，均无异常。建议继续监控order-service及其调用链路，补充调用链证据以便后续定位潜在问题。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:46"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 4000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 109,
+      "slow_threshold_ms": 1
+    }
+  },
+  {
+    "run_id": "run-d7025f27349f",
+    "trace_id": "0009f64d9e884bd0",
+    "status": "ok",
+    "started_at": "2026-03-30T19:32:48",
+    "finished_at": "2026-03-30T19:32:54",
+    "trace": {
+      "trace_id": "0009f64d9e884bd0",
+      "bottleneck_service": "inventory-service",
+      "keyword": "none"
+    },
+    "diagnosis": {
+      "trace_id": "0009f64d9e884bd0",
+      "total_spans": 9,
+      "bottleneck": {
+        "service_name": "inventory-service",
+        "operation_name": "RPC lockStock",
+        "duration_ms": 72,
+        "status": "OK",
+        "error_type": "None",
+        "action_suggestion": "inventory-service 当前无异常，关注其子调用链路",
+        "knowledge_insight": {
+          "matched_patterns": [],
+          "related_services": [],
+          "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+          "linkage_investigation_suggestion": null
+        }
+      },
+      "top_spans": [
+        {
+          "service_name": "inventory-service",
+          "operation_name": "RPC lockStock",
+          "duration_ms": 72,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "payment-service",
+          "operation_name": "HTTP POST /payment/charge",
+          "duration_ms": 70,
+          "status": "OK",
+          "error_type": "None"
+        },
+        {
+          "service_name": "order-service",
+          "operation_name": "RPC createOrder",
+          "duration_ms": 57,
+          "status": "OK",
+          "error_type": "None"
+        }
+      ],
+      "summary": "瓶颈节点: inventory-service, 耗时: 72ms, 异常类型: None"
+    },
+    "jvm": {
+      "service": "inventory-service",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample_ts": "2026-03-30T09:40:57.235000+00:00",
+      "heap_used_mb": 751.2,
+      "heap_max_mb": 2048.0,
+      "gc_count": 1,
+      "thread_count": 92,
+      "p95_duration_ms": 1241.0045724172019,
+      "error_count": 264,
+      "error_rate": 0.0663
+    },
+    "logs": {
+      "service": "inventory-service",
+      "keyword": "",
+      "source": "es",
+      "index": "nebula_metrics",
+      "window_minutes": 10080,
+      "status": "ok",
+      "doc_count": 3980,
+      "sample": [
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully",
+        "request finished successfully"
+      ],
+      "trace_ids": [
+        "05dd16e37e1746a2",
+        "8df6ad4739bb4e89",
+        "c24b2a01bc7d4c1d",
+        "cf84f552aa584877",
+        "efd0fadb6a4c4540"
+      ]
+    },
+    "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 0009f64d9e884bd0，运行实例: run-d7025f27349f，瓶颈服务为 inventory-service，操作为 RPC lockStock，耗时 72ms。诊断结果显示无异常类型，未发现异常模式，inventory-service 运行正常，无错误或超时，置信度 1.00。关键证据包括 JVM p95 响应时间 1241ms，堆内存使用 751.2MB/2048MB，GC 次数 1，错误率 0.0663，日志命中 3980 条，示例日志显示请求成功。建议继续监控 inventory-service 及其子调用链，补充调用链证据后定位首个失败节点，确保无异常发生。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。",
+    "error": null,
+    "history": [
+      {
+        "node": "get_trace",
+        "status": "ok",
+        "detail": "trace 拉取完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_trace",
+          "target": "0009f64d9e884bd0",
+          "payload": {
+            "trace_id": "0009f64d9e884bd0",
+            "bottleneck_service": "inventory-service",
+            "keyword": "none"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:48",
+            "payload_size": 94
+          },
+          "summary": "已获取 Trace：0009f64d9e884bd0",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 94,
+            "returned_size": 94
+          }
+        },
+        "timestamp": "2026-03-30T19:32:48"
+      },
+      {
+        "node": "analyze",
+        "status": "ok",
+        "detail": "诊断完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_analyze_trace",
+          "target": "0009f64d9e884bd0",
+          "payload": {
+            "trace_id": "0009f64d9e884bd0",
+            "total_spans": 9,
+            "bottleneck": {
+              "service_name": "inventory-service",
+              "operation_name": "RPC lockStock",
+              "duration_ms": 72,
+              "status": "OK",
+              "error_type": "None",
+              "action_suggestion": "inventory-service 当前无异常，关注其子调用链路",
+              "knowledge_insight": {
+                "matched_patterns": [],
+                "related_services": [],
+                "relation_query_hint": "当前未识别到异常模式，无需额外关联查询。",
+                "linkage_investigation_suggestion": null
+              }
+            },
+            "top_spans": [
+              {
+                "service_name": "inventory-service",
+                "operation_name": "RPC lockStock",
+                "duration_ms": 72,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "payment-service",
+                "operation_name": "HTTP POST /payment/charge",
+                "duration_ms": 70,
+                "status": "OK",
+                "error_type": "None"
+              },
+              {
+                "service_name": "order-service",
+                "operation_name": "RPC createOrder",
+                "duration_ms": 57,
+                "status": "OK",
+                "error_type": "None"
+              }
+            ],
+            "summary": "瓶颈节点: inventory-service, 耗时: 72ms, 异常类型: None"
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:48",
+            "payload_size": 888
+          },
+          "summary": "诊断完成：trace=0009f64d9e884bd0，瓶颈服务=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 888,
+            "returned_size": 888
+          }
+        },
+        "timestamp": "2026-03-30T19:32:48"
+      },
+      {
+        "node": "route",
+        "status": "ok",
+        "detail": "条件路由完成",
+        "payload": {
+          "route": "dual"
+        },
+        "timestamp": "2026-03-30T19:32:48"
+      },
+      {
+        "node": "enrich_jvm",
+        "status": "ok",
+        "detail": "JVM 指标补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_get_jvm_metrics",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample_ts": "2026-03-30T09:40:57.235000+00:00",
+            "heap_used_mb": 751.2,
+            "heap_max_mb": 2048.0,
+            "gc_count": 1,
+            "thread_count": 92,
+            "p95_duration_ms": 1241.0045724172019,
+            "error_count": 264,
+            "error_rate": 0.0663
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:48",
+            "payload_size": 346
+          },
+          "summary": "JVM 指标已获取：service=inventory-service",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 346,
+            "returned_size": 346
+          }
+        },
+        "timestamp": "2026-03-30T19:32:48"
+      },
+      {
+        "node": "enrich_logs",
+        "status": "ok",
+        "detail": "日志补充完成",
+        "payload": {
+          "status": "ok",
+          "tool": "tool_search_logs",
+          "target": "inventory-service",
+          "payload": {
+            "service": "inventory-service",
+            "keyword": "",
+            "source": "es",
+            "index": "nebula_metrics",
+            "window_minutes": 10080,
+            "status": "ok",
+            "doc_count": 3980,
+            "sample": [
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully",
+              "request finished successfully"
+            ],
+            "trace_ids": [
+              "05dd16e37e1746a2",
+              "8df6ad4739bb4e89",
+              "c24b2a01bc7d4c1d",
+              "cf84f552aa584877",
+              "efd0fadb6a4c4540"
+            ]
+          },
+          "error": null,
+          "meta": {
+            "generated_at": "2026-03-30T19:32:48",
+            "payload_size": 442
+          },
+          "summary": "日志检索完成：service=inventory-service，keyword=",
+          "truncation": {
+            "is_truncated": false,
+            "original_size": 442,
+            "returned_size": 442
+          }
+        },
+        "timestamp": "2026-03-30T19:32:48"
+      },
+      {
+        "node": "llm_decision",
+        "status": "ok",
+        "detail": "LLM 根因决策完成",
+        "payload": {
+          "decision": {
+            "problem_type": "None",
+            "root_cause": "inventory-service运行正常，无异常错误或超时",
+            "action": "继续监控inventory-service及其子调用链路，确保无异常发生",
+            "confidence": 1.0,
+            "linkage_suspected": false
+          }
+        },
+        "timestamp": "2026-03-30T19:32:51"
+      },
+      {
+        "node": "report_polish",
+        "status": "ok",
+        "detail": "LLM 报告润色完成",
+        "payload": {
+          "enabled": true
+        },
+        "timestamp": "2026-03-30T19:32:54"
+      },
+      {
+        "node": "report",
+        "status": "ok",
+        "detail": "生成汇总报告",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 0009f64d9e884bd0，运行实例: run-d7025f27349f，瓶颈服务为 inventory-service，操作为 RPC lockStock，耗时 72ms。诊断结果显示无异常类型，未发现异常模式，inventory-service 运行正常，无错误或超时，置信度 1.00。关键证据包括 JVM p95 响应时间 1241ms，堆内存使用 751.2MB/2048MB，GC 次数 1，错误率 0.0663，日志命中 3980 条，示例日志显示请求成功。建议继续监控 inventory-service 及其子调用链，补充调用链证据后定位首个失败节点，确保无异常发生。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:54"
+      },
+      {
+        "node": "notify",
+        "status": "ok",
+        "detail": "通知阶段完成（由上层 CLI 控制实际发送）",
+        "payload": {
+          "summary": "【Nebula 告警】[P3] 慢调用事件，Trace ID: 0009f64d9e884bd0，运行实例: run-d7025f27349f，瓶颈服务为 inventory-service，操作为 RPC lockStock，耗时 72ms。诊断结果显示无异常类型，未发现异常模式，inventory-service 运行正常，无错误或超时，置信度 1.00。关键证据包括 JVM p95 响应时间 1241ms，堆内存使用 751.2MB/2048MB，GC 次数 1，错误率 0.0663，日志命中 3980 条，示例日志显示请求成功。建议继续监控 inventory-service 及其子调用链，补充调用链证据后定位首个失败节点，确保无异常发生。\n模式比对: 无\n关联查询: 当前未识别到异常模式，无需额外关联查询。\n链路排查建议: 按调用链顺序补齐证据后再定位首个失败节点。"
+        },
+        "timestamp": "2026-03-30T19:32:54"
+      }
+    ],
+    "trigger_source": "monitor-es",
+    "notify": {
+      "status": "skipped",
+      "deduplicated": false,
+      "attempts": 0,
+      "error": null
+    },
+    "metrics": {
+      "duration_ms": 6000,
+      "history_events": 9,
+      "failure_events": 0,
+      "notify_status": "skipped",
+      "bottleneck_duration_ms": 72,
+      "slow_threshold_ms": 1
+    }
   }
 ]

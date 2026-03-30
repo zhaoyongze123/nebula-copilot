@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from datetime import datetime
 from pathlib import Path
@@ -275,24 +276,47 @@ def create_app() -> Flask:
     @app.get("/api/traces/<trace_id>/inspect")
     def api_trace_inspect(trace_id: str) -> Any:
         start = time.time() * 1000
-        source = request.args.get("source", "local")
+        source = request.args.get("source", "auto")
         local_path = Path(request.args.get("local_path", "data/mock_trace.json"))
+        es_url = request.args.get("es_url") or os.getenv("NEBULA_ES_URL", "http://localhost:9200")
+        index = request.args.get("index") or os.getenv("NEBULA_ES_INDEX", "nebula_metrics")
+        username = request.args.get("username") or os.getenv("NEBULA_ES_USERNAME")
+        password = request.args.get("password") or os.getenv("NEBULA_ES_PASSWORD")
+        verify_certs = request.args.get("verify_certs", "true").lower() == "true"
+        timeout_seconds = int(request.args.get("timeout_seconds", "10"))
 
         try:
+            source_name = source
             if source == "es":
                 trace_doc = fetch_trace_by_id(
-                    es_url=request.args.get("es_url", "http://localhost:9200"),
-                    index=request.args.get("index", "nebula_metrics"),
+                    es_url=es_url,
+                    index=index,
                     trace_id=trace_id,
-                    username=request.args.get("username"),
-                    password=request.args.get("password"),
-                    verify_certs=(request.args.get("verify_certs", "true").lower() == "true"),
-                    timeout_seconds=int(request.args.get("timeout_seconds", "10")),
+                    username=username,
+                    password=password,
+                    verify_certs=verify_certs,
+                    timeout_seconds=timeout_seconds,
                 )
                 source_name = "es"
-            else:
+            elif source == "local":
                 trace_doc = LocalJsonRepository(local_path).get_trace(trace_id)
                 source_name = "local"
+            else:
+                # Auto mode: prefer local for existing mock/debug flow, fallback to ES for real traces.
+                try:
+                    trace_doc = LocalJsonRepository(local_path).get_trace(trace_id)
+                    source_name = "local"
+                except (TraceNotFoundError, DataSourceError, TraceValidationError):
+                    trace_doc = fetch_trace_by_id(
+                        es_url=es_url,
+                        index=index,
+                        trace_id=trace_id,
+                        username=username,
+                        password=password,
+                        verify_certs=verify_certs,
+                        timeout_seconds=timeout_seconds,
+                    )
+                    source_name = "es"
 
             diagnosis = analyze_trace(trace_doc, top_n=3).to_dict()
             data = {
