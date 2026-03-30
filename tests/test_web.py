@@ -94,6 +94,19 @@ def test_trace_inspect_local(tmp_path: Path) -> None:
     assert body["data"]["tree"]["service_name"]
 
 
+def test_trace_inspect_local_not_found(tmp_path: Path) -> None:
+    app = create_app()
+    client = app.test_client()
+
+    trace_path = tmp_path / "mock_trace.json"
+    write_mock_file(trace_path, trace_id=DEFAULT_TRACE_ID, scenario="timeout")
+
+    resp = client.get(f"/api/traces/not-exists/inspect?source=local&local_path={trace_path}")
+    assert resp.status_code == 404
+    body = resp.get_json()
+    assert body["ok"] is False
+
+
 def test_logs_search_api_with_monkeypatch(monkeypatch) -> None:
     app = create_app()
     client = app.test_client()

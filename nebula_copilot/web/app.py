@@ -10,6 +10,7 @@ from flask import Flask, jsonify, redirect, render_template, request
 
 from nebula_copilot.analyzer import analyze_trace
 from nebula_copilot.cli import _load_run_records
+from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
 from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, search_service_logs
 from nebula_copilot.repository import LocalJsonRepository
 
@@ -300,6 +301,12 @@ def create_app() -> Flask:
                 "diagnosis": diagnosis,
             }
             return jsonify(_envelope(data, source=source_name, degraded=False, start_ms=start))
+        except TraceNotFoundError as exc:
+            return jsonify(_envelope({}, source=source, degraded=True, start_ms=start, error=str(exc))), 404
+        except TraceValidationError as exc:
+            return jsonify(_envelope({}, source=source, degraded=True, start_ms=start, error=str(exc))), 422
+        except DataSourceError as exc:
+            return jsonify(_envelope({}, source=source, degraded=True, start_ms=start, error=str(exc))), 503
         except Exception as exc:
             return jsonify(_envelope({}, source=source, degraded=True, start_ms=start, error=str(exc))), 500
 

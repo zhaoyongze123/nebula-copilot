@@ -21,10 +21,12 @@ function statusBadge(status) {
 
 async function getJson(url) {
   const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
+  const payload = await res.json();
+  if (!res.ok || payload.ok === false) {
+    const message = payload.error || `HTTP ${res.status}`;
+    throw new Error(message);
   }
-  return await res.json();
+  return payload;
 }
 
 function renderKpi(data) {
@@ -121,7 +123,12 @@ async function selectRun(run) {
   const page = await getJson(`/api/runs/${encodeURIComponent(run.run_id)}/page`);
   renderRunDetail(page.data || {});
   if (run.trace_id) {
-    await loadTraceInspect(run.trace_id);
+    try {
+      await loadTraceInspect(run.trace_id);
+    } catch (err) {
+      const panel = qs('tracePanel');
+      panel.innerHTML = `<div><strong>trace_id:</strong> ${run.trace_id}</div><div><strong>提示:</strong> Trace 检查暂不可用：${err.message}</div>`;
+    }
   }
 }
 
