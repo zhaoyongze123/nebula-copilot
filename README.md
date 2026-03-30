@@ -7,6 +7,41 @@ Nebula-Copilot 是一个终端排障助手：
 - 支持 `rich/json` 双格式输出，方便机器人推送
 - 支持接入真实 Elasticsearch，直接按 TraceID 查询并分析
 
+## 业务价值与适用场景
+
+面向微服务生产环境的值班与故障应急场景，目标是把“发现慢链路/报错”到“定位责任服务与处置建议”的时间压缩到分钟级。
+
+典型业务痛点：
+- 链路跨多个服务，人工排查成本高
+- 报警只告诉你“慢了/错了”，但不给可执行处置建议
+- 通知系统易抖动，重复告警或推送失败影响值班效率
+
+Nebula-Copilot 的业务收益：
+- 快速定位：自动给出瓶颈节点、异常类型、关键证据
+- 降本增效：支持规则 + LLM 双路径，LLM 不可用时可降级
+- 闭环落地：支持 Web 可观测面板、告警推送与运行记录追踪
+
+## 技术架构概览
+
+系统采用“数据采集 -> 诊断编排 -> 通知闭环 -> 可视化展示”的分层结构：
+
+1. 数据层
+- Elasticsearch 作为 trace/log/jvm 指标来源
+- 支持本地 JSON 与 ES 双数据源（便于本地调试 + 线上接入）
+
+2. 诊断层
+- `analyzer` 负责瓶颈识别、错误分类、摘要生成
+- `agent graph` 负责调用编排（trace/jvm/logs）与重试回退
+- 支持 LLM 增强决策，并提供强制/非强制决策模式
+
+3. 可靠性层
+- 运行去重、限流、通知重试
+- 将系统侧失败与链路侧失败区分为 `degraded`/`failed`
+
+4. 展示层
+- Typer CLI（rich/json）
+- Web Dashboard（Runs/Run Detail/Trace Tree/Topology/Logs）
+
 ## 目录结构
 
 - `nebula_copilot/models.py`：Pydantic Trace 数据模型
@@ -100,6 +135,11 @@ nebula-cli monitor-es \
 - `--trigger-dedupe-seconds`：同一 trace 触发去重窗口
 - `--max-iterations`：最大轮询次数（0 表示持续运行）
 
+状态说明（重要）：
+- `failed`：链路诊断存在真实 `ERROR` 节点（链路级失败）
+- `degraded`：系统侧失败（例如 LLM 429/通知失败）或降级回退，但链路本身未出现 `ERROR`
+- `ok`：诊断与通知均正常
+
 ### 6) 向 ES 批量写入高仿真链路监控数据（正常/慢链路/报错）
 
 脚本：`scripts/load_simulated_es_data.py`
@@ -124,6 +164,7 @@ python scripts/load_simulated_es_data.py \
 - 同时写入 `traceId/trace_id`、`spanId/span_id` 等兼容字段
 - 覆盖真实字段：`@timestamp`、`httpStatus`、`instanceId`、`podName`、`errorType`、`exceptionStack`、`tags`
 - 可控制正常/慢链路/报错比例，适合压测和自动诊断联调
+- 报错链路符合真实传播：上游节点 `ERROR` 后，下游同步调用会标记为 `SKIPPED`（`UpstreamFailure`）
 
 参数说明：
 - `--source/-s`：输入 trace JSON 文件
@@ -158,6 +199,13 @@ http://127.0.0.1:8080/dashboard
 - Run Detail 区块：显示 `/api/runs/<run_id>/page` 的来源
 - Trace Inspect 区块：显示 `/api/traces/<trace_id>/inspect` 的来源
 - Logs 区块：显示 `/api/logs/search` 的来源
+
+页面交互增强：
+- Runs 区块使用可展开下拉模块（Accordion），展开即联动加载 Run Detail
+- Run Detail 新增 “LLM 分析结果” 面板，展示摘要与 LLM 事件（如 `llm_decision`）
+- Trace Tree 自动折叠重复 `trace-root` 层级，减少噪音
+- Topology 自动过滤 synthetic root，仅展示真实服务节点
+- Topology 节点按状态着色：`ERROR=红`、`SKIPPED=橙`、`OK=蓝`
 
 ### 8) 一键闭环演示（真实 ES）
 

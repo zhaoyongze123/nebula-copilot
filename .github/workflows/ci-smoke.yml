@@ -110,7 +110,15 @@ jobs:
           test -f docker-compose.yml
           test -f deploy/k8s/deployment.yaml
           test -f deploy/k8s/secret.example.yaml
-          docker build -t nebula-copilot:ci .
+          for i in 1 2 3; do
+            echo "docker build attempt=${i}"
+            if docker build --pull -t nebula-copilot:ci .; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "docker build failed after 3 attempts"
+          exit 1
 
       - name: Run full pytest
         run: pytest -q
