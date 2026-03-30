@@ -21,6 +21,10 @@ Nebula-Copilot 的业务收益：
 - 降本增效：支持规则 + LLM 双路径，LLM 不可用时可降级
 - 闭环落地：支持 Web 可观测面板、告警推送与运行记录追踪
 
+- 演示
+  <img width="1640" height="895" alt="image" src="https://github.com/user-attachments/assets/fe52b31c-bfcd-48f3-96ae-194e08d43f1c" />
+
+
 ## 技术架构概览
 
 系统采用“数据采集 -> 诊断编排 -> 通知闭环 -> 可视化展示”的分层结构：
