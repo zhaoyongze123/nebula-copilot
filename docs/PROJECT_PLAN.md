@@ -455,6 +455,10 @@ class AgentState(TypedDict, total=False):
    - 飞书 webhook 实测发送成功。
 - 已新增 KnowledgeBase 模块并接入 analyzer：支持典型模式比对（依赖挂掉/消费积压/配置漂移）、关联服务指标补查提示、链路排查建议输出。
 - 已扩展 Agent 报告汇总：当 LLM 怀疑链路问题时，输出中会追加“链路排查建议”，并与规则层 KnowledgeBase 归纳结果联动展示。
+- 已优化飞书通知文案版式：告警摘要调整为“事件概览 / 诊断结论 / 关键证据 / 建议动作”四段结构，减少信息堆叠并提升可读性。
+- 已升级飞书通知为 interactive 卡片：支持双列信息分栏、关键提示高亮、关键证据折叠面板（可展开查看）。
+- 已完成真实链路端到端验证（ES -> monitor-es -> agent graph -> webhook）：单轮扫描触发 5 次告警推送，通知状态与运行记录均为 `ok`。
+- 已新增可复用实测脚本 `scripts/e2e_real_es_feishu_test.sh`：支持真实 ES + 真实飞书 webhook 的单命令闭环验证与运行证据校验。
 
 
 

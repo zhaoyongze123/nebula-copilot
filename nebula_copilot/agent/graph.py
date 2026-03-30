@@ -221,25 +221,33 @@ def _node_report(
 
     base_summary = (
         f"【Nebula 告警】[{level}] {type_label}\n"
-        f"- Trace: {state.trace_id}\n"
-        f"- Run: {state.run_id}\n"
-        f"- 瓶颈服务: {service_name}\n"
-        f"- 操作: {operation_name}\n"
-        f"- 耗时: {duration_ms}ms\n"
-        f"- 异常类型: {error_type}\n"
-        f"- 模式比对: {kb_pattern_text}\n"
-        f"- 关联查询: {kb_relation_hint}\n"
-        f"- {jvm_hint}\n"
-        f"- {logs_hint}\n"
-        f"- LLM根因: {llm_root_cause or '无（规则结论）'}\n"
-        f"- LLM置信度: {f'{llm_confidence:.2f}' if llm_confidence is not None else 'N/A'}\n"
-        f"- 链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}\n"
-        f"- 建议动作: {action_hint or '优先检查关键错误日志与依赖可用性。'}"
+        "\n"
+        "[事件概览]\n"
+        f"Trace: {state.trace_id}\n"
+        f"Run: {state.run_id}\n"
+        f"瓶颈服务: {service_name}\n"
+        f"操作: {operation_name}\n"
+        f"耗时: {duration_ms}ms\n"
+        "\n"
+        "[诊断结论]\n"
+        f"异常类型: {error_type}\n"
+        f"模式比对: {kb_pattern_text}\n"
+        f"关联查询: {kb_relation_hint}\n"
+        f"LLM根因: {llm_root_cause or '无（规则结论）'}\n"
+        f"LLM置信度: {f'{llm_confidence:.2f}' if llm_confidence is not None else 'N/A'}\n"
+        "\n"
+        "[关键证据]\n"
+        f"{jvm_hint}\n"
+        f"{logs_hint}\n"
+        f"链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}\n"
+        "\n"
+        "[建议动作]\n"
+        f"建议动作: {action_hint or '优先检查关键错误日志与依赖可用性。'}"
     )
     mandatory_lines = [
-        f"- 模式比对: {kb_pattern_text}",
-        f"- 关联查询: {kb_relation_hint}",
-        f"- 链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}",
+        f"模式比对: {kb_pattern_text}",
+        f"关联查询: {kb_relation_hint}",
+        f"链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}",
     ]
 
     def _ensure_mandatory_lines(summary_text: str) -> str:
