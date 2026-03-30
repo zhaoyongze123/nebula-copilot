@@ -464,6 +464,8 @@ class AgentState(TypedDict, total=False):
    - 新增 API：`/api/overview`、`/api/runs`、`/api/runs/<run_id>/page`、`/api/traces/<trace_id>/inspect`、`/api/logs/search`；
    - 新增前端页面与静态资源：`dashboard.html` + `app.js` + `app.css`，完成“Run 列表 -> Run 详情 -> Trace -> Logs”闭环链路；
    - 新增测试 `tests/test_web.py`，覆盖核心页面与 API 路径（含 ES 查询接口的 monkeypatch 契约验证）。
+- 已完成可视化可信度增强：KPI / Runs / Run Detail / Trace / Logs 均新增 `source=local|es` 显式标识。
+- 已新增真实闭环一键演示脚本 `scripts/e2e_web_closure_demo.sh`：单命令触发 monitor-es 单轮、刷新 run 记录并输出可验证 trace_id。
 
 
 

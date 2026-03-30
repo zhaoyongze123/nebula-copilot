@@ -43,7 +43,7 @@
 
   <main class="layout">
     <section>
-      <h2>Runs</h2>
+      <h2>Runs <span id="sourceRuns" class="source-chip">source:-</span></h2>
       <table id="runsTable">
         <thead>
           <tr>
@@ -59,7 +59,7 @@
     </section>
 
     <section>
-      <h2>Run Detail</h2>
+      <h2>Run Detail <span id="sourceRunDetail" class="source-chip">source:-</span></h2>
       <div id="runSummary" class="card"></div>
       <h3>Timeline</h3>
       <ul id="timeline" class="timeline"></ul>
@@ -68,11 +68,11 @@
     </section>
 
     <section>
-      <h2>Trace Inspect</h2>
+      <h2>Trace Inspect <span id="sourceTrace" class="source-chip">source:-</span></h2>
       <div id="tracePanel" class="card"></div>
       <h3>Trace Tree</h3>
       <div id="traceTree" class="tree card"></div>
-      <h3>Logs</h3>
+      <h3>Logs <span id="sourceLogs" class="source-chip">source:-</span></h3>
       <div class="logs-search">
         <input id="spanIdInput" placeholder="span_id（可选）" />
         <input id="keywordInput" placeholder="关键字（可选）" />
@@ -81,6 +81,10 @@
       <pre id="logsResult"></pre>
     </section>
   </main>
+
+  <div class="kpi-source-wrap">
+    <span id="sourceKpi" class="source-chip">KPI source:-</span>
+  </div>
 
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>

@@ -1,6 +1,7 @@
 const state = {
   selectedRunId: null,
   selectedTraceId: null,
+  selectedSpanId: null,
   autoTimer: null,
 };
 
@@ -17,6 +18,12 @@ function fmtTime(ts) {
 function statusBadge(status) {
   const s = status || 'ok';
   return `<span class="badge ${s}">${s}</span>`;
+}
+
+function setSource(id, source) {
+  const el = qs(id);
+  if (!el) return;
+  el.textContent = `source:${source || '-'}`;
 }
 
 function eventClass(text) {
@@ -86,8 +93,10 @@ function renderRunDetail(page) {
   const events = page.timeline || [];
   for (const ev of events) {
     const li = document.createElement('li');
+    const eventText = `${ev.phase || ''} ${ev.message || ''}`;
     li.className = eventClass(`${ev.phase || ''} ${ev.message || ''}`);
     li.textContent = `${fmtTime(ev.ts || ev.timestamp)} | ${ev.phase || ev.name || 'event'} | ${ev.message || ''}`;
+    li.dataset.searchText = eventText.toLowerCase();
     timeline.appendChild(li);
   }
 
@@ -125,13 +134,17 @@ function renderSpanNode(node) {
 
   const line = document.createElement('div');
   line.className = 'span-line';
+  line.dataset.spanId = node.span_id;
   line.innerHTML = `<strong>${node.service_name}</strong> / ${node.operation_name} / ${node.duration_ms}ms / ${node.status}`;
+
+  line.addEventListener('click', () => selectSpanNode(node));
 
   const pickBtn = document.createElement('button');
   pickBtn.className = 'pick-btn';
   pickBtn.textContent = '查日志';
   pickBtn.addEventListener('click', async (ev) => {
     ev.preventDefault();
+    selectSpanNode(node);
     qs('spanIdInput').value = node.span_id;
     await loadLogs();
   });
@@ -152,9 +165,34 @@ function renderSpanNode(node) {
   return wrapper;
 }
 
+function selectSpanNode(node) {
+  state.selectedSpanId = node.span_id;
+  qs('spanIdInput').value = node.span_id;
+  if (!qs('keywordInput').value.trim()) {
+    qs('keywordInput').value = node.service_name || node.operation_name || '';
+  }
+
+  document.querySelectorAll('.tree .span-line').forEach((el) => {
+    el.classList.toggle('active', el.dataset.spanId === node.span_id);
+  });
+
+  const needle = `${node.service_name || ''} ${node.operation_name || ''} ${node.span_id || ''}`.toLowerCase();
+  const timelineItems = Array.from(document.querySelectorAll('#timeline li'));
+  let found = false;
+  for (const item of timelineItems) {
+    const hit = needle && (item.dataset.searchText || '').includes(needle);
+    item.classList.toggle('active', hit);
+    if (hit && !found) {
+      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      found = true;
+    }
+  }
+}
+
 async function loadOverview() {
   const data = await getJson('/api/overview');
   renderKpi(data.data || {});
+  setSource('sourceKpi', data.meta?.source);
 }
 
 async function loadRuns() {
@@ -164,6 +202,7 @@ async function loadRuns() {
   const data = await getJson(`/api/runs?trace_id=${traceId}&status=${status}&sort=${sort}&size=50`);
   const items = data.data?.items || [];
   renderRuns(items);
+  setSource('sourceRuns', data.meta?.source);
   if (!state.selectedRunId && items.length) {
     await selectRun(items[0]);
   }
@@ -174,12 +213,14 @@ async function selectRun(run) {
   state.selectedTraceId = run.trace_id;
   const page = await getJson(`/api/runs/${encodeURIComponent(run.run_id)}/page`);
   renderRunDetail(page.data || {});
+  setSource('sourceRunDetail', page.meta?.source);
   if (run.trace_id) {
     try {
       await loadTraceInspect(run.trace_id);
     } catch (err) {
       const panel = qs('tracePanel');
       panel.innerHTML = `<div><strong>trace_id:</strong> ${run.trace_id}</div><div><strong>提示:</strong> Trace 检查暂不可用：${err.message}</div>`;
+      setSource('sourceTrace', 'error');
     }
   }
 }
@@ -187,6 +228,7 @@ async function selectRun(run) {
 async function loadTraceInspect(traceId) {
   const data = await getJson(`/api/traces/${encodeURIComponent(traceId)}/inspect`);
   renderTraceInspect(data.data || {});
+  setSource('sourceTrace', data.meta?.source);
 }
 
 async function loadLogs() {
@@ -195,6 +237,7 @@ async function loadLogs() {
   const keyword = encodeURIComponent(qs('keywordInput').value.trim());
   const data = await getJson(`/api/logs/search?trace_id=${encodeURIComponent(state.selectedTraceId)}&span_id=${spanId}&keyword=${keyword}&limit=50`);
   qs('logsResult').textContent = JSON.stringify(data.data || {}, null, 2);
+  setSource('sourceLogs', data.meta?.source);
 }
 
 async function refreshAll() {

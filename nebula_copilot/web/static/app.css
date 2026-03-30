@@ -42,6 +42,23 @@ body {
   color: var(--muted);
 }
 
+.source-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #124169;
+  background: #e7f2ff;
+  border: 1px solid #bfd6ee;
+  vertical-align: middle;
+}
+
+.kpi-source-wrap {
+  padding: 0 24px 10px;
+}
+
 .controls {
   display: flex;
   align-items: center;
@@ -188,6 +205,11 @@ tr.clickable:hover {
   background: #f3f9ff;
 }
 
+.timeline li.active {
+  outline: 2px solid #0b5ea8;
+  outline-offset: 1px;
+}
+
 #diagnosis, #logsResult {
   background: #0f1720;
   color: #d9e2ef;
@@ -224,6 +246,13 @@ tr.clickable:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.tree .span-line.active {
+  background: #eaf4ff;
+  border: 1px solid #b9d7f3;
 }
 
 .tree .pick-btn {

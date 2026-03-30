@@ -152,6 +152,36 @@ http://127.0.0.1:8080/dashboard
 - `GET /api/traces/<trace_id>/inspect`：trace 树 + 诊断结果
 - `GET /api/logs/search`：按 trace/span 反查服务日志
 
+页面已支持显式数据来源标签（`source=local|es`）：
+- KPI 区块：显示 `/api/overview` 的来源
+- Runs 区块：显示 `/api/runs` 的来源
+- Run Detail 区块：显示 `/api/runs/<run_id>/page` 的来源
+- Trace Inspect 区块：显示 `/api/traces/<trace_id>/inspect` 的来源
+- Logs 区块：显示 `/api/logs/search` 的来源
+
+### 8) 一键闭环演示（真实 ES）
+
+脚本：`scripts/e2e_web_closure_demo.sh`
+
+功能：
+- 触发 `monitor-es` 单轮扫描（真实 ES）
+- 刷新 `data/agent_runs.json`
+- 输出最新 `run_id/trace_id`
+- 调用 Web `trace inspect` 接口并打印可验证结果（`ok/source/error`）
+
+示例：
+
+```bash
+bash scripts/e2e_web_closure_demo.sh nebula_metrics
+```
+
+可选环境变量：
+- `LAST_MINUTES`（默认 10080）
+- `LIMIT`（默认 5）
+- `SLOW_THRESHOLD_MS`（默认 1）
+- `RUNS_PATH`（默认 `data/agent_runs.json`）
+- `WEB_BASE_URL`（默认 `http://127.0.0.1:8080`）
+
 ## 错误分级规则
 
 - `Timeout`：异常栈含 `timeout` / `timed out`
