@@ -107,6 +107,37 @@ def test_trace_inspect_local_not_found(tmp_path: Path) -> None:
     assert body["ok"] is False
 
 
+def test_trace_inspect_auto_fallback_to_es(monkeypatch, tmp_path: Path) -> None:
+    app = create_app()
+    client = app.test_client()
+
+    trace_path = tmp_path / "mock_trace.json"
+    write_mock_file(trace_path, trace_id=DEFAULT_TRACE_ID, scenario="timeout")
+    trace_doc = build_mock_trace("real-es-trace", "timeout")
+
+    monkeypatch.setattr("nebula_copilot.web.app.fetch_trace_by_id", lambda **_: trace_doc)
+
+    resp = client.get(f"/api/traces/real-es-trace/inspect?local_path={trace_path}")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body["meta"]["source"] == "es"
+
+
+def test_trace_inspect_es_explicit(monkeypatch) -> None:
+    app = create_app()
+    client = app.test_client()
+    trace_doc = build_mock_trace("trace-es-explicit", "timeout")
+
+    monkeypatch.setattr("nebula_copilot.web.app.fetch_trace_by_id", lambda **_: trace_doc)
+
+    resp = client.get("/api/traces/trace-es-explicit/inspect?source=es")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body["meta"]["source"] == "es"
+
+
 def test_logs_search_api_with_monkeypatch(monkeypatch) -> None:
     app = create_app()
     client = app.test_client()
