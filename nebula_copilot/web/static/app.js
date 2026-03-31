@@ -43,6 +43,16 @@ async function getJson(url) {
   return payload;
 }
 
+async function postJson(url) {
+  const res = await fetch(url, { method: 'POST' });
+  const payload = await res.json();
+  if (!res.ok || payload.ok === false) {
+    const message = payload.error || `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+  return payload;
+}
+
 function renderKpi(data) {
   const root = qs('kpiGrid');
   if (!root) return;
@@ -566,7 +576,7 @@ async function startImport() {
 
   try {
     // 启动导入
-    const startResp = await getJson(
+    const startResp = await postJson(
       `/api/import/start?from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}&limit=${limit}&output_path=${encodeURIComponent(outputPath)}`
     );
 
@@ -645,7 +655,7 @@ async function startSync() {
 
   try {
     qs('syncStartBtn').disabled = true;
-    const resp = await getJson(
+    const resp = await postJson(
       `/api/sync/start?interval_seconds=${interval}&lookback_minutes=${lookback}&output_path=${encodeURIComponent(outputPath)}`
     );
 
@@ -666,7 +676,7 @@ async function startSync() {
 async function stopSync() {
   try {
     qs('syncStopBtn').disabled = true;
-    const resp = await getJson('/api/sync/stop');
+    const resp = await postJson('/api/sync/stop');
 
     if (!resp.ok) {
       throw new Error(resp.error || '停止同步失败');
