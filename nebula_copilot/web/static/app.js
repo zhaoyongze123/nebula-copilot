@@ -378,8 +378,8 @@ function renderSpanNode(node) {
     ev.preventDefault();
     selectSpanNode(node);
     // 自动填充 trace_id 和 service_name
-    qs('traceIdInput').value = state.selectedTraceId;
-    qs('serviceInput').value = node.service_name || '';
+    qs('logTraceIdInput').value = state.selectedTraceId;
+    qs('logServiceInput').value = node.service_name || '';
     await loadLogs();
   });
   line.appendChild(pickBtn);
@@ -478,13 +478,13 @@ async function loadTraceInspect(traceId) {
 }
 
 async function loadLogs() {
-  const traceId = (qs('traceIdInput').value || state.selectedTraceId).trim();
+  const traceId = (qs('logTraceIdInput').value || state.selectedTraceId).trim();
   if (!traceId) {
     alert('请先选择一个 trace');
     return;
   }
   
-  const serviceInput = qs('serviceInput').value.trim();
+  const serviceInput = qs('logServiceInput').value.trim();
   const keyword = encodeURIComponent(qs('keywordInput').value.trim());
   
   // 构建 URL：如果指定了 service_name，添加到查询参数
@@ -497,7 +497,7 @@ async function loadLogs() {
   if (data.ok) {
     // 更新 service_name 显示（使用 API 返回的实际值）
     if (data.data?.query?.service_name) {
-      qs('serviceInput').value = data.data.query.service_name;
+      qs('logServiceInput').value = data.data.query.service_name;
     }
   }
   
