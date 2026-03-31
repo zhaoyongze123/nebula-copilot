@@ -315,6 +315,13 @@ CI 自动执行（GitHub Actions）：
 - 部署手册：`docs/DEPLOYMENT.md`
 - 运维手册：`docs/OPERATIONS.md`
 
+## 数据接入与集成
+
+- **ES 数据格式标准**：`docs/ES_DATA_SCHEMA.md`（nebula-monitor 对齐指南）
+- **Nebula-Monitor 集成指南**：`docs/MONITOR_INTEGRATION_GUIDE.md`
+- **批量导入与同步 API**：`docs/ES_IMPORT_SYNC_API.md`
+- **导入/同步行为说明**：`docs/IMPORT_SYNC_BEHAVIOR.md`
+
 PR 自动合并脚本：
 - 按 PR 号执行：`bash scripts/merge_pr.sh <pr_number>`
 - 按当前分支自动定位 PR：`bash scripts/merge_current_pr.sh`
