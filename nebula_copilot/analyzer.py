@@ -102,6 +102,22 @@ def flatten_spans(root: Span) -> List[Span]:
     return spans
 
 
+def _has_error_in_trace(root: Span) -> bool:
+    """检查 trace 中是否存在任何错误 span。
+    
+    返回 True 如果存在任何异常情况，False 表示全部正常（OK）。
+    """
+    spans = flatten_spans(root)
+    for span in spans:
+        # 排除合成的 trace-root 节点
+        if span.service_name == "trace-root":
+            continue
+        error_type = classify_error(span)
+        if error_type != "None":
+            return True
+    return False
+
+
 def classify_error(span: Span) -> str:
     stack = (span.exception_stack or "").lower()
     if "timeout" in stack or "timed out" in stack:
@@ -163,7 +179,12 @@ def analyze_trace(
     sorted_spans = sorted(candidates, key=lambda s: s.duration_ms, reverse=True)
     top = sorted_spans[: max(1, top_n)]
     kb = knowledge_base or KnowledgeBase()
-    top_diagnosis = [build_span_diagnosis(trace_doc, s, llm_executor, kb) for s in top]
+    
+    # 仅当 trace 存在错误时才调用 LLM，正常链路不需要 LLM 分析
+    has_error = _has_error_in_trace(trace_doc.root)
+    executor_for_analysis = llm_executor if has_error else None
+    
+    top_diagnosis = [build_span_diagnosis(trace_doc, s, executor_for_analysis, kb) for s in top]
     return DiagnosisResult(
         trace_id=trace_doc.trace_id,
         bottleneck=top_diagnosis[0],
