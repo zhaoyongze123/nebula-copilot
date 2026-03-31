@@ -185,6 +185,7 @@ function renderRunDetail(page) {
 }
 
 function renderTraceInspect(payload) {
+  state.selectedTraceId = payload.trace_id;
   const panel = qs('tracePanel');
   if (!panel) return;
   const tree = normalizeTraceTree(payload.tree || {});
