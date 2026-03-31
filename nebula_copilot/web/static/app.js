@@ -501,6 +501,7 @@ function bootstrap() {
   qs('logSearchBtn').addEventListener('click', loadLogs);
   setupAutoRefresh();
   refreshAll();
+  initImportSync();
 }
 
 window.addEventListener('DOMContentLoaded', bootstrap);
@@ -710,11 +711,4 @@ async function updateSyncStatus() {
 function initImportSync() {
   initImportModal();
   initSyncPanel();
-}
-
-// 在 bootstrap 中调用
-const originalBootstrap = bootstrap;
-function bootstrap() {
-  originalBootstrap();
-  initImportSync();
 }
