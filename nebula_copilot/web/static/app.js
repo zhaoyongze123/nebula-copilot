@@ -401,9 +401,13 @@ function renderSpanNode(node) {
 
 function selectSpanNode(node) {
   state.selectedSpanId = node.span_id;
-  qs('spanIdInput').value = node.span_id;
-  if (!qs('keywordInput').value.trim()) {
-    qs('keywordInput').value = node.service_name || node.operation_name || '';
+  const spanIdInput = qs('spanIdInput');
+  if (spanIdInput) {
+    spanIdInput.value = node.span_id;
+  }
+  const keywordInput = qs('keywordInput');
+  if (keywordInput && !keywordInput.value.trim()) {
+    keywordInput.value = node.service_name || node.operation_name || '';
   }
 
   document.querySelectorAll('.tree .span-line').forEach((el) => {

@@ -7,6 +7,8 @@ nebula_copilot/code_whitelist.py
 nebula_copilot/config.py
 nebula_copilot/errors.py
 nebula_copilot/es_client.py
+nebula_copilot/es_importer.py
+nebula_copilot/es_sync.py
 nebula_copilot/evaluation.py
 nebula_copilot/history_vector.py
 nebula_copilot/knowledge_base.py
@@ -44,6 +46,8 @@ tests/test_cli.py
 tests/test_code_whitelist.py
 tests/test_config.py
 tests/test_es_client.py
+tests/test_es_importer.py
+tests/test_es_sync.py
 tests/test_evaluation.py
 tests/test_history_vector.py
 tests/test_llm_executor.py
