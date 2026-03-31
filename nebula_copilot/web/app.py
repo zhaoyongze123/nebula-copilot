@@ -394,6 +394,9 @@ def create_app() -> Flask:
             return jsonify(_envelope(data, source=source_name, degraded=False, start_ms=start))
         except TraceNotFoundError as exc:
             return jsonify(_envelope({}, source=source, degraded=True, start_ms=start, error=str(exc))), 404
+        except ESQueryError as exc:
+            # ES 中找不到 trace，当作 404 处理
+            return jsonify(_envelope({}, source=source, degraded=True, start_ms=start, error=str(exc))), 404
         except TraceValidationError as exc:
             return jsonify(_envelope({}, source=source, degraded=True, start_ms=start, error=str(exc))), 422
         except DataSourceError as exc:
@@ -467,7 +470,8 @@ def create_app() -> Flask:
             }
             return jsonify(_envelope(data, source="es", degraded=False, start_ms=start))
         except ESQueryError as exc:
-            return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 502
+            # trace 不存在，返回 404
+            return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 404
         except Exception as exc:
             return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 500
 
