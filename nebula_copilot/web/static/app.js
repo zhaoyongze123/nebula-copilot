@@ -504,3 +504,217 @@ function bootstrap() {
 }
 
 window.addEventListener('DOMContentLoaded', bootstrap);
+
+// ============= 批量导入功能 =============
+
+function initImportModal() {
+  const modal = qs('importModal');
+  const btn = qs('importBtn');
+  const closeBtn = qs('importModalClose');
+  const cancelBtn = qs('importCancelBtn');
+  const startBtn = qs('importStartBtn');
+
+  // 设置默认日期
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  
+  function formatDatetimeLocal(date) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+  
+  qs('importFromDate').value = formatDatetimeLocal(sevenDaysAgo);
+  qs('importToDate').value = formatDatetimeLocal(now);
+
+  btn.addEventListener('click', () => {
+    modal.style.display = 'flex';
+  });
+
+  closeBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+
+  startBtn.addEventListener('click', startImport);
+}
+
+async function startImport() {
+  const fromDate = qs('importFromDate').value;
+  const toDate = qs('importToDate').value;
+  const limit = qs('importLimit').value || '1000';
+  const outputPath = qs('importOutputPath').value;
+
+  if (!fromDate || !toDate) {
+    alert('请选择时间范围');
+    return;
+  }
+
+  // 隐藏按钮，显示进度
+  qs('importStartBtn').style.display = 'none';
+  qs('importCancelBtn').style.display = 'none';
+  qs('importProgress').style.display = 'block';
+
+  try {
+    // 启动导入
+    const startResp = await getJson(
+      `/api/import/start?from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}&limit=${limit}&output_path=${encodeURIComponent(outputPath)}`
+    );
+
+    if (!startResp.ok) {
+      throw new Error(startResp.error || '启动导入失败');
+    }
+
+    const taskId = startResp.data.task_id;
+    qs('importStatus').textContent = `任务 ID: ${taskId}，进度: 0%`;
+
+    // 轮询导入进度
+    const maxAttempts = 600; // 10 分钟（6s × 600）
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const statusResp = await getJson(`/api/import/${encodeURIComponent(taskId)}/status`);
+      if (!statusResp.ok) {
+        throw new Error(statusResp.error || '查询状态失败');
+      }
+
+      const { status, progress, error, result } = statusResp.data;
+
+      if (status === 'done') {
+        const count = result?.imported_count || 0;
+        qs('importStatus').textContent = `✅ 导入完成！已导入 ${count} 条 traces`;
+        qs('importProgressBar').style.width = '100%';
+        break;
+      } else if (status === 'error') {
+        qs('importStatus').textContent = `❌ 导入失败: ${error}`;
+        break;
+      } else {
+        qs('importStatus').textContent = `进度: ${progress || 0}%`;
+        qs('importProgressBar').style.width = `${progress || 0}%`;
+      }
+    }
+
+    // 刷新数据
+    setTimeout(() => {
+      refreshAll();
+      qs('importModal').style.display = 'none';
+    }, 1000);
+  } catch (err) {
+    qs('importStatus').textContent = `❌ 错误: ${err.message}`;
+    console.error(err);
+  }
+}
+
+// ============= 自动同步功能 =============
+
+function initSyncPanel() {
+  const syncBtn = qs('syncBtn');
+  const panel = qs('syncPanel');
+  const closeBtn = qs('syncPanelClose');
+  const startBtn = qs('syncStartBtn');
+  const stopBtn = qs('syncStopBtn');
+  const refreshBtn = qs('syncRefreshStatusBtn');
+
+  syncBtn.addEventListener('click', () => {
+    panel.style.display = 'block';
+    updateSyncStatus();
+  });
+
+  closeBtn.addEventListener('click', () => {
+    panel.style.display = 'none';
+  });
+
+  startBtn.addEventListener('click', startSync);
+  stopBtn.addEventListener('click', stopSync);
+  refreshBtn.addEventListener('click', updateSyncStatus);
+}
+
+async function startSync() {
+  const interval = qs('syncInterval').value || '300';
+  const lookback = qs('syncLookback').value || '60';
+  const outputPath = qs('syncOutputPath').value;
+
+  try {
+    qs('syncStartBtn').disabled = true;
+    const resp = await getJson(
+      `/api/sync/start?interval_seconds=${interval}&lookback_minutes=${lookback}&output_path=${encodeURIComponent(outputPath)}`
+    );
+
+    if (!resp.ok) {
+      throw new Error(resp.error || '启动同步失败');
+    }
+
+    // 更新状态
+    await updateSyncStatus();
+    qs('syncStopBtn').disabled = false;
+  } catch (err) {
+    alert(`启动同步失败: ${err.message}`);
+    qs('syncStartBtn').disabled = false;
+    console.error(err);
+  }
+}
+
+async function stopSync() {
+  try {
+    qs('syncStopBtn').disabled = true;
+    const resp = await getJson('/api/sync/stop');
+
+    if (!resp.ok) {
+      throw new Error(resp.error || '停止同步失败');
+    }
+
+    // 更新状态
+    await updateSyncStatus();
+    qs('syncStartBtn').disabled = false;
+  } catch (err) {
+    alert(`停止同步失败: ${err.message}`);
+    qs('syncStopBtn').disabled = false;
+    console.error(err);
+  }
+}
+
+async function updateSyncStatus() {
+  try {
+    const resp = await getJson('/api/sync/status');
+
+    if (!resp.ok) {
+      throw new Error(resp.error || '查询状态失败');
+    }
+
+    const { is_running, last_sync_time, total_synced, total_errors } = resp.data;
+
+    // 更新状态显示
+    qs('syncStatus').textContent = is_running ? '🟢 运行中' : '🔴 未运行';
+    qs('syncLastTime').textContent = last_sync_time ? new Date(last_sync_time).toLocaleString() : '-';
+    qs('syncTotalCount').textContent = total_synced || 0;
+    qs('syncErrorCount').textContent = total_errors || 0;
+
+    // 更新按钮状态
+    qs('syncStartBtn').disabled = is_running;
+    qs('syncStopBtn').disabled = !is_running;
+  } catch (err) {
+    console.error('更新同步状态失败:', err);
+    qs('syncStatus').textContent = '❌ 查询失败';
+  }
+}
+
+// 初始化导入和同步
+function initImportSync() {
+  initImportModal();
+  initSyncPanel();
+}
+
+// 在 bootstrap 中调用
+const originalBootstrap = bootstrap;
+function bootstrap() {
+  originalBootstrap();
+  initImportSync();
+}

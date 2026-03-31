@@ -19,6 +19,8 @@
         <input id="autoRefresh" type="checkbox" checked />
       </label>
       <button id="refreshBtn">立即刷新</button>
+      <button id="importBtn" class="primary">📥 批量导入</button>
+      <button id="syncBtn" class="primary">🔄 自动同步</button>
       <span id="lastRefresh">-</span>
     </div>
   </header>
@@ -78,6 +80,96 @@
 
   <div class="kpi-source-wrap">
     <span id="sourceKpi" class="source-chip">KPI source:-</span>
+  </div>
+
+  <!-- 批量导入弹窗 -->
+  <div id="importModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📥 批量导入 Traces</h2>
+        <button class="modal-close" id="importModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>开始时间</label>
+          <input id="importFromDate" type="datetime-local" required />
+          <small>默认：7 天前</small>
+        </div>
+        <div class="form-group">
+          <label>结束时间</label>
+          <input id="importToDate" type="datetime-local" required />
+          <small>默认：当前时间</small>
+        </div>
+        <div class="form-group">
+          <label>导入数量</label>
+          <input id="importLimit" type="number" value="1000" min="1" max="5000" />
+          <small>最多导入多少条 traces（默认 1000）</small>
+        </div>
+        <div class="form-group">
+          <label>输出文件路径</label>
+          <input id="importOutputPath" type="text" value="data/agent_runs.json" />
+          <small>导入结果保存位置</small>
+        </div>
+        <div id="importProgress" style="display: none;">
+          <h3>导入进度</h3>
+          <div class="progress-bar">
+            <div id="importProgressBar" class="progress-fill"></div>
+          </div>
+          <p id="importStatus">准备导入...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="importStartBtn" class="btn-primary">开始导入</button>
+        <button id="importCancelBtn" class="btn-secondary">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自动同步控制面板 -->
+  <div id="syncPanel" class="sync-panel" style="display: none;">
+    <div class="sync-header">
+      <h3>🔄 自动同步状态</h3>
+      <button class="panel-close" id="syncPanelClose">&times;</button>
+    </div>
+    <div class="sync-body">
+      <div class="sync-status">
+        <div class="status-item">
+          <label>状态</label>
+          <span id="syncStatus">未运行</span>
+        </div>
+        <div class="status-item">
+          <label>最后同步</label>
+          <span id="syncLastTime">-</span>
+        </div>
+        <div class="status-item">
+          <label>累计导入</label>
+          <span id="syncTotalCount">0</span> 条
+        </div>
+        <div class="status-item">
+          <label>错误数</label>
+          <span id="syncErrorCount">0</span>
+        </div>
+      </div>
+      <div class="sync-controls">
+        <div class="form-group">
+          <label>同步间隔（秒）</label>
+          <input id="syncInterval" type="number" value="300" min="60" max="3600" />
+        </div>
+        <div class="form-group">
+          <label>回溯窗口（分钟）</label>
+          <input id="syncLookback" type="number" value="60" min="10" max="1440" />
+        </div>
+        <div class="form-group">
+          <label>输出文件路径</label>
+          <input id="syncOutputPath" type="text" value="data/agent_runs.json" />
+        </div>
+        <div class="sync-buttons">
+          <button id="syncStartBtn" class="btn-primary">启动同步</button>
+          <button id="syncStopBtn" class="btn-secondary" disabled>停止同步</button>
+        </div>
+        <button id="syncRefreshStatusBtn" class="btn-small">刷新状态</button>
+      </div>
+    </div>
   </div>
 
   <script src="{{ url_for('static', filename='app.js') }}"></script>
