@@ -591,9 +591,9 @@ def search_traces_by_range(
     """
     es = _build_es(es_url, username, password, verify_certs, timeout_seconds)
 
-    # 构建时间范围过滤器
-    from_ts = from_date.isoformat()
-    to_ts = to_date.isoformat()
+    # 构建时间范围过滤器（转换为 epoch_millis）
+    from_ts = int(from_date.timestamp() * 1000)
+    to_ts = int(to_date.timestamp() * 1000)
 
     query = {
         "size": limit,
