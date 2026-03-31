@@ -104,6 +104,10 @@ jobs:
       - name: Run M4 runtime guard acceptance tests
         run: pytest -q tests/test_runtime_guard.py
 
+      - name: Run Vector Library Tests (Phase 2-4)
+        run: |
+          pytest -q tests/test_history_vector.py tests/test_phase2_integration.py tests/test_code_whitelist.py tests/test_phase3_code_diagnosis.py tests/test_evaluation.py
+
       - name: Validate deployment assets
         run: |
           test -f Dockerfile
@@ -168,3 +172,4 @@ jobs:
       - name: Live LLM smoke skipped
         if: steps.key_check.outputs.has_key != 'true'
         run: echo "GH_MODELS_API_KEY missing; Live LLM smoke skipped"
+
