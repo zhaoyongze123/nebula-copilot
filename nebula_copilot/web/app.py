@@ -409,6 +409,7 @@ def create_app() -> Flask:
         start = time.time() * 1000
         trace_id = request.args.get("trace_id", "").strip()
         span_id = request.args.get("span_id", "").strip()
+        service_name = request.args.get("service_name", "").strip()  # 新增：直接指定 service
         keyword = request.args.get("keyword", "").strip()
         limit = max(1, min(200, int(request.args.get("limit", "50"))))
 
@@ -433,12 +434,16 @@ def create_app() -> Flask:
                 verify_certs=verify_certs,
                 timeout_seconds=timeout_seconds,
             )
-            target_span = _find_span(trace_doc.root, span_id) if span_id else None
-            target_service = (
-                target_span.service_name
-                if target_span is not None
-                else analyze_trace(trace_doc, top_n=1, knowledge_base=knowledge_base).bottleneck.span.service_name
-            )
+            
+            # 确定目标 service：优先使用直接指定的 service_name，其次查找 span，最后用瓶颈 service
+            target_service = service_name
+            if not target_service:
+                target_span = _find_span(trace_doc.root, span_id) if span_id else None
+                target_service = (
+                    target_span.service_name
+                    if target_span is not None
+                    else analyze_trace(trace_doc, top_n=1, knowledge_base=knowledge_base).bottleneck.span.service_name
+                )
 
             logs_payload = search_service_logs(
                 es_url=es_url,

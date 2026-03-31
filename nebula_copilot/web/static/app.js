@@ -376,7 +376,9 @@ function renderSpanNode(node) {
   pickBtn.addEventListener('click', async (ev) => {
     ev.preventDefault();
     selectSpanNode(node);
-    qs('spanIdInput').value = node.span_id;
+    // 自动填充 trace_id 和 service_name
+    qs('traceIdInput').value = state.selectedTraceId;
+    qs('serviceInput').value = node.service_name || '';
     await loadLogs();
   });
   line.appendChild(pickBtn);
@@ -475,10 +477,29 @@ async function loadTraceInspect(traceId) {
 }
 
 async function loadLogs() {
-  if (!state.selectedTraceId) return;
-  const spanId = encodeURIComponent(qs('spanIdInput').value.trim());
+  const traceId = (qs('traceIdInput').value || state.selectedTraceId).trim();
+  if (!traceId) {
+    alert('请先选择一个 trace');
+    return;
+  }
+  
+  const serviceInput = qs('serviceInput').value.trim();
   const keyword = encodeURIComponent(qs('keywordInput').value.trim());
-  const data = await getJson(`/api/logs/search?trace_id=${encodeURIComponent(state.selectedTraceId)}&span_id=${spanId}&keyword=${keyword}&limit=50`);
+  
+  // 构建 URL：如果指定了 service_name，添加到查询参数
+  let url = `/api/logs/search?trace_id=${encodeURIComponent(traceId)}&keyword=${keyword}&limit=50`;
+  if (serviceInput) {
+    url += `&service_name=${encodeURIComponent(serviceInput)}`;
+  }
+  
+  const data = await getJson(url);
+  if (data.ok) {
+    // 更新 service_name 显示（使用 API 返回的实际值）
+    if (data.data?.query?.service_name) {
+      qs('serviceInput').value = data.data.query.service_name;
+    }
+  }
+  
   qs('logsResult').textContent = JSON.stringify(data.data || {}, null, 2);
   setSource('sourceLogs', data.meta?.source);
 }

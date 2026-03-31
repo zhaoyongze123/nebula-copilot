@@ -70,7 +70,8 @@
       <div id="cy" class="card" style="height: 300px; width: 100%; position: relative;"></div>
       <h3>Logs <span id="sourceLogs" class="source-chip">source:-</span></h3>
       <div class="logs-search">
-        <input id="spanIdInput" placeholder="span_id（可选）" />
+        <input id="traceIdInput" placeholder="trace_id（自动）" readonly />
+        <input id="serviceInput" placeholder="service_name（自动填充）" />
         <input id="keywordInput" placeholder="关键字（可选）" />
         <button id="logSearchBtn">查日志</button>
       </div>
