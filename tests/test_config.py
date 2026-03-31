@@ -16,6 +16,10 @@ def test_load_app_config_from_env_file(tmp_path: Path) -> None:
                 "LLM_TIMEOUT_MS=7000",
                 "LLM_MAX_RETRY=1",
                 "LLM_REPORT_POLISH_ENABLED=true",
+                "VECTOR_ENABLED=true",
+                "VECTOR_PROVIDER=local",
+                "VECTOR_TOP_K=5",
+                "VECTOR_MIN_SCORE=0.42",
                 "RUN_DEDUPE_WINDOW_SECONDS=120",
                 "RUN_RATE_LIMIT_PER_MINUTE=9",
                 "RUN_GUARD_PATH=data/custom_guard.json",
@@ -31,6 +35,10 @@ def test_load_app_config_from_env_file(tmp_path: Path) -> None:
     assert cfg.llm.api_key == "test-key"
     assert cfg.llm.timeout_ms == 7000
     assert cfg.llm.max_retry == 1
+    assert cfg.vector.enabled is True
+    assert cfg.vector.provider == "local"
+    assert cfg.vector.top_k == 5
+    assert cfg.vector.min_score == 0.42
     assert cfg.run_dedupe_window_seconds == 120
     assert cfg.run_rate_limit_per_minute == 9
     assert str(cfg.run_guard_path) == "data/custom_guard.json"

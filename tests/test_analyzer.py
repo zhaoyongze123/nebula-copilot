@@ -1,6 +1,9 @@
 from nebula_copilot.analyzer import analyze_trace, build_alert_summary, classify_error
+from nebula_copilot.config import VectorConfig
+from nebula_copilot.knowledge_base import KnowledgeBase
 from nebula_copilot.models import Span, TraceDocument
 from nebula_copilot.mock_data import build_mock_trace
+from nebula_copilot.vector_store import VectorRecord, VectorSearchHit
 
 
 def test_bottleneck_timeout_scenario() -> None:
@@ -149,3 +152,59 @@ def test_analyze_trace_matches_config_drift_pattern() -> None:
 
     assert insight is not None
     assert any(item.get("label") == "配置漂移" for item in insight.matched_patterns)
+
+
+def test_analyze_trace_adds_vector_pattern_when_rule_not_hit() -> None:
+    class FakeVectorStore:
+        def upsert(self, records: list[VectorRecord]) -> None:
+            return None
+
+        def search(self, query: str, top_k: int) -> list[VectorSearchHit]:
+            return [
+                VectorSearchHit(
+                    record_id="dependency_outage",
+                    score=0.87,
+                    metadata={
+                        "name": "dependency_outage",
+                        "label": "依赖挂掉",
+                        "description": "向量召回依赖故障模式",
+                    },
+                )
+            ]
+
+    trace = TraceDocument(
+        trace_id="trace_kb_vector",
+        root=Span(
+            span_id="root",
+            parent_span_id=None,
+            service_name="gateway-service",
+            operation_name="POST /api/pay",
+            duration_ms=350,
+            status="OK",
+            exception_stack=None,
+            children=[
+                Span(
+                    span_id="biz-1",
+                    parent_span_id="root",
+                    service_name="payment-service",
+                    operation_name="RPC settle",
+                    duration_ms=1400,
+                    status="ERROR",
+                    exception_stack="UnhandledRuntimeException",
+                    children=[],
+                )
+            ],
+        ),
+    )
+    knowledge_base = KnowledgeBase(
+        vector_config=VectorConfig(enabled=True, provider="local", top_k=3, min_score=0.5),
+        vector_store=FakeVectorStore(),
+    )
+
+    result = analyze_trace(trace, top_n=1, knowledge_base=knowledge_base)
+    insight = result.bottleneck.knowledge_insight
+
+    assert insight is not None
+    assert insight.matched_patterns
+    assert insight.matched_patterns[0].get("label") == "依赖挂掉"
+    assert insight.matched_patterns[0].get("match_source") == "vector"

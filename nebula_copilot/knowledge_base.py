@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
+from nebula_copilot.config import AppConfig, VectorConfig
 from nebula_copilot.models import Span, TraceDocument
+from nebula_copilot.vector_store import LocalVectorStore, VectorRecord, VectorStore
 
 
 @dataclass(frozen=True)
@@ -33,7 +35,12 @@ class KnowledgeInsight:
 
 
 class KnowledgeBase:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        vector_config: Optional[VectorConfig] = None,
+        vector_store: Optional[VectorStore] = None,
+    ) -> None:
         self._patterns: List[FaultPattern] = [
             FaultPattern(
                 name="dependency_outage",
@@ -72,6 +79,21 @@ class KnowledgeBase:
                 linkage_suggestion="对比异常实例与健康实例的配置快照、发布批次和依赖版本，排查漂移来源。",
             ),
         ]
+        self._patterns_by_name = {pattern.name: pattern for pattern in self._patterns}
+
+        self._vector_config = vector_config or VectorConfig()
+        self._vector_store: Optional[VectorStore] = None
+        if self._vector_config.enabled:
+            if vector_store is not None:
+                self._vector_store = vector_store
+            elif self._vector_config.provider.lower() == "local":
+                self._vector_store = LocalVectorStore()
+            if self._vector_store is not None:
+                self._seed_vector_store()
+
+    @classmethod
+    def from_app_config(cls, app_config: AppConfig) -> "KnowledgeBase":
+        return cls(vector_config=app_config.vector)
 
     def infer(self, trace_doc: TraceDocument, span: Span, error_type: str) -> KnowledgeInsight:
         if error_type == "None":
@@ -97,9 +119,12 @@ class KnowledgeBase:
                     "description": pattern.description,
                     "confidence": round(score, 2),
                     "signals": hit_signals,
+                    "match_source": "rule",
                     "related_metric_checks": list(pattern.related_metric_checks),
                 }
             )
+
+        matched.extend(self._vector_match(text, existing_names={str(item.get("name", "")) for item in matched}))
 
         if not matched:
             matched = [
@@ -143,6 +168,65 @@ class KnowledgeBase:
                 (error_type or "").lower(),
             ]
         )
+
+    def _seed_vector_store(self) -> None:
+        if self._vector_store is None:
+            return
+
+        records = [
+            VectorRecord(
+                record_id=pattern.name,
+                text=" ".join(
+                    [
+                        pattern.name,
+                        pattern.label,
+                        pattern.description,
+                        " ".join(pattern.signals),
+                        " ".join(pattern.related_metric_checks),
+                    ]
+                ),
+                metadata={
+                    "name": pattern.name,
+                    "label": pattern.label,
+                    "description": pattern.description,
+                },
+            )
+            for pattern in self._patterns
+        ]
+        self._vector_store.upsert(records)
+
+    def _vector_match(self, text: str, existing_names: set[str]) -> List[Dict[str, object]]:
+        if self._vector_store is None:
+            return []
+
+        hits = self._vector_store.search(text, top_k=self._vector_config.top_k)
+        matched: List[Dict[str, object]] = []
+        for hit in hits:
+            if hit.score < self._vector_config.min_score:
+                continue
+            pattern_name = hit.metadata.get("name") or hit.record_id
+            if pattern_name in existing_names:
+                continue
+
+            pattern = self._patterns_by_name.get(pattern_name)
+            related_checks = (
+                list(pattern.related_metric_checks)
+                if pattern is not None
+                else ["关联服务错误率与慢调用趋势", "最近发布/配置变更记录"]
+            )
+            matched.append(
+                {
+                    "name": pattern_name,
+                    "label": hit.metadata.get("label", "向量相似模式"),
+                    "description": hit.metadata.get("description", "根据历史案例相似度召回的模式。"),
+                    "confidence": round(min(0.92, max(0.35, hit.score)), 2),
+                    "signals": [f"vector_similarity:{hit.score:.2f}"],
+                    "match_source": "vector",
+                    "related_metric_checks": related_checks,
+                }
+            )
+
+        return matched
 
     def _related_services(self, trace_doc: TraceDocument, target: Span) -> List[str]:
         parent, children = self._find_neighbors(trace_doc.root, target.span_id)

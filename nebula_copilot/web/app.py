@@ -11,8 +11,10 @@ from flask import Flask, jsonify, redirect, render_template, request
 
 from nebula_copilot.analyzer import analyze_trace
 from nebula_copilot.cli import _load_run_records
+from nebula_copilot.config import load_app_config
 from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
 from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, search_service_logs
+from nebula_copilot.knowledge_base import KnowledgeBase
 from nebula_copilot.repository import LocalJsonRepository
 
 
@@ -198,6 +200,10 @@ def _find_span(span: Any, span_id: str) -> Any | None:
 
 
 def create_app() -> Flask:
+    env_file = Path(os.getenv("NEBULA_ENV_FILE", ".env"))
+    app_config = load_app_config(env_file)
+    knowledge_base = KnowledgeBase.from_app_config(app_config)
+
     app = Flask(
         __name__,
         template_folder=str(Path(__file__).parent / "templates"),
@@ -371,7 +377,7 @@ def create_app() -> Flask:
                     )
                     source_name = "es"
 
-            diagnosis = analyze_trace(trace_doc, top_n=3).to_dict()
+            diagnosis = analyze_trace(trace_doc, top_n=3, knowledge_base=knowledge_base).to_dict()
             data = {
                 "trace_id": trace_id,
                 "tree": _span_to_dict(trace_doc.root),
@@ -420,7 +426,7 @@ def create_app() -> Flask:
             target_service = (
                 target_span.service_name
                 if target_span is not None
-                else analyze_trace(trace_doc, top_n=1).bottleneck.span.service_name
+                else analyze_trace(trace_doc, top_n=1, knowledge_base=knowledge_base).bottleneck.span.service_name
             )
 
             logs_payload = search_service_logs(
