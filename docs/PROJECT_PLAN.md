@@ -467,6 +467,21 @@ class AgentState(TypedDict, total=False):
 - 已完成可视化可信度增强：KPI / Runs / Run Detail / Trace / Logs 均新增 `source=local|es` 显式标识。
 - 已新增真实闭环一键演示脚本 `scripts/e2e_web_closure_demo.sh`：单命令触发 monitor-es 单轮、刷新 run 记录并输出可验证 trace_id。
 
+### 最新进度同步（2026-03-31）
+
+**向量库接入 Phase 2 完成：**
+- ✅ **Phase 0** 完成：统一 VectorStore 抽象接口，支持 Chroma（本地）+ pgvector（生产）双环境配置
+- ✅ **Phase 1** 完成：知识库向量化落地，将规则 SOP 与模式特征纳入向量索引，analyzer 接入向量召回补充规则匹配
+- ✅ **Phase 2** 完成：历史诊断向量库与证据追踪
+  - 已实现 VectorProvider 工厂模式（LocalVectorStore + pgvector adapter）
+  - 已在诊断记录中追踪向量匹配来源、相似度、提供者信息
+  - 已增强 `_node_report()` 在飞书报告中展示"向量匹配模式"段落，包含相似度评分与库源标识
+  - 关键程序：`nebula_copilot/vector_store.py`（存储抽象）、`nebula_copilot/knowledge_base.py`（向量化与检索）、`nebula_copilot/agent/graph.py`（报告增强）
+
+**下一优先级：**
+- Phase 3 规划：源码白名单检索（接口层、异常处理、重试降级逻辑），支持按 service+keyword 的结构过滤 + 向量重排
+- Phase 4 规划：周指标评估（召回率、采纳率、耗时分布）与数据治理（过期清理、敏感信息脱敏）
+
 
 
 

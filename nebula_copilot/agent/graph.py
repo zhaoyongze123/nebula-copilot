@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from time import sleep
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from nebula_copilot.agent.state import AgentState
 from nebula_copilot.models import TraceDocument
@@ -109,6 +109,7 @@ def _node_report(
     llm_executor: Any | None = None,
     *,
     llm_decision_required: bool = False,
+    history_store: Any = None,
 ) -> None:
     bottleneck = state.diagnosis.get("bottleneck", {}) if isinstance(state.diagnosis, dict) else {}
     error_type = bottleneck.get("error_type", "Unknown")
@@ -128,6 +129,7 @@ def _node_report(
     kb_relation_hint = "无"
     kb_linkage_hint = ""
     vector_evidence = ""
+    historical_cases_context = ""
 
     if isinstance(knowledge_insight, dict):
         patterns = knowledge_insight.get("matched_patterns")
@@ -158,6 +160,43 @@ def _node_report(
             kb_relation_hint = relation_hint
         kb_linkage_hint = str(knowledge_insight.get("linkage_investigation_suggestion") or "").strip()
 
+    # Retrieve historical cases for context
+    if history_store is not None:
+        try:
+            exception_stack = bottleneck.get("exception_stack")
+            historical_matches = history_store.search(
+                service_name=service_name,
+                operation_name=operation_name,
+                error_type=error_type,
+                exception_stack=exception_stack,
+            )
+            if historical_matches:
+                case_lines = []
+                for i, match in enumerate(historical_matches[:3], 1):
+                    case_lines.append(
+                        f"{i}. {match.service_name}/{match.error_type} "
+                        f"(相似度:{match.score:.2f})\n"
+                        f"   建议: {match.action_suggestion[:100]}"
+                    )
+                if case_lines:
+                    historical_cases_context = "历史相似案例:\n" + "\n".join(case_lines)
+                    state.add_event(
+                        "history_retrieval",
+                        "ok",
+                        f"检索到 {len(historical_matches)} 个相似历史案例",
+                        {
+                            "count": len(historical_matches),
+                            "top_score": historical_matches[0].score if historical_matches else 0.0,
+                        },
+                    )
+        except Exception as exc:
+            state.add_event(
+                "history_retrieval",
+                "fallback",
+                "历史案例检索失败",
+                {"error": str(exc)},
+            )
+
     if llm_executor is None and llm_decision_required:
         raise RuntimeError("LLM decision required but executor is not configured")
 
@@ -175,6 +214,7 @@ def _node_report(
                         "jvm": jvm,
                         "logs": logs,
                         "rule_action": action_hint,
+                        "historical_cases": historical_cases_context if historical_cases_context else None,
                     }
                 )
                 if isinstance(decision, dict) and decision:
@@ -258,6 +298,7 @@ def _node_report(
         f"{jvm_hint}\n"
         f"{logs_hint}\n"
         + (f"{vector_evidence}\n" if vector_evidence else "")
+        + (f"{historical_cases_context}\n" if historical_cases_context else "")
         + f"链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}\n"
         "\n"
         "[建议动作]\n"
@@ -302,6 +343,7 @@ def run_agent_graph(
     tool_registry: ToolRegistry,
     llm_executor: Any | None = None,
     llm_decision_required: bool = False,
+    history_store: Any = None,
 ) -> Dict[str, Any]:
     state = AgentState.new(trace_id=trace_id, run_id=run_id)
 
@@ -329,6 +371,7 @@ def run_agent_graph(
             service_name,
             llm_executor=llm_executor,
             llm_decision_required=llm_decision_required,
+            history_store=history_store,
         )
         _node_notify(state)
         state.status = "ok"

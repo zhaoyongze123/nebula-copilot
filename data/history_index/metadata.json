@@ -1,0 +1,7 @@
+{
+  "indexed_count": 19,
+  "provider": "local",
+  "top_k": 5,
+  "min_score": 0.4,
+  "source_file": "/Users/mac/Documents/python/data/agent_runs.json"
+}
