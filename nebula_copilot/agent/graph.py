@@ -110,6 +110,7 @@ def _node_report(
     *,
     llm_decision_required: bool = False,
     history_store: Any = None,
+    code_store: Any = None,
 ) -> None:
     bottleneck = state.diagnosis.get("bottleneck", {}) if isinstance(state.diagnosis, dict) else {}
     error_type = bottleneck.get("error_type", "Unknown")
@@ -130,6 +131,7 @@ def _node_report(
     kb_linkage_hint = ""
     vector_evidence = ""
     historical_cases_context = ""
+    code_evidence_context = ""
 
     if isinstance(knowledge_insight, dict):
         patterns = knowledge_insight.get("matched_patterns")
@@ -194,6 +196,42 @@ def _node_report(
                 "history_retrieval",
                 "fallback",
                 "历史案例检索失败",
+                {"error": str(exc)},
+            )
+
+    # Retrieve source code snippets for context
+    if code_store is not None:
+        try:
+            code_matches = code_store.search(
+                service_name=service_name,
+                error_type=error_type,
+                operation_name=operation_name,
+            )
+            if code_matches:
+                code_lines = []
+                for i, match in enumerate(code_matches[:2], 1):
+                    func_name = match.function_name or "unknown"
+                    file_name = match.file_path.split("/")[-1] if match.file_path else "unknown"
+                    code_lines.append(
+                        f"{i}. {file_name}:{func_name} (相似度:{match.score:.2f})\n"
+                        f"   关键字: {', '.join(match.keywords[:3])}"
+                    )
+                if code_lines:
+                    code_evidence_context = "相关源码片段:\n" + "\n".join(code_lines)
+                    state.add_event(
+                        "code_retrieval",
+                        "ok",
+                        f"检索到 {len(code_matches)} 个相关源码片段",
+                        {
+                            "count": len(code_matches),
+                            "top_score": code_matches[0].score if code_matches else 0.0,
+                        },
+                    )
+        except Exception as exc:
+            state.add_event(
+                "code_retrieval",
+                "fallback",
+                "源码检索失败",
                 {"error": str(exc)},
             )
 
@@ -299,6 +337,7 @@ def _node_report(
         f"{logs_hint}\n"
         + (f"{vector_evidence}\n" if vector_evidence else "")
         + (f"{historical_cases_context}\n" if historical_cases_context else "")
+        + (f"{code_evidence_context}\n" if code_evidence_context else "")
         + f"链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}\n"
         "\n"
         "[建议动作]\n"
@@ -344,6 +383,7 @@ def run_agent_graph(
     llm_executor: Any | None = None,
     llm_decision_required: bool = False,
     history_store: Any = None,
+    code_store: Any = None,
 ) -> Dict[str, Any]:
     state = AgentState.new(trace_id=trace_id, run_id=run_id)
 
@@ -372,6 +412,7 @@ def run_agent_graph(
             llm_executor=llm_executor,
             llm_decision_required=llm_decision_required,
             history_store=history_store,
+            code_store=code_store,
         )
         _node_notify(state)
         state.status = "ok"
