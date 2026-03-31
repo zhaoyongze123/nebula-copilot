@@ -188,38 +188,63 @@ python scripts/load_simulated_es_data.py \
 
 ### 7) 启动前端可观测排障台（Web）
 
-安装依赖后可直接启动：
+#### 安装（重要：首次需要注册 entry point）
 
 ```bash
+# 首次安装或更新后必须执行此命令来注册 nebula-web 命令
+python -m pip install -e .
+```
+
+#### 启动方式
+
+**方式 1：直接命令（推荐）**
+```bash
 nebula-web --host 0.0.0.0 --port 8080
+# 访问 http://127.0.0.1:8080/dashboard
 ```
 
-打开浏览器访问：
-
-```text
-http://127.0.0.1:8080/dashboard
+**方式 2：Python 模块运行**
+```bash
+python -m nebula_copilot.web --host 0.0.0.0 --port 8080
 ```
 
-核心接口：
+**方式 3：启用调试模式**
+```bash
+nebula-web --host 0.0.0.0 --port 8080 --debug
+```
+
+**方式 4：Docker 容器内**
+```bash
+docker compose up -d
+# 访问 http://127.0.0.1:8080/dashboard
+```
+
+#### 核心功能
+
+打开浏览器访问 http://127.0.0.1:8080/dashboard，你会看到：
+
+- **KPI 网格**：总诊断数、成功率、平均延迟、错误分布
+- **Runs 列表**：所有运行记录，支持状态/trace/排序过滤，展开即加载详情
+- **Run Detail**：单次诊断详情、Timeline、诊断结论、LLM 分析结果
+- **Trace Tree**：链路树展示，自动折叠重复层级
+- **Topology**：服务拓扑图，按状态着色（ERROR=红、SKIPPED=橙、OK=蓝）
+- **Logs**：日志搜索，支持按 trace_id / span_id / keyword
+
+#### 核心接口
+
 - `GET /api/overview`：总体 KPI 与最近异常
 - `GET /api/runs`：运行记录列表（支持状态/trace/sort 过滤）
 - `GET /api/runs/<run_id>/page`：单次运行详情
 - `GET /api/traces/<trace_id>/inspect`：trace 树 + 诊断结果
 - `GET /api/logs/search`：按 trace/span 反查服务日志
 
-页面已支持显式数据来源标签（`source=local|es`）：
-- KPI 区块：显示 `/api/overview` 的来源
-- Runs 区块：显示 `/api/runs` 的来源
-- Run Detail 区块：显示 `/api/runs/<run_id>/page` 的来源
-- Trace Inspect 区块：显示 `/api/traces/<trace_id>/inspect` 的来源
-- Logs 区块：显示 `/api/logs/search` 的来源
+#### 页面特性
 
-页面交互增强：
-- Runs 区块使用可展开下拉模块（Accordion），展开即联动加载 Run Detail
-- Run Detail 新增 “LLM 分析结果” 面板，展示摘要与 LLM 事件（如 `llm_decision`）
-- Trace Tree 自动折叠重复 `trace-root` 层级，减少噪音
-- Topology 自动过滤 synthetic root，仅展示真实服务节点
-- Topology 节点按状态着色：`ERROR=红`、`SKIPPED=橙`、`OK=蓝`
+- **数据来源标签**（`source=local|es`）：所有区块清晰标识数据来源
+- **Accordion 展开**：Runs 列表展开时自动加载 Run Detail
+- **LLM 分析面板**：展示摘要与 LLM 决策事件
+- **智能折叠**：Trace Tree 自动折叠重复 trace-root 层级
+- **拓扑着色**：Topology 节点按状态着色，快速识别问题
 
 ### 8) 一键闭环演示（真实 ES）
 
