@@ -127,6 +127,7 @@ def _node_report(
     kb_pattern_text = "无"
     kb_relation_hint = "无"
     kb_linkage_hint = ""
+    vector_evidence = ""
 
     if isinstance(knowledge_insight, dict):
         patterns = knowledge_insight.get("matched_patterns")
@@ -135,6 +136,23 @@ def _node_report(
             labels = [label for label in labels if label]
             if labels:
                 kb_pattern_text = "、".join(labels[:2])
+
+            # Collect vector evidence details
+            vector_matches = [
+                item for item in patterns
+                if isinstance(item, dict) and str(item.get("match_source", "")).strip() == "vector"
+            ]
+            if vector_matches:
+                vector_lines = []
+                for vm in vector_matches[:2]:
+                    score = vm.get("vector_score")
+                    label = str(vm.get("label", "")).strip()
+                    provider = str(vm.get("vector_provider", "local")).strip()
+                    if label and score is not None:
+                        vector_lines.append(f"  • {label} (相似度: {score:.4f}, 库: {provider})")
+                if vector_lines:
+                    vector_evidence = "向量匹配模式:\n" + "\n".join(vector_lines)
+
         relation_hint = str(knowledge_insight.get("relation_query_hint") or "").strip()
         if relation_hint:
             kb_relation_hint = relation_hint
@@ -239,7 +257,8 @@ def _node_report(
         "[关键证据]\n"
         f"{jvm_hint}\n"
         f"{logs_hint}\n"
-        f"链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}\n"
+        + (f"{vector_evidence}\n" if vector_evidence else "")
+        + f"链路排查建议: {llm_linkage_suggestion or kb_linkage_hint or '按调用链顺序补齐证据后再定位首个失败节点。'}\n"
         "\n"
         "[建议动作]\n"
         f"建议动作: {action_hint or '优先检查关键错误日志与依赖可用性。'}"
