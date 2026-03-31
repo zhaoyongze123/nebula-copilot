@@ -506,11 +506,22 @@ class AgentState(TypedDict, total=False):
 3. 完整治理链路：从脱敏检测到重复清理到趋势分析的全生命周期管理
 4. 可观测报告：每周自动评估指标、对标目标、生成建议
 
-**后续优化方向：**
-- 集成真实嵌入模型（OpenAI Embeddings / 开源 Embeddings）提升向量精度
-- 接入 Milvus/Weaviate 作为大规模向量库的备选方案
-- 建立人工反馈循环，持续优化向量评分与去重策略
-- 联动监控告警，对低质量召回实时预警
+## 下一阶段优化方向（可选，Priority: P1-P3）
+
+### P1: 生产环境接入
+- 配置真实 Elasticsearch 数据源与生产网络连接
+- 敏感信息脱敏规则优化与企业特定字段支持
+- 部署到 Kubernetes 生产集群，配置 HPA 与健康检查
+
+### P2: 性能与可扩展性
+- 向量模型升级：从本地 bag-of-words 迁移到 OpenAI Embeddings / all-MiniLM-L6-v2
+- 向量库扩容：评估 Milvus / Weaviate / pgvector 应对 100K+ 案例规模
+- 缓存策略：热点案例预加载、召回结果缓存
+
+### P3: 用户体验与反馈
+- 前端集成：Dashboard 展示历史案例、源码定位结果
+- 人工反馈循环：用户评分机制、持续改进诊断质量
+- 监控联动：诊断效果指标纳入告警系统
 
 
 
