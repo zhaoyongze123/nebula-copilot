@@ -1,2 +1,3 @@
 [console_scripts]
 nebula-cli = nebula_copilot.cli:app
+nebula-web = nebula_copilot.web:main

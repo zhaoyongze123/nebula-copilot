@@ -4,6 +4,7 @@ pydantic>=2.9.0
 elasticsearch<9.0.0,>=8.14.0
 langchain>=0.3.0
 langchain-openai>=0.2.0
+flask>=3.0.0
 
 [dev]
 pytest>=8.0.0

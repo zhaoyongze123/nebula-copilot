@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import os
 import time
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,8 @@ from nebula_copilot.cli import _load_run_records
 from nebula_copilot.config import load_app_config
 from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
 from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, search_service_logs
+from nebula_copilot.es_importer import ESImporter, ImportError
+from nebula_copilot.es_sync import ESSync, SyncError
 from nebula_copilot.knowledge_base import KnowledgeBase
 from nebula_copilot.repository import LocalJsonRepository
 
@@ -209,6 +212,11 @@ def create_app() -> Flask:
         template_folder=str(Path(__file__).parent / "templates"),
         static_folder=str(Path(__file__).parent / "static"),
     )
+
+    # 全局导入/同步状态存储
+    # 格式：{task_id: {"status": "running|done|error", "progress": 0-100, "error": "...", "created_at": "...", "updated_at": "..."}}
+    import_tasks: dict[str, dict[str, Any]] = {}
+    es_sync_instance: ESSync | None = None
 
     @app.get("/")
     def root() -> Any:
@@ -462,6 +470,200 @@ def create_app() -> Flask:
             return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 502
         except Exception as exc:
             return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 500
+
+    @app.post("/api/import/start")
+    def api_import_start() -> Any:
+        """启动 ES 批量导入。
+
+        查询参数：
+        - from_date: 开始时间（ISO 8601，例如 2025-03-20T00:00:00）
+        - to_date: 结束时间（ISO 8601）
+        - limit: 导入数量上限（默认 1000）
+        - es_url: Elasticsearch 地址（默认 localhost:9200）
+        - index: 索引名（默认 nebula_metrics）
+        - username: ES 用户名
+        - password: ES 密码
+        - output_path: 输出文件路径（默认 data/agent_runs.json）
+
+        返回：{task_id, status, created_at}
+        """
+        start = time.time() * 1000
+
+        try:
+            from_date_str = request.args.get("from_date")
+            to_date_str = request.args.get("to_date")
+            if not from_date_str or not to_date_str:
+                return jsonify(
+                    _envelope({}, source="es", degraded=True, start_ms=start, error="from_date and to_date required")
+                ), 400
+
+            from_date = datetime.fromisoformat(from_date_str)
+            to_date = datetime.fromisoformat(to_date_str)
+            limit = int(request.args.get("limit", "1000"))
+
+            es_url = request.args.get("es_url") or os.getenv("NEBULA_ES_URL", "http://localhost:9200")
+            index = request.args.get("index") or os.getenv("NEBULA_ES_INDEX", "nebula_metrics")
+            username = request.args.get("username") or os.getenv("NEBULA_ES_USERNAME")
+            password = request.args.get("password") or os.getenv("NEBULA_ES_PASSWORD")
+            output_path = Path(request.args.get("output_path", "data/agent_runs.json"))
+
+            task_id = str(uuid.uuid4())[:8]
+            import_tasks[task_id] = {
+                "status": "running",
+                "progress": 0,
+                "error": None,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+            }
+
+            # 在新线程中执行导入
+            def _do_import() -> None:
+                try:
+                    importer = ESImporter(
+                        es_url=es_url,
+                        index=index,
+                        username=username,
+                        password=password,
+                    )
+                    runs = importer.import_traces(from_date=from_date, to_date=to_date, limit=limit)
+                    importer.save_runs(runs, output_path)
+
+                    import_tasks[task_id]["status"] = "done"
+                    import_tasks[task_id]["progress"] = 100
+                    import_tasks[task_id]["result"] = {"imported_count": len(runs)}
+                except ImportError as exc:
+                    import_tasks[task_id]["status"] = "error"
+                    import_tasks[task_id]["error"] = str(exc)
+                finally:
+                    import_tasks[task_id]["updated_at"] = datetime.now().isoformat()
+
+            import threading
+
+            thread = threading.Thread(target=_do_import, daemon=True)
+            thread.start()
+
+            data = {
+                "task_id": task_id,
+                "status": "running",
+                "created_at": import_tasks[task_id]["created_at"],
+            }
+            return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+
+        except ValueError as exc:
+            return jsonify(
+                _envelope({}, source="es", degraded=True, start_ms=start, error=f"Invalid date format: {exc}")
+            ), 400
+        except Exception as exc:
+            return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 500
+
+    @app.get("/api/import/<task_id>/status")
+    def api_import_status(task_id: str) -> Any:
+        """查询导入进度。
+
+        返回：{task_id, status, progress, error, created_at, updated_at, result}
+        """
+        start = time.time() * 1000
+
+        if task_id not in import_tasks:
+            return jsonify(_envelope({}, source="local", degraded=True, start_ms=start, error="task_not_found")), 404
+
+        task = import_tasks[task_id]
+        data = {
+            "task_id": task_id,
+            "status": task.get("status"),
+            "progress": task.get("progress", 0),
+            "error": task.get("error"),
+            "created_at": task.get("created_at"),
+            "updated_at": task.get("updated_at"),
+            "result": task.get("result"),
+        }
+        return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+
+    @app.get("/api/sync/status")
+    def api_sync_status() -> Any:
+        """查询自动同步状态。
+
+        返回：{is_running, last_sync_time, total_synced, total_errors}
+        """
+        start = time.time() * 1000
+        nonlocal es_sync_instance
+
+        if es_sync_instance is None:
+            data = {
+                "is_running": False,
+                "last_sync_time": None,
+                "total_synced": 0,
+                "total_errors": 0,
+            }
+        else:
+            data = es_sync_instance.get_sync_status()
+
+        return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+
+    @app.post("/api/sync/start")
+    def api_sync_start() -> Any:
+        """启动自动同步。
+
+        查询参数：
+        - interval_seconds: 同步间隔（默认 300）
+        - lookback_minutes: 回溯窗口（默认 60）
+        - es_url: Elasticsearch 地址（默认 localhost:9200）
+        - index: 索引名（默认 nebula_metrics）
+        - username: ES 用户名
+        - password: ES 密码
+        - output_path: 输出文件路径（默认 data/agent_runs.json）
+
+        返回：{status: "started"}
+        """
+        start = time.time() * 1000
+        nonlocal es_sync_instance
+
+        try:
+            es_url = request.args.get("es_url") or os.getenv("NEBULA_ES_URL", "http://localhost:9200")
+            index = request.args.get("index") or os.getenv("NEBULA_ES_INDEX", "nebula_metrics")
+            username = request.args.get("username") or os.getenv("NEBULA_ES_USERNAME")
+            password = request.args.get("password") or os.getenv("NEBULA_ES_PASSWORD")
+            output_path = Path(request.args.get("output_path", "data/agent_runs.json"))
+            interval_seconds = int(request.args.get("interval_seconds", "300"))
+            lookback_minutes = int(request.args.get("lookback_minutes", "60"))
+
+            if es_sync_instance is None:
+                es_sync_instance = ESSync(
+                    es_url=es_url,
+                    index=index,
+                    output_path=output_path,
+                    username=username,
+                    password=password,
+                )
+
+            es_sync_instance.start_periodic_sync(interval_seconds=interval_seconds, lookback_minutes=lookback_minutes)
+
+            data = {"status": "started"}
+            return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+
+        except SyncError as exc:
+            return jsonify(_envelope({}, source="local", degraded=True, start_ms=start, error=str(exc))), 409
+        except Exception as exc:
+            return jsonify(_envelope({}, source="local", degraded=True, start_ms=start, error=str(exc))), 500
+
+    @app.post("/api/sync/stop")
+    def api_sync_stop() -> Any:
+        """停止自动同步。
+
+        返回：{status: "stopped"}
+        """
+        start = time.time() * 1000
+        nonlocal es_sync_instance
+
+        try:
+            if es_sync_instance is not None:
+                es_sync_instance.stop_sync()
+
+            data = {"status": "stopped"}
+            return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+
+        except Exception as exc:
+            return jsonify(_envelope({}, source="local", degraded=True, start_ms=start, error=str(exc))), 500
 
     return app
 

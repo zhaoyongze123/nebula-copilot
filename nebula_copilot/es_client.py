@@ -557,3 +557,108 @@ def search_service_logs(
             "sample": [],
             "trace_ids": [],
         }
+
+
+def search_traces_by_range(
+    es_url: str,
+    index: str,
+    from_date: datetime,
+    to_date: datetime,
+    limit: int = 1000,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    verify_certs: bool = True,
+    timeout_seconds: int = 10,
+) -> List[TraceDocument]:
+    """按时间范围查询 ES 中的所有 traces。
+
+    Args:
+        es_url: Elasticsearch 地址
+        index: 索引名称或模式（支持通配符）
+        from_date: 开始时间
+        to_date: 结束时间
+        limit: 最大返回数量
+        username: ES 用户名
+        password: ES 密码
+        verify_certs: 是否验证 SSL 证书
+        timeout_seconds: 查询超时（秒）
+
+    Returns:
+        TraceDocument 列表
+
+    Raises:
+        ESQueryError: 查询失败
+    """
+    es = _build_es(es_url, username, password, verify_certs, timeout_seconds)
+
+    # 构建时间范围过滤器
+    from_ts = from_date.isoformat()
+    to_ts = to_date.isoformat()
+
+    query = {
+        "size": limit,
+        "query": {
+            "bool": {
+                "should": [
+                    {
+                        "range": {
+                            "timestamp": {
+                                "gte": from_ts,
+                                "lte": to_ts,
+                            }
+                        }
+                    },
+                    {
+                        "range": {
+                            "@timestamp": {
+                                "gte": from_ts,
+                                "lte": to_ts,
+                            }
+                        }
+                    },
+                ],
+                "minimum_should_match": 1,
+            }
+        },
+        "sort": [
+            {"timestamp": {"order": "desc", "unmapped_type": "date"}},
+            {"@timestamp": {"order": "desc", "unmapped_type": "date"}},
+        ],
+    }
+
+    try:
+        resp = es.search(index=index, body=query)
+    except Exception as exc:
+        raise ESQueryError(f"Failed to search traces in ES: {exc}") from exc
+
+    hits = resp.get("hits", {}).get("hits", [])
+    if not hits:
+        return []
+
+    # 按 trace_id 分组，然后为每个 trace 构建 TraceDocument
+    traces_by_id: Dict[str, List[Dict[str, Any]]] = {}
+    for hit in hits:
+        source = hit.get("_source", {})
+        trace_id = str(source.get("trace_id") or source.get("traceId") or "")
+        if not trace_id:
+            continue
+        traces_by_id.setdefault(trace_id, []).append(source)
+
+    traces: List[TraceDocument] = []
+    for trace_id, sources in traces_by_id.items():
+        try:
+            # 尝试从单个 source 构建 trace
+            for src in sources:
+                if isinstance(src.get("root"), dict) or isinstance(src.get("spans"), list):
+                    trace = trace_from_es_source(src)
+                    traces.append(trace)
+                    break
+            else:
+                # 如果没有找到合适的 source，从多个 span docs 构建
+                trace = _build_tree_from_span_docs(trace_id, sources)
+                traces.append(trace)
+        except Exception as exc:
+            # 跳过解析失败的 traces
+            continue
+
+    return traces
