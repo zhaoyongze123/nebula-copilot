@@ -29,7 +29,8 @@ from nebula_copilot.notifier import NotifyError, push_summary, push_summary_reli
 from nebula_copilot.models import Span
 from nebula_copilot.report_schema import NebulaReport, SpanReport
 from nebula_copilot.agent.graph import run_agent_graph
-from nebula_copilot.config import load_app_config
+from nebula_copilot.config import AppConfig, load_app_config
+from nebula_copilot.knowledge_base import KnowledgeBase
 from nebula_copilot.llm.executor import LLMExecutor, LLMSettings
 from nebula_copilot.runtime_guard import evaluate_run_guard
 from nebula_copilot.repository import ESRepository, LocalJsonRepository
@@ -363,6 +364,10 @@ def _build_llm_executor(env_file: Path, cli_llm_enabled: bool) -> LLMExecutor:
     )
 
 
+def _build_knowledge_base(cfg: AppConfig) -> KnowledgeBase:
+    return KnowledgeBase.from_app_config(cfg)
+
+
 def _build_es_enrichment_registry(
     *,
     query_trace: Callable[[str], dict[str, object]],
@@ -443,11 +448,18 @@ def analyze(
         raise typer.Exit(code=2)
 
     try:
+        cfg = load_app_config(env_file)
         llm_executor = _build_llm_executor(env_file, llm_enabled)
+        knowledge_base = _build_knowledge_base(cfg)
         repository = LocalJsonRepository(source)
         trace_doc = repository.get_trace(trace_id)
 
-        result = analyze_trace(trace_doc, top_n=top_n, llm_executor=llm_executor)
+        result = analyze_trace(
+            trace_doc,
+            top_n=top_n,
+            llm_executor=llm_executor,
+            knowledge_base=knowledge_base,
+        )
         summary = _render_result(trace_doc.root, result, format)
         _maybe_push_webhook(push_webhook, summary)
 
@@ -507,7 +519,9 @@ def analyze_es(
         password = os.getenv("NEBULA_ES_PASSWORD")
 
     try:
+        cfg = load_app_config(env_file)
         llm_executor = _build_llm_executor(env_file, llm_enabled)
+        knowledge_base = _build_knowledge_base(cfg)
         repository = ESRepository(
             es_url=es_url,
             index=index,
@@ -517,7 +531,12 @@ def analyze_es(
             timeout_seconds=timeout_seconds,
         )
         trace_doc = repository.get_trace(trace_id)
-        result = analyze_trace(trace_doc, top_n=top_n, llm_executor=llm_executor)
+        result = analyze_trace(
+            trace_doc,
+            top_n=top_n,
+            llm_executor=llm_executor,
+            knowledge_base=knowledge_base,
+        )
         summary = _render_result(trace_doc.root, result, format)
         _maybe_push_webhook(push_webhook, summary)
 
@@ -867,6 +886,8 @@ def monitor_es(
         password = os.getenv("NEBULA_ES_PASSWORD")
 
     llm_executor = _build_llm_executor(env_file, llm_enabled)
+    cfg = load_app_config(env_file)
+    knowledge_base = _build_knowledge_base(cfg)
     repository = ESRepository(
         es_url=es_url,
         index=index,
@@ -913,7 +934,12 @@ def monitor_es(
 
             try:
                 trace_doc = repository.get_trace(trace_id)
-                quick_result = analyze_trace(trace_doc, top_n=1, llm_executor=llm_executor)
+                quick_result = analyze_trace(
+                    trace_doc,
+                    top_n=1,
+                    llm_executor=llm_executor,
+                    knowledge_base=knowledge_base,
+                )
             except (ESQueryError, TraceValidationError, DataSourceError) as exc:
                 logger.warning("monitor-es skip trace_id=%s, reason=%s", trace_id, exc)
                 continue
