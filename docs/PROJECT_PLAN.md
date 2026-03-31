@@ -469,18 +469,49 @@ class AgentState(TypedDict, total=False):
 
 ### 最新进度同步（2026-03-31）
 
-**向量库接入 Phase 2 完成：**
+**向量库接入全阶段完成（Phase 0-4）：**
+
 - ✅ **Phase 0** 完成：统一 VectorStore 抽象接口，支持 Chroma（本地）+ pgvector（生产）双环境配置
 - ✅ **Phase 1** 完成：知识库向量化落地，将规则 SOP 与模式特征纳入向量索引，analyzer 接入向量召回补充规则匹配
 - ✅ **Phase 2** 完成：历史诊断向量库与证据追踪
-  - 已实现 VectorProvider 工厂模式（LocalVectorStore + pgvector adapter）
-  - 已在诊断记录中追踪向量匹配来源、相似度、提供者信息
-  - 已增强 `_node_report()` 在飞书报告中展示"向量匹配模式"段落，包含相似度评分与库源标识
-  - 关键程序：`nebula_copilot/vector_store.py`（存储抽象）、`nebula_copilot/knowledge_base.py`（向量化与检索）、`nebula_copilot/agent/graph.py`（报告增强）
+  - 实现 `HistoryVectorStore`：从 agent_runs.json 提取诊断案例，构建向量索引
+  - 包含离线构建脚本 `scripts/build_history_index.py`，支持验证与元数据输出
+  - 在 agent graph 中注入历史案例上下文到报告中展示
+  - 13 个单元测试 + 集成测试覆盖
 
-**下一优先级：**
-- Phase 3 规划：源码白名单检索（接口层、异常处理、重试降级逻辑），支持按 service+keyword 的结构过滤 + 向量重排
-- Phase 4 规划：周指标评估（召回率、采纳率、耗时分布）与数据治理（过期清理、敏感信息脱敏）
+- ✅ **Phase 3** 完成：源码白名单向量检索
+  - 实现 `CodeWhitelistStore`：从白名单目录提取函数级代码片段
+  - 支持 API 层、异常处理、重试降级等分类检索
+  - 自动识别关键字（retry、timeout、exception 等）与依赖服务
+  - 在 agent graph 报告中展示相关源码片段与函数信息
+  - 9 个单元测试覆盖
+
+- ✅ **Phase 4** 完成：评估与治理
+  - 实现 `MetricsCollector`：收集搜索、采纳、准确率等关键指标
+  - 实现 `DataGovernance`：敏感信息脱敏、重复检测、过期数据清理
+  - 实现 `WeeklyReportBuilder`：自动生成周报与可行动建议
+  - 定义质量目标：Top-3 召回>=70%, Top-5>=85%, 采纳率>=15%, 准确率>=80%
+  - 性能目标：延迟<120ms(本地), <250ms(生产), 成功率>=95%
+  - 11 个单元测试覆盖
+
+**项目统计（Phase 2-4）：**
+- 新增模块：4 个（history_vector.py, code_whitelist.py, evaluation.py, scripts/build_history_index.py）
+- 新增测试：33 个（history: 9 + phase2_integration: 4 + code_whitelist: 9 + evaluation: 11）
+- 修改文件：agent/graph.py（集成三种向量库上下文）
+- 全量测试：110+ 通过
+
+**关键特性亮点：**
+1. 多源证据融合：规则匹配 + 知识向量 + 历史案例 + 源码片段，多维度诊断
+2. 向量库双引擎：本地 heuristic（无依赖、快速）+ Chroma/pgvector（精确、可扩展）
+3. 完整治理链路：从脱敏检测到重复清理到趋势分析的全生命周期管理
+4. 可观测报告：每周自动评估指标、对标目标、生成建议
+
+**后续优化方向：**
+- 集成真实嵌入模型（OpenAI Embeddings / 开源 Embeddings）提升向量精度
+- 接入 Milvus/Weaviate 作为大规模向量库的备选方案
+- 建立人工反馈循环，持续优化向量评分与去重策略
+- 联动监控告警，对低质量召回实时预警
+
 
 
 
