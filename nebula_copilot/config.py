@@ -40,6 +40,8 @@ class VectorConfig:
     provider: str = "local"
     top_k: int = 3
     min_score: float = 0.5
+    collection_name: str = "nebula_kb_patterns"
+    persist_dir: Optional[str] = None
 
 
 @dataclass
@@ -73,6 +75,8 @@ def load_app_config(env_file: Path | None = None) -> AppConfig:
     vector_provider = _get("VECTOR_PROVIDER", "local")
     vector_top_k = int(_get("VECTOR_TOP_K", "3") or "3")
     vector_min_score = float(_get("VECTOR_MIN_SCORE", "0.5") or "0.5")
+    vector_collection_name = _get("VECTOR_COLLECTION", "nebula_kb_patterns")
+    vector_persist_dir = _get("VECTOR_PERSIST_DIR", "").strip() or None
     run_dedupe_window_seconds = int(_get("RUN_DEDUPE_WINDOW_SECONDS", "300") or "300")
     run_rate_limit_per_minute = int(_get("RUN_RATE_LIMIT_PER_MINUTE", "0") or "0")
     run_guard_path = Path(_get("RUN_GUARD_PATH", "data/run_guard.json"))
@@ -94,6 +98,8 @@ def load_app_config(env_file: Path | None = None) -> AppConfig:
             provider=vector_provider,
             top_k=max(1, vector_top_k),
             min_score=min(1.0, max(0.0, vector_min_score)),
+            collection_name=vector_collection_name,
+            persist_dir=vector_persist_dir,
         ),
         run_dedupe_window_seconds=max(1, run_dedupe_window_seconds),
         run_rate_limit_per_minute=max(0, run_rate_limit_per_minute),

@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Sequence
 
 from nebula_copilot.config import AppConfig, VectorConfig
 from nebula_copilot.models import Span, TraceDocument
-from nebula_copilot.vector_store import LocalVectorStore, VectorRecord, VectorStore
+from nebula_copilot.vector_store import VectorRecord, VectorStore, build_vector_store
 
 
 @dataclass(frozen=True)
@@ -83,11 +83,15 @@ class KnowledgeBase:
 
         self._vector_config = vector_config or VectorConfig()
         self._vector_store: Optional[VectorStore] = None
+        self._vector_provider = "none"
         if self._vector_config.enabled:
             if vector_store is not None:
                 self._vector_store = vector_store
-            elif self._vector_config.provider.lower() == "local":
-                self._vector_store = LocalVectorStore()
+                self._vector_provider = "custom"
+            else:
+                build_result = build_vector_store(self._vector_config)
+                self._vector_store = build_result.store
+                self._vector_provider = build_result.provider
             if self._vector_store is not None:
                 self._seed_vector_store()
 
@@ -222,6 +226,8 @@ class KnowledgeBase:
                     "confidence": round(min(0.92, max(0.35, hit.score)), 2),
                     "signals": [f"vector_similarity:{hit.score:.2f}"],
                     "match_source": "vector",
+                    "vector_provider": self._vector_provider,
+                    "vector_score": round(hit.score, 4),
                     "related_metric_checks": related_checks,
                 }
             )
