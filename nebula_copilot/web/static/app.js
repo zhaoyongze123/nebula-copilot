@@ -1,750 +1,426 @@
 const state = {
-  selectedRunId: null,
-  selectedTraceId: null,
-  selectedSpanId: null,
-  autoTimer: null,
+    currentTab: 'panel-dashboard',
+    cyConfigured: false
 };
 
-function qs(id) {
-  return document.getElementById(id);
-}
+document.addEventListener('DOMContentLoaded', () => {
+    initECharts();
 
-function fmtTime(ts) {
-  if (!ts) return '-';
-  const d = new Date(ts);
-  return isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
-}
-
-function statusBadge(status) {
-  const s = status || 'ok';
-  return `<span class="badge ${s}">${s}</span>`;
-}
-
-function setSource(id, source) {
-  const el = qs(id);
-  if (!el) return;
-  el.textContent = `source:${source || '-'}`;
-}
-
-function eventClass(text) {
-  const raw = String(text || '').toLowerCase();
-  if (/error|failed|exception|timeout/.test(raw)) return 'error';
-  if (/warn|degraded|retry|fallback/.test(raw)) return 'warn';
-  return 'info';
-}
-
-async function getJson(url) {
-  const res = await fetch(url);
-  const payload = await res.json();
-  if (!res.ok || payload.ok === false) {
-    const message = payload.error || `HTTP ${res.status}`;
-    throw new Error(message);
-  }
-  return payload;
-}
-
-async function postJson(url) {
-  const res = await fetch(url, { method: 'POST' });
-  const payload = await res.json();
-  if (!res.ok || payload.ok === false) {
-    const message = payload.error || `HTTP ${res.status}`;
-    throw new Error(message);
-  }
-  return payload;
-}
-
-function renderKpi(data) {
-  const root = qs('kpiGrid');
-  if (!root) return;
-  const kpi = data.kpi || {};
-  const metrics = [
-    ['总 Run', kpi.total ?? 0],
-    ['成功率(%)', kpi.success_rate ?? 0],
-    ['失败数', kpi.failed ?? 0],
-    ['退化数', kpi.degraded ?? 0],
-    ['P95(ms)', kpi.p95_duration_ms ?? 0],
-    ['异常事件', (data.recent_anomalies || []).length],
-  ];
-  root.innerHTML = metrics
-    .map(([label, value]) => `<div class="kpi"><div class="label">${label}</div><div class="value">${value}</div></div>`)
-    .join('');
-}
-
-function renderRuns(items) {
-  const body = qs('runsAccordion');
-  if (!body) {
-    const legacyTable = qs('runsTable');
-    const legacyBody = legacyTable ? legacyTable.querySelector('tbody') : null;
-    if (!legacyBody) return;
-    legacyBody.innerHTML = '';
-    for (const run of items) {
-      const tr = document.createElement('tr');
-      tr.className = 'clickable';
-      tr.innerHTML = `
-        <td>${statusBadge(run.status)}</td>
-        <td>${run.run_id || '-'}</td>
-        <td>${run.trace_id || '-'}</td>
-        <td>${run.duration_ms ?? '-'}</td>
-        <td>${fmtTime(run.started_at || run.timestamp)}</td>
-      `;
-      tr.addEventListener('click', () => selectRun(run));
-      legacyBody.appendChild(tr);
-    }
-    return;
-  }
-  body.innerHTML = '';
-
-  if (!items.length) {
-    body.innerHTML = '<div class="card">暂无符合条件的 run 记录</div>';
-    return;
-  }
-
-  for (const run of items) {
-    const details = document.createElement('details');
-    details.className = 'run-item';
-    details.dataset.runId = run.run_id || '';
-    details.innerHTML = `
-      <summary>
-        <span>${statusBadge(run.status)}</span>
-        <span>${run.run_id || '-'}</span>
-        <span class="run-meta">trace: ${run.trace_id || '-'}</span>
-        <span class="run-meta">${fmtTime(run.started_at || run.timestamp)}</span>
-      </summary>
-      <div class="run-body">
-        <div><strong>duration:</strong> ${run.duration_ms ?? '-'} ms</div>
-        <div><strong>notify:</strong> ${(run.notify || {}).status || '-'}</div>
-      </div>
-    `;
-
-    details.addEventListener('toggle', () => {
-      if (details.open) {
-        selectRun(run);
-      }
+    window.addEventListener('resize', () => {
+        if(window.apdexChart) window.apdexChart.resize();
+        if(window.responseTimeChart) window.responseTimeChart.resize();
+        if(window.cy) window.cy.resize();
     });
 
-    if (state.selectedRunId && state.selectedRunId === run.run_id) {
-      details.open = true;
-      details.classList.add('active');
-    }
-
-    body.appendChild(details);
-  }
-}
-
-function renderRunDetail(page) {
-  const summary = qs('runSummary');
-  if (!summary) return;
-  const run = page.summary || {};
-  summary.innerHTML = `
-    <div><strong>run_id:</strong> ${run.run_id || '-'}</div>
-    <div><strong>trace_id:</strong> ${run.trace_id || '-'}</div>
-    <div><strong>status:</strong> ${statusBadge(run.status || 'ok')}</div>
-    <div><strong>duration:</strong> ${run.duration_ms ?? '-'} ms</div>
-    <div><strong>started:</strong> ${fmtTime(run.started_at || run.timestamp)}</div>
-  `;
-
-  const timeline = qs('timeline');
-  if (!timeline) return;
-  timeline.innerHTML = '';
-  const events = page.timeline || [];
-  for (const ev of events) {
-    const li = document.createElement('li');
-    const eventText = `${ev.phase || ''} ${ev.message || ''}`;
-    li.className = eventClass(`${ev.phase || ''} ${ev.message || ''}`);
-    li.textContent = `${fmtTime(ev.ts || ev.timestamp)} | ${ev.phase || ev.name || 'event'} | ${ev.message || ''}`;
-    li.dataset.searchText = eventText.toLowerCase();
-    timeline.appendChild(li);
-  }
-
-  const diagnosis = qs('diagnosis');
-  if (diagnosis) {
-    diagnosis.textContent = page.diagnosis?.summary || JSON.stringify(page.diagnosis || {}, null, 2);
-  }
-
-  const llmResult = qs('llmResult');
-  if (!llmResult) return;
-  const raw = page.raw || {};
-  const history = Array.isArray(raw.history) ? raw.history : [];
-  const llmEvents = history.filter((ev) => {
-    const node = String(ev.node || '').toLowerCase();
-    return node.includes('llm') || node.includes('report_polish');
-  });
-
-  const llmSummary = raw.summary || '';
-  if (llmSummary || llmEvents.length) {
-    const eventText = llmEvents.map((ev) => {
-      return `[${ev.node || '-'}|${ev.status || '-'}] ${ev.message || ''}`;
-    }).join('\n');
-    llmResult.textContent = [
-      llmSummary ? `摘要:\n${llmSummary}` : '',
-      eventText ? `\nLLM事件:\n${eventText}` : ''
-    ].filter(Boolean).join('\n');
-  } else {
-    llmResult.textContent = '本次运行无 LLM 分析结果（可能使用规则分析或未启用 LLM）。';
-  }
-}
-
-function renderTraceInspect(payload) {
-  state.selectedTraceId = payload.trace_id;
-  const panel = qs('tracePanel');
-  if (!panel) return;
-  const tree = normalizeTraceTree(payload.tree || {});
-  const diagnosis = payload.diagnosis || {};
-  const bottleneck = diagnosis.bottleneck?.span || {};
-  panel.innerHTML = `
-    <div><strong>trace_id:</strong> ${payload.trace_id || '-'}</div>
-    <div><strong>root service:</strong> ${tree.service_name || '-'}</div>
-    <div><strong>bottleneck:</strong> ${bottleneck.service_name || '-'}</div>
-    <div><strong>duration:</strong> ${bottleneck.duration_ms ?? tree.duration_ms ?? '-'} ms</div>
-  `;
-
-  const treeBox = qs('traceTree');
-  if (!treeBox) return;
-  treeBox.innerHTML = '';
-  if (tree && tree.span_id) {
-    treeBox.appendChild(renderSpanNode(tree));
-    renderTopology(tree, bottleneck.span_id);
-  } else {
-    treeBox.textContent = '无可展示的 trace 树';
-    const cyBox = qs('cy');
-    if (cyBox) cyBox.innerHTML = '';
-  }
-}
-
-let cyInstance = null;
-
-function isSyntheticRootNode(node) {
-  if (!node) return false;
-  const service = String(node.service_name || '').toLowerCase();
-  const operation = String(node.operation_name || '').toLowerCase();
-  return service === 'trace-root' || operation.startsWith('trace:');
-}
-
-function normalizeTraceTree(root) {
-  let current = root;
-  while (
-    current &&
-    isSyntheticRootNode(current) &&
-    Array.isArray(current.children) &&
-    current.children.length === 1 &&
-    isSyntheticRootNode(current.children[0])
-  ) {
-    current = current.children[0];
-  }
-  return current || root;
-}
-
-function renderTopology(treeRoot, bottleneckId) {
-  const container = qs('cy');
-  if (!container || typeof cytoscape === 'undefined') return;
-  const elements = [];
-
-  function traverse(node, parentId) {
-    if (!node || !node.span_id) return;
-    const currentNodeId = node.span_id;
-    const skipNode = isSyntheticRootNode(node);
-
-    if (!skipNode) {
-      elements.push({
-        data: {
-          id: currentNodeId,
-          label: `${node.service_name || 'unknown'}\n${node.operation_name || ''}\n${node.status || 'OK'}`,
-          status: String(node.status || 'OK').toUpperCase(),
-          isBottleneck: currentNodeId === bottleneckId
-        }
-      });
-
-      if (parentId) {
-        elements.push({
-          data: {
-            id: `${parentId}-${currentNodeId}`,
-            source: parentId,
-            target: currentNodeId
-          }
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            fetchDashboardOverview();
         });
-      }
     }
 
-    const nextParentId = skipNode ? parentId : currentNodeId;
-
-    if (Array.isArray(node.children)) {
-      node.children.forEach(child => traverse(child, nextParentId));
+    const searchTraceBtn = document.getElementById('searchTraceBtn');
+    if (searchTraceBtn) {
+        searchTraceBtn.addEventListener('click', () => {
+            const traceId = document.getElementById('traceIdInput').value.trim();
+            if (traceId) {
+                fetchTraceDetails(traceId);
+            }
+        });
     }
-  }
 
-  traverse(treeRoot, null);
-
-  if (!elements.length) {
-    container.innerHTML = '<div style="padding:8px;color:#5f6b73;">当前链路无可展示的服务拓扑节点</div>';
-    return;
-  }
-
-  if (cyInstance) {
-    cyInstance.destroy();
-  }
-
-  cyInstance = cytoscape({
-    container,
-    elements: elements,
-    style: [
-      {
-        selector: 'node',
-        style: {
-          'background-color': function(ele) {
-            if (ele.data('isBottleneck')) return '#bf2f2f';
-            const status = String(ele.data('status') || 'OK').toUpperCase();
-            if (status === 'ERROR') return '#d14949';
-            if (status === 'SKIPPED') return '#c58a1b';
-            return '#0b5ea8';
-          },
-          'label': 'data(label)',
-          'color': '#1b2b34',
-          'font-size': '10px',
-          'text-wrap': 'wrap',
-          'text-valign': 'bottom',
-          'text-margin-y': 4,
-          'font-weight': function(ele) {
-            const status = String(ele.data('status') || 'OK').toUpperCase();
-            return (ele.data('isBottleneck') || status === 'ERROR') ? 'bold' : 'normal';
-          },
-        }
-      },
-      {
-        selector: 'edge',
-        style: {
-          'width': 2,
-          'line-color': '#d7e0e6',
-          'target-arrow-color': '#d7e0e6',
-          'target-arrow-shape': 'triangle',
-          'curve-style': 'taxi',
-          'taxi-direction': 'downward'
-        }
-      },
-      {
-        selector: 'node.highlight',
-        style: {
-          'background-color': '#0f8f4f',
-          'border-width': 2,
-          'border-color': '#0f8f4f'
-        }
-      },
-      {
-        selector: 'edge.highlight',
-        style: {
-          'line-color': '#0f8f4f',
-          'target-arrow-color': '#0f8f4f',
-          'width': 3
-        }
-      }
-    ],
-    layout: {
-      name: 'breadthfirst',
-      directed: true,
-      padding: 10
+    const loadRunsBtn = document.getElementById('loadRunsBtn');
+    if (loadRunsBtn) {
+        loadRunsBtn.addEventListener('click', fetchRuns);
     }
-  });
-
-  cyInstance.on('mouseover', 'node', function(e){
-    const sel = e.target;
-    cyInstance.elements().removeClass('highlight');
-    sel.addClass('highlight');
-    sel.predecessors().addClass('highlight');
-    sel.successors().addClass('highlight');
-  });
-
-  cyInstance.on('mouseout', 'node', function(e){
-    cyInstance.elements().removeClass('highlight');
-  });
-}
-
-function renderSpanNode(node) {
-  const hasChildren = Array.isArray(node.children) && node.children.length > 0;
-  const wrapper = document.createElement(hasChildren ? 'details' : 'div');
-  if (hasChildren) {
-    wrapper.open = true;
-  }
-
-  const line = document.createElement('div');
-  line.className = 'span-line';
-  line.dataset.spanId = node.span_id;
-  line.innerHTML = `<strong>${node.service_name}</strong> / ${node.operation_name} / ${node.duration_ms}ms / ${node.status}`;
-
-  line.addEventListener('click', () => selectSpanNode(node));
-
-  const pickBtn = document.createElement('button');
-  pickBtn.className = 'pick-btn';
-  pickBtn.textContent = '查日志';
-  pickBtn.addEventListener('click', async (ev) => {
-    ev.preventDefault();
-    selectSpanNode(node);
-    // 自动填充 trace_id 和 service_name
-    qs('logTraceIdInput').value = state.selectedTraceId;
-    qs('logServiceInput').value = node.service_name || '';
-    await loadLogs();
-  });
-  line.appendChild(pickBtn);
-
-  if (!hasChildren) {
-    wrapper.appendChild(line);
-    return wrapper;
-  }
-
-  const summary = document.createElement('summary');
-  summary.appendChild(line);
-  wrapper.appendChild(summary);
-
-  for (const child of node.children) {
-    wrapper.appendChild(renderSpanNode(child));
-  }
-  return wrapper;
-}
-
-function selectSpanNode(node) {
-  state.selectedSpanId = node.span_id;
-  const spanIdInput = qs('spanIdInput');
-  if (spanIdInput) {
-    spanIdInput.value = node.span_id;
-  }
-  const keywordInput = qs('keywordInput');
-  if (keywordInput && !keywordInput.value.trim()) {
-    keywordInput.value = node.service_name || node.operation_name || '';
-  }
-
-  document.querySelectorAll('.tree .span-line').forEach((el) => {
-    el.classList.toggle('active', el.dataset.spanId === node.span_id);
-  });
-
-  const needle = `${node.service_name || ''} ${node.operation_name || ''} ${node.span_id || ''}`.toLowerCase();
-  const timelineItems = Array.from(document.querySelectorAll('#timeline li'));
-  let found = false;
-  for (const item of timelineItems) {
-    const hit = needle && (item.dataset.searchText || '').includes(needle);
-    item.classList.toggle('active', hit);
-    if (hit && !found) {
-      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      found = true;
+    
+    // Check URL parameters for trace lookup
+    const urlParams = new URLSearchParams(window.location.search);
+    const initTrace = urlParams.get('trace_id');
+    if (initTrace) {
+        document.getElementById('traceIdInput').value = initTrace;
+        // switch tab logic triggers chart repair too
+        document.querySelector('[data-target="panel-trace"]').click();
+        fetchTraceDetails(initTrace);
     }
-  }
-}
 
-async function loadOverview() {
-  const data = await getJson('/api/overview');
-  renderKpi(data.data || {});
-  setSource('sourceKpi', data.meta?.source);
-}
+    // Auto fetch initial data
+    fetchDashboardOverview();
+    fetchRuns();
+});
 
-async function loadRuns() {
-  const traceId = encodeURIComponent(qs('traceIdInput').value.trim());
-  const status = encodeURIComponent(qs('statusSelect').value);
-  const sort = encodeURIComponent(qs('sortSelect').value);
-  const data = await getJson(`/api/runs?trace_id=${traceId}&status=${status}&sort=${sort}&size=50`);
-  const items = data.data?.items || [];
-  renderRuns(items);
-  setSource('sourceRuns', data.meta?.source);
-  if (!state.selectedRunId && items.length) {
-    await selectRun(items[0]);
-  }
-}
+// ===== API Calls & Renderings =====
 
-async function selectRun(run) {
-  state.selectedRunId = run.run_id;
-  state.selectedTraceId = run.trace_id;
-
-  document.querySelectorAll('.run-item').forEach((el) => {
-    const runId = el.dataset.runId || '';
-    const active = runId === run.run_id;
-    el.classList.toggle('active', active);
-    if (active) {
-      el.open = true;
-    }
-  });
-
-  const page = await getJson(`/api/runs/${encodeURIComponent(run.run_id)}/page`);
-  renderRunDetail(page.data || {});
-  setSource('sourceRunDetail', page.meta?.source);
-  if (run.trace_id) {
+async function fetchDashboardOverview() {
     try {
-      await loadTraceInspect(run.trace_id);
-    } catch (err) {
-      const panel = qs('tracePanel');
-      if (panel) {
-        panel.innerHTML = `<div><strong>trace_id:</strong> ${run.trace_id}</div><div><strong>提示:</strong> Trace 检查暂不可用：${err.message}</div>`;
-      }
-      setSource('sourceTrace', 'error');
+        const res = await fetch('/api/overview');
+        const payload = await res.json();
+        if (!payload.ok) throw new Error(payload.error);
+        renderKPIs(payload.data.kpi);
+    } catch (e) {
+        console.error('Failed to fetch dashboard data:', e);
     }
-  }
 }
 
-async function loadTraceInspect(traceId) {
-  const data = await getJson(`/api/traces/${encodeURIComponent(traceId)}/inspect`);
-  renderTraceInspect(data.data || {});
-  setSource('sourceTrace', data.meta?.source);
-}
-
-async function loadLogs() {
-  const traceId = (qs('logTraceIdInput').value || state.selectedTraceId).trim();
-  if (!traceId) {
-    alert('请先选择一个 trace');
-    return;
-  }
-  
-  const serviceInput = qs('logServiceInput').value.trim();
-  const keyword = encodeURIComponent(qs('keywordInput').value.trim());
-  
-  // 构建 URL：如果指定了 service_name，添加到查询参数
-  let url = `/api/logs/search?trace_id=${encodeURIComponent(traceId)}&keyword=${keyword}&limit=50`;
-  if (serviceInput) {
-    url += `&service_name=${encodeURIComponent(serviceInput)}`;
-  }
-  
-  const data = await getJson(url);
-  if (data.ok) {
-    // 更新 service_name 显示（使用 API 返回的实际值）
-    if (data.data?.query?.service_name) {
-      qs('logServiceInput').value = data.data.query.service_name;
+function renderKPIs(kpiData) {
+    const grid = document.getElementById('kpiGrid');
+    if (!grid) return;
+    if (!kpiData) {
+        grid.innerHTML = '<div style="color:#aaa;">无法获取指标数据</div>';
+        return;
     }
-  }
-  
-  qs('logsResult').textContent = JSON.stringify(data.data || {}, null, 2);
-  setSource('sourceLogs', data.meta?.source);
+    const metrics = [
+        { label: '总请求量 (Total)', value: kpiData.total },
+        { label: '成功率 (Success Rate)', value: kpiData.success_rate + '%' },
+        { label: '异常数 (Failed)', value: kpiData.failed, color: 'var(--sw-error)' },
+        { label: '降级数 (Degraded)', value: kpiData.degraded, color: 'var(--sw-warn)' },
+        { label: 'P95 响应 (P95)', value: kpiData.p95_duration_ms + ' ms' }
+    ];
+    grid.innerHTML = '';
+    metrics.forEach(m => {
+        let valStyle = m.color ? `color: ${m.color};` : 'color: var(--sw-text-main);';
+        // Need specific Skywalking dark styles for KPI since we added them above dashboard grid
+        grid.innerHTML += `
+        <div style="flex: 1; min-width: 180px; background: #252a36; border: 1px solid #444; border-radius: 4px; padding: 16px; border-top: 3px solid var(--sw-primary);">
+            <div style="color: #aaa; font-size: 13px; margin-bottom: 8px;">${m.label}</div>
+            <div style="font-size: 24px; font-weight: bold; color: #fff;">${m.value}</div>
+        </div>`;
+    });
 }
 
-async function refreshAll() {
-  try {
-    await loadOverview();
-    await loadRuns();
-    qs('lastRefresh').textContent = `刷新: ${new Date().toLocaleTimeString()}`;
-  } catch (err) {
-    qs('lastRefresh').textContent = `刷新失败: ${err.message}`;
-  }
-}
-
-function setupAutoRefresh() {
-  const box = qs('autoRefresh');
-  const reset = () => {
-    if (state.autoTimer) clearInterval(state.autoTimer);
-    if (box.checked) {
-      state.autoTimer = setInterval(refreshAll, 10000);
+async function fetchRuns() {
+    try {
+        const res = await fetch('/api/runs?size=20');
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.error);
+        const tbody = document.getElementById('runsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        const items = payload.data.items || [];
+        if (items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 16px;">无数据</td></tr>';
+            return;
+        }
+        items.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #444';
+            tr.innerHTML = `
+                <td style="padding: 8px 0;">
+                   <span style="background: ${item.status === 'failed' ? '#e74c3c' : (item.status === 'degraded' ? '#e67e22' : '#2ecc71')}; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${item.status}</span>
+                </td>
+                <td><a href="?trace_id=${item.trace_id}" style="color: var(--sw-primary); text-decoration: none;">${item.trace_id}</a></td>
+                <td>${item.started_at ? new Date(item.started_at).toLocaleString() : '-'}</td>
+                <td>
+                   <button onclick="inspectTrace('${item.trace_id}')" style="background:transparent; border:1px solid #777; color:#ddd; padding: 4px 8px; border-radius: 4px; cursor: pointer;">查看异常/监控</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (e) {
+        console.error('Fetch runs error', e);
     }
-  };
-  box.addEventListener('change', reset);
-  reset();
 }
 
-function bootstrap() {
-  qs('refreshBtn').addEventListener('click', refreshAll);
-  qs('filterBtn').addEventListener('click', refreshAll);
-  qs('logSearchBtn').addEventListener('click', loadLogs);
-  setupAutoRefresh();
-  refreshAll();
-  initImportSync();
-}
+window.inspectTrace = function(traceId) {
+    document.getElementById('traceIdInput').value = traceId;
+    document.querySelector('[data-target="panel-trace"]').click();
+    fetchTraceDetails(traceId);
+};
 
-window.addEventListener('DOMContentLoaded', bootstrap);
-
-// ============= 批量导入功能 =============
-
-function initImportModal() {
-  const modal = qs('importModal');
-  const btn = qs('importBtn');
-  const closeBtn = qs('importModalClose');
-  const cancelBtn = qs('importCancelBtn');
-  const startBtn = qs('importStartBtn');
-
-  // 设置默认日期
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  
-  function formatDatetimeLocal(date) {
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-  
-  qs('importFromDate').value = formatDatetimeLocal(sevenDaysAgo);
-  qs('importToDate').value = formatDatetimeLocal(now);
-
-  btn.addEventListener('click', () => {
-    modal.style.display = 'flex';
-  });
-
-  closeBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-  });
-
-  cancelBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-  });
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.style.display = 'none';
+async function fetchTraceDetails(traceId) {
+    const statusText = document.getElementById('traceStatusText');
+    statusText.innerText = '加载中...';
+    try {
+        const url = `/api/traces/${traceId}/inspect`;
+        const res = await fetch(url);
+        const payload = await res.json();
+        
+        if (!payload.ok) throw new Error(payload.error || 'Server error');
+        statusText.innerText = `数据来源: ${payload.meta.source}`;
+        
+        const tree = payload.data.tree;
+        const diagnosis = payload.data.diagnosis;
+        
+        renderTraceGantt(tree);
+        // Also fetch topology from the tree directly
+        renderTopology(tree);
+        renderDiagnosisSummary(diagnosis);
+        
+    } catch (e) {
+        statusText.innerText = `加载失败: ${e.message}`;
+        document.getElementById('ganttBody').innerHTML = '';
+        document.getElementById('diagnosisResultContent').innerHTML = `<div style="color:var(--sw-error)">${e.message}</div>`;
     }
-  });
-
-  startBtn.addEventListener('click', startImport);
 }
 
-async function startImport() {
-  const fromDate = qs('importFromDate').value;
-  const toDate = qs('importToDate').value;
-  const limit = qs('importLimit').value || '1000';
-  const outputPath = qs('importOutputPath').value;
+// ===== Rendering Gantt =====
+let totalDurationGlobal = 1;
 
-  if (!fromDate || !toDate) {
-    alert('请选择时间范围');
-    return;
-  }
+function renderTraceGantt(rootSpan) {
+    const container = document.getElementById('ganttBody');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    // Calculate global duration from root
+    totalDurationGlobal = rootSpan.duration_ms || 1;
+    
+    // Flatten tree and render rows
+    let rowsHtml = '';
+    function traverse(span, depth, cumStartObj) {
+        let isVirtualRoot = (span.service_name === 'trace-root' || !span.parent_span_id && (span.operation_name || '').startsWith('trace:'));
+        
+        let childStartObj = { start: cumStartObj.start };
+        if (!isVirtualRoot) {
+            const dur = span.duration_ms || 0;
+            const startOffsetMs = cumStartObj.start;
+            const offsetPercent = Math.min((startOffsetMs / totalDurationGlobal) * 100, 100);
+            const widthPercent = Math.max((dur / totalDurationGlobal) * 100, 0.5);
+            
+            const rowColorStr = span.status === 'ERROR' ? '#e74c3c' : 'var(--sw-primary)';
+            
+            const spanDataJson = JSON.stringify(span).replace(/"/g, '&quot;');
 
-  // 隐藏按钮，显示进度
-  qs('importStartBtn').style.display = 'none';
-  qs('importCancelBtn').style.display = 'none';
-  qs('importProgress').style.display = 'block';
+            let bgRowStr = '';
+            if (span.status === 'ERROR') bgRowStr = 'background: rgba(231, 76, 60, 0.1); border-left: 3px solid #e74c3c;';
 
-  try {
-    // 启动导入
-    const startResp = await postJson(
-      `/api/import/start?from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}&limit=${limit}&output_path=${encodeURIComponent(outputPath)}`
-    );
-
-    if (!startResp.ok) {
-      throw new Error(startResp.error || '启动导入失败');
+            rowsHtml += `
+            <div class="gantt-row" style="padding-left: ${depth * 15}px; cursor: pointer; transition: background 0.2s; ${bgRowStr}" onclick="showSpanDetails(this, '${spanDataJson}')">
+                <div class="g-col-name" style="flex: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${span.operation_name}">
+                    <span style="font-size: 11px; padding: 2px 4px; background: #333; border-radius: 2px; margin-right: 6px;">${span.service_name}</span>
+                    ${span.operation_name}
+                </div>
+                <div class="g-col-duration" style="flex: 1; padding: 0 10px;">${dur} ms</div>
+                <div class="g-col-timeline" style="flex: 3; position: relative; background: rgba(255,255,255,0.05); height: 20px; border-radius: 2px;">
+                    <div style="position: absolute; top: 4px; height: 12px; background: ${rowColorStr}; border-radius: 2px; min-width: 2px; left: ${offsetPercent}%; width: ${widthPercent}%;"></div>
+                </div>
+            </div>`;
+            
+            // Only increase depth if it's a real node
+            depth++;
+        }
+        
+        if (span.children && span.children.length > 0) {
+            span.children.forEach(child => {
+                traverse(child, depth, childStartObj);
+                childStartObj.start += (child.duration_ms || 0); // Approximate sequential child offset
+            });
+        }
     }
-
-    const taskId = startResp.data.task_id;
-    qs('importStatus').textContent = `任务 ID: ${taskId}，进度: 0%`;
-
-    // 轮询导入进度
-    const maxAttempts = 600; // 10 分钟（6s × 600）
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const statusResp = await getJson(`/api/import/${encodeURIComponent(taskId)}/status`);
-      if (!statusResp.ok) {
-        throw new Error(statusResp.error || '查询状态失败');
-      }
-
-      const { status, progress, error, result } = statusResp.data;
-
-      if (status === 'done') {
-        const count = result?.imported_count || 0;
-        qs('importStatus').textContent = `✅ 导入完成！已导入 ${count} 条 traces`;
-        qs('importProgressBar').style.width = '100%';
-        break;
-      } else if (status === 'error') {
-        qs('importStatus').textContent = `❌ 导入失败: ${error}`;
-        break;
-      } else {
-        qs('importStatus').textContent = `进度: ${progress || 0}%`;
-        qs('importProgressBar').style.width = `${progress || 0}%`;
-      }
-    }
-
-    // 刷新数据
-    setTimeout(() => {
-      refreshAll();
-      qs('importModal').style.display = 'none';
-    }, 1000);
-  } catch (err) {
-    qs('importStatus').textContent = `❌ 错误: ${err.message}`;
-    console.error(err);
-  }
+    
+    traverse(rootSpan, 0, { start: 0 });
+    container.innerHTML = rowsHtml;
 }
 
-// ============= 自动同步功能 =============
+window.showSpanDetails = function(rowElement, jsonStr) {
+    // Basic highlight toggle
+    document.querySelectorAll('.gantt-row').forEach(el => el.style.borderLeft = '');
+    rowElement.style.borderLeft = '3px solid var(--sw-primary)';
 
-function initSyncPanel() {
-  const syncBtn = qs('syncBtn');
-  const panel = qs('syncPanel');
-  const closeBtn = qs('syncPanelClose');
-  const startBtn = qs('syncStartBtn');
-  const stopBtn = qs('syncStopBtn');
-  const refreshBtn = qs('syncRefreshStatusBtn');
-
-  syncBtn.addEventListener('click', () => {
-    panel.style.display = 'block';
-    updateSyncStatus();
-  });
-
-  closeBtn.addEventListener('click', () => {
-    panel.style.display = 'none';
-  });
-
-  startBtn.addEventListener('click', startSync);
-  stopBtn.addEventListener('click', stopSync);
-  refreshBtn.addEventListener('click', updateSyncStatus);
-}
-
-async function startSync() {
-  const interval = qs('syncInterval').value || '300';
-  const lookback = qs('syncLookback').value || '60';
-  const outputPath = qs('syncOutputPath').value;
-
-  try {
-    qs('syncStartBtn').disabled = true;
-    const resp = await postJson(
-      `/api/sync/start?interval_seconds=${interval}&lookback_minutes=${lookback}&output_path=${encodeURIComponent(outputPath)}`
-    );
-
-    if (!resp.ok) {
-      throw new Error(resp.error || '启动同步失败');
+    const spanObj = JSON.parse(jsonStr);
+    const dtPanel = document.getElementById('spanDetailContent');
+    
+    let errHtml = '';
+    if (spanObj.status === 'ERROR' && spanObj.exception_stack) {
+        errHtml = `
+        <div style="margin-top: 10px; padding: 10px; background: rgba(231,76,60,0.1); border: 1px solid #e74c3c; border-radius: 4px; font-family: monospace; white-space: pre-wrap; font-size: 11px; overflow-x: auto; color: #ffcccc;">
+${spanObj.exception_stack}
+        </div>`;
     }
 
-    // 更新状态
-    await updateSyncStatus();
-    qs('syncStopBtn').disabled = false;
-  } catch (err) {
-    alert(`启动同步失败: ${err.message}`);
-    qs('syncStartBtn').disabled = false;
-    console.error(err);
-  }
-}
+    dtPanel.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;">
+           <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px 0; color: #888; width: 80px;">Service</td><td style="padding: 8px 0; color: #eee;">${spanObj.service_name}</td></tr>
+           <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px 0; color: #888;">Operation</td><td style="padding: 8px 0; color: #fff;">${spanObj.operation_name}</td></tr>
+           <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px 0; color: #888;">Span ID</td><td style="padding: 8px 0; color: #eee;">${spanObj.span_id}</td></tr>
+           <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px 0; color: #888;">Duration</td><td style="padding: 8px 0; font-weight: bold; color: #fff;">${spanObj.duration_ms} ms</td></tr>
+           <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px 0; color: #888;">Status</td><td style="padding: 8px 0;"><span style="font-weight: bold; color: ${spanObj.status === 'ERROR' ? '#e74c3c' : '#2ecc71'}">${spanObj.status}</span></td></tr>
+        </table>
+        ${errHtml}
+    `;
+};
 
-async function stopSync() {
-  try {
-    qs('syncStopBtn').disabled = true;
-    const resp = await postJson('/api/sync/stop');
+// ===== Diagnosis Output =====
+function renderDiagnosisSummary(diagnosisObj) {
+    const parent = document.getElementById('diagnosisResultContent');
+    if (!diagnosisObj || Object.keys(diagnosisObj).length === 0) {
+        parent.innerHTML = '<div style="color: #aaa">暂无针对此链路的AI诊断报告。</div>';
+        return;
+    }
+    
+    // Parse the API data
+    const bottleneckHtml = diagnosisObj.bottleneck ? `
+       <div style="margin-bottom: 6px;"><b>发现瓶颈组件: </b> <span style="color: #fff">${diagnosisObj.bottleneck.service_name}::${diagnosisObj.bottleneck.operation_name}</span></div>
+       <div style="margin-bottom: 6px; color: #e74c3c;"><b>慢调用详情: </b> ${diagnosisObj.bottleneck.duration_ms}ms 消耗 (占链路极大比重)</div>
+    ` : '';
 
-    if (!resp.ok) {
-      throw new Error(resp.error || '停止同步失败');
+    let spansHtml = '';
+    if (diagnosisObj.top_spans && diagnosisObj.top_spans.length > 0) {
+        diagnosisObj.top_spans.forEach(s => {
+            spansHtml += `<li style="color: #ddd;">${s.service_name} — 耗时: <b>${s.duration_ms}ms</b> ${s.status === 'ERROR' ? '<span style="color: #e74c3c">(错误)</span>' : ''}</li>`;
+        });
     }
 
-    // 更新状态
-    await updateSyncStatus();
-    qs('syncStartBtn').disabled = false;
-  } catch (err) {
-    alert(`停止同步失败: ${err.message}`);
-    qs('syncStopBtn').disabled = false;
-    console.error(err);
-  }
+    parent.innerHTML = `
+        <div style="background: rgba(68, 141, 254, 0.1); border-left: 3px solid var(--sw-primary); border-radius: 4px; padding: 12px; font-size: 13px; line-height: 1.6;">
+            ${bottleneckHtml}
+            ${spansHtml ? `<div style="margin-top: 8px;"><b>关键耗时微服务:</b><ul style="padding-left: 20px; margin-top: 4px;">${spansHtml}</ul></div>` : ''}
+            
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(68,141,254,0.3);">
+                <div style="color: #448dfe; font-weight: bold; margin-bottom: 4px;">智能建议 / 根因:</div>
+                <div style="color: #fff;">${diagnosisObj.root_cause || "系统暂无确切定论 (未见明显报错或阈值突破)"}</div>
+            </div>
+        </div>
+    `;
 }
 
-async function updateSyncStatus() {
-  try {
-    const resp = await getJson('/api/sync/status');
+// ===== Rendering Topology (Cytoscape) =====
+function renderTopology(rootSpan) {
+    const cyDom = document.getElementById('cy');
+    if (!cyDom) return;
 
-    if (!resp.ok) {
-      throw new Error(resp.error || '查询状态失败');
+    let elements = [];
+    let edgesMap = new Map();
+    let nodesMap = new Map();
+    
+    function collectEdges(span, parentNodeName) {
+        let nodeName = span.service_name;
+        if (!nodeName) nodeName = 'Unknown';
+        
+        let isVirtualRoot = (nodeName === 'trace-root' || !span.parent_span_id && span.operation_name.startsWith('trace:'));
+        let isError = span.status === 'ERROR' || span.status === 'error' || span.status === 'failed' || span.status === 'degraded';
+
+        // 真正的微服务节点才记录到 nodesMap和edgesMap
+        if (!isVirtualRoot) {
+            let existing = nodesMap.get(nodeName);
+            if (!existing || isError) {
+                nodesMap.set(nodeName, { id: nodeName, label: nodeName, isError: isError });
+            }
+
+            if (parentNodeName && parentNodeName !== nodeName) {
+                const edgeKey = `${parentNodeName}->${nodeName}`;
+                if (!edgesMap.has(edgeKey)) {
+                    edgesMap.set(edgeKey, { source: parentNodeName, target: nodeName, calls: 1 });
+                } else {
+                    edgesMap.get(edgeKey).calls++;
+                }
+            }
+
+            // 核心诉求："failed 终止不显示后面链路"，只对真实节点阻断
+            if (isError) {
+                return;
+            }
+        }
+
+        // 递归子节点
+        if (span.children && span.children.length > 0) {
+            span.children.forEach(child => {
+                collectEdges(child, isVirtualRoot ? null : nodeName);
+            });
+        }
+    }
+    
+    collectEdges(rootSpan, null);
+
+    // 基于 base64 SVG 构建 3D 棱柱模块，完美匹配 SkyWalking 的 3D 立体感 Cube
+    const healthySvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115"><polygon points="50,0 100,25 100,85 50,110 0,85 0,25" fill="#4B4D57"/><polygon points="50,0 100,25 50,50 0,25" fill="#818590"/><polygon points="0,25 50,50 50,110 0,85" fill="#383A42"/></svg>';
+    const errorSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115"><polygon points="50,0 100,25 100,85 50,110 0,85 0,25" fill="#A83C4B"/><polygon points="50,0 100,25 50,50 0,25" fill="#E6586F"/><polygon points="0,25 50,50 50,110 0,85" fill="#842B38"/></svg>';
+    const healthyCube = 'data:image/svg+xml;base64,' + btoa(healthySvg);
+    const errorCube = 'data:image/svg+xml;base64,' + btoa(errorSvg);
+
+    nodesMap.forEach((val) => {
+        elements.push({ 
+            data: { 
+                id: val.id, 
+                label: val.label,
+                image: val.isError ? errorCube : healthyCube
+            } 
+        });
+    });
+
+    edgesMap.forEach((val, key) => {
+        elements.push({ data: { id: key, source: val.source, target: val.target, label: '' } });
+    });
+
+    // Need to initialize visible
+    document.getElementById('panel-topology').style.display = 'block';
+
+    if (window.cy && typeof window.cy.destroy === 'function') {
+        window.cy.destroy();
     }
 
-    const { is_running, last_sync_time, total_synced, total_errors } = resp.data;
+    if (elements.length > 0) {
+        window.cy = cytoscape({
+            container: cyDom,
+            elements: elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': 'transparent',
+                        'background-image': 'data(image)',
+                        'background-fit': 'contain',
+                        'width': 44,
+                        'height': 50,
+                        'shape': 'rectangle',
+                        'label': 'data(label)',
+                        'color': '#fff',
+                        'text-valign': 'bottom',
+                        'text-halign': 'center',
+                        'text-margin-y': 6,
+                        'font-size': '12px'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 1.5,
+                        'line-color': '#a3c2f6',
+                        'line-style': 'dashed',
+                        'target-arrow-color': '#a3c2f6',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier'
+                    }
+                }
+            ],
+            layout: {
+                name: 'breadthfirst',
+                directed: true,
+                spacingFactor: 1.5
+            }
+        });
+    }
 
-    // 更新状态显示
-    qs('syncStatus').textContent = is_running ? '🟢 运行中' : '🔴 未运行';
-    qs('syncLastTime').textContent = last_sync_time ? new Date(last_sync_time).toLocaleString() : '-';
-    qs('syncTotalCount').textContent = total_synced || 0;
-    qs('syncErrorCount').textContent = total_errors || 0;
-
-    // 更新按钮状态
-    qs('syncStartBtn').disabled = is_running;
-    qs('syncStopBtn').disabled = !is_running;
-  } catch (err) {
-    console.error('更新同步状态失败:', err);
-    qs('syncStatus').textContent = '❌ 查询失败';
-  }
+    // Hide it back again since we're currently viewing the trace panel
+    document.getElementById('panel-topology').style.display = 'none';
 }
 
-// 初始化导入和同步
-function initImportSync() {
-  initImportModal();
-  initSyncPanel();
+// ===== ECharts Static Init =====
+function initECharts() {
+    if (typeof echarts === 'undefined') return;
+
+    const apdexDom = document.getElementById('apdexChart');
+    if (apdexDom) {
+        window.apdexChart = echarts.init(apdexDom);
+        window.apdexChart.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: ['09:40', '09:45', '09:50', '09:55', '10:00', '10:05'], show: false },
+            yAxis: { type: 'value', min: 0, max: 1, splitLine: { lineStyle: { type: 'dashed', color: '#444' } } },
+            series: [{ data: [1, 0.95, 0.9, 0.97, 1, 0.9], type: 'line', smooth: false, lineStyle: { color: '#448dfe', width: 2 }, symbol: 'none' }],
+            grid: { left: 40, right: 20, top: 20, bottom: 20 }
+        });
+    }
+
+    const respDom = document.getElementById('responseTimeChart');
+    if (respDom) {
+        window.responseTimeChart = echarts.init(respDom);
+        window.responseTimeChart.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: ['09:40', '09:45', '09:50', '09:55', '10:00', '10:05'], show: false },
+            yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#444' } } },
+            series: [{ data: [50, 300, 40, 250, 60, 45], type: 'line', smooth: false, areaStyle: { color: 'rgba(68, 141, 254, 0.1)' }, lineStyle: { color: '#448dfe', width: 2 }, symbol: 'none' }],
+            grid: { left: 40, right: 20, top: 20, bottom: 20 }
+        });
+    }
 }

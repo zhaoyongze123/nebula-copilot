@@ -55,6 +55,11 @@ curl -X POST "http://localhost:8080/api/import/start" \
 }
 ```
 
+**导入覆盖策略（已启用）**
+- 每次调用 `POST /api/import/start` 时，系统都会先清空本地输出文件（`output_path`，覆盖为 `[]`）。
+- ES 源索引默认**不清空**，避免“导入 0 条”。
+- 如需同时清空 ES，再导入，可传 `clear_es=true`。
+
 ### 查询导入进度
 
 **请求**

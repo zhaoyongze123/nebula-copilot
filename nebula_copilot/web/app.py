@@ -106,28 +106,30 @@ def _diagnosis_has_error(item: dict[str, Any]) -> bool:
 
 def _normalized_run_status(item: dict[str, Any]) -> str:
     status = str(item.get("status") or "").lower()
+    # 历史导入数据可能写入为 "error"，统一归一化到 "failed"
+    if status in {"error", "failed"}:
+        if _diagnosis_has_error(item):
+            return "failed"
+
+        error_text = str(item.get("error") or "").lower()
+        history = item.get("history") if isinstance(item.get("history"), list) else []
+        has_llm_fallback = any(
+            isinstance(ev, dict)
+            and "llm" in str(ev.get("node") or "").lower()
+            and str(ev.get("status") or "").lower() in {"fallback", "failed"}
+            for ev in history
+        )
+
+        if has_llm_fallback or any(
+            token in error_text
+            for token in ["rate limit", "ratelimit", "429", "llm decision required", "openai"]
+        ):
+            return "degraded"
+        return "failed"
+
     if status != "failed":
         return status
-
-    if _diagnosis_has_error(item):
-        return status
-
-    error_text = str(item.get("error") or "").lower()
-    history = item.get("history") if isinstance(item.get("history"), list) else []
-    has_llm_fallback = any(
-        isinstance(ev, dict)
-        and "llm" in str(ev.get("node") or "").lower()
-        and str(ev.get("status") or "").lower() in {"fallback", "failed"}
-        for ev in history
-    )
-
-    if has_llm_fallback or any(
-        token in error_text
-        for token in ["rate limit", "ratelimit", "429", "llm decision required", "openai"]
-    ):
-        return "degraded"
-
-    return status
+    return "failed"
 
 
 def _status_rank(status: str) -> int:
@@ -493,6 +495,7 @@ def create_app() -> Flask:
         - username: ES 用户名
         - password: ES 密码
         - output_path: 输出文件路径（默认 data/agent_runs.json）
+        - clear_es: 是否先清空 ES 索引（默认 false）
 
         返回：{task_id, status, created_at}
         """
@@ -515,6 +518,7 @@ def create_app() -> Flask:
             username = request.args.get("username") or os.getenv("NEBULA_ES_USERNAME")
             password = request.args.get("password") or os.getenv("NEBULA_ES_PASSWORD")
             output_path = Path(request.args.get("output_path", "data/agent_runs.json"))
+            clear_es = request.args.get("clear_es", "false").lower() in ("1", "true", "yes", "on")
 
             task_id = str(uuid.uuid4())[:8]
             import_tasks[task_id] = {
@@ -534,6 +538,8 @@ def create_app() -> Flask:
                         username=username,
                         password=password,
                     )
+                    # 每次批量导入前：先清空本地文件；按需清空 ES 源索引
+                    importer.reset_local_and_es(output_path, clear_es=clear_es)
                     runs = importer.import_traces(from_date=from_date, to_date=to_date, limit=limit)
                     importer.save_runs(runs, output_path)
 
