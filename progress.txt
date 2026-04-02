@@ -1,5 +1,26 @@
 # Nebula-Copilot 进度日志
-# 格式: [时间戳] [状态] [内容]
+# 格式: [时间戳] [状态] [任务ID] - [描述]
 
-## 框架初始化
-2026-04-02 初始化自我循环运行框架
+## 框架版本记录
+2026-04-02 v1.0 初始化框架（基础增量开发）
+2026-04-02 v2.0 升级框架（四大前沿理论整合）
+
+## 框架升级内容
+- Context Handoff（状态接力机制）
+- Programmatic Tool Calling（编程式工具调用）
+- TDD 强制门禁（防复合错误）
+- 多角色协同（DEV + QA + DOCS）
+- 消息总线（message_bus/）
+
+## v2.0 核心文件
+- task.json v2.0 - 支持消息总线配置
+- feature_list.json v2.0 - 含 context_handoff 和 type 字段
+- CLAUDE.md v2.0 - 完整四大理论整合
+- CLAUDE_DEV.md - 开发工程师角色
+- CLAUDE_QA.md - 测试工程师角色
+- CLAUDE_DOCS.md - 文档工程师角色
+- run-agent.sh v2.0 - 多角色路由支持
+- message_bus/ - 黑板模式消息总线
+  - ready_for_test.md - 待测试队列
+  - bug_reports.md - Bug 报告
+  - completed.md - 已完成记录
