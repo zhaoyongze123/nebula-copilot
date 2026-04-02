@@ -44,25 +44,50 @@ def test_dashboard_route() -> None:
     assert "Nebula" in resp.get_data(as_text=True)
 
 
-def test_overview_and_runs_api(tmp_path: Path) -> None:
+def test_overview_and_runs_api(monkeypatch) -> None:
+    """测试 overview 和 runs API 直接查 ES（已改为 ES-first，不再读本地 JSON）。"""
     app = create_app()
     client = app.test_client()
 
-    runs_path = tmp_path / "runs.json"
-    _make_runs(runs_path)
+    # Mock ES 查询函数，返回已知数据
+    monkeypatch.setattr(
+        "nebula_copilot.web.app.query_overview_metrics",
+        lambda **_: {
+            "total": 42,
+            "success_rate": 95.0,
+            "failed": 2,
+            "degraded": 0,
+            "p95_duration_ms": 1234,
+            "p99_duration_ms": 2000,
+            "avg_duration_ms": 500,
+            "apdex_series": [{"time": "10:00", "value": 0.95}],
+            "response_time_series": [{"time": "10:00", "value": 500}],
+            "source": "es",
+            "window_hours": 168,
+        },
+    )
+    monkeypatch.setattr(
+        "nebula_copilot.web.app.query_recent_traces",
+        lambda **_: [
+            {"run_id": "es_abc123", "trace_id": "abc123", "status": "ok", "service_name": "api-gateway", "duration_ms": 50, "started_at": "2026-01-01T10:00:00"},
+            {"run_id": "es_def456", "trace_id": "def456", "status": "error", "service_name": "payment-service", "duration_ms": 2000, "started_at": "2026-01-01T09:00:00"},
+        ],
+    )
 
-    overview = client.get(f"/api/overview?runs_path={runs_path}")
+    overview = client.get("/api/overview")
     assert overview.status_code == 200
     body = overview.get_json()
     assert body["ok"] is True
-    assert body["data"]["kpi"]["total"] == 2
+    assert body["data"]["kpi"]["total"] == 42
+    assert body["data"]["kpi"]["success_rate"] == 95.0
+    assert len(body["data"]["apdex_series"]) == 1
 
-    runs = client.get(f"/api/runs?runs_path={runs_path}&sort=error_first&size=10")
+    runs = client.get("/api/runs?size=10")
     assert runs.status_code == 200
     runs_body = runs.get_json()
     items = runs_body["data"]["items"]
     assert len(items) == 2
-    assert items[0]["run_id"] == "run-1"
+    assert items[0]["trace_id"] == "abc123"
 
 
 def test_run_detail_api(tmp_path: Path) -> None:

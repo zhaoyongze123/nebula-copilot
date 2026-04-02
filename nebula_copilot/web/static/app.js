@@ -19,6 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const importDemoBtn = document.getElementById('importDemoBtn');
+    if (importDemoBtn) {
+        importDemoBtn.addEventListener('click', () => {
+            importDemoData();
+        });
+    }
+
     const searchTraceBtn = document.getElementById('searchTraceBtn');
     if (searchTraceBtn) {
         searchTraceBtn.addEventListener('click', () => {
@@ -57,9 +64,113 @@ async function fetchDashboardOverview() {
         const payload = await res.json();
         if (!payload.ok) throw new Error(payload.error);
         renderKPIs(payload.data.kpi);
+        updateCharts(payload.data.apdex_series, payload.data.response_time_series);
     } catch (e) {
         console.error('Failed to fetch dashboard data:', e);
+        document.getElementById('kpiGrid').innerHTML =
+            '<div style="color:#e74c3c; padding:16px;">加载失败: ' + e.message + '</div>';
     }
+}
+
+function updateCharts(apdexSeries, responseSeries) {
+    if (typeof echarts === 'undefined') return;
+
+    // Apdex 图表
+    const apdexDom = document.getElementById('apdexChart');
+    if (apdexDom) {
+        if (!window.apdexChart) {
+            window.apdexChart = echarts.init(apdexDom);
+        }
+        const times = (apdexSeries || []).map(p => p.time);
+        const values = (apdexSeries || []).map(p => p.value);
+        window.apdexChart.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: times, show: false },
+            yAxis: { type: 'value', min: 0, max: 1, splitLine: { lineStyle: { type: 'dashed', color: '#444' } } },
+            series: [{ data: values, type: 'line', smooth: false, lineStyle: { color: '#448dfe', width: 2 }, symbol: 'none' }],
+            grid: { left: 40, right: 20, top: 20, bottom: 20 }
+        }, true);
+    }
+
+    // 响应时间图表
+    const respDom = document.getElementById('responseTimeChart');
+    if (respDom) {
+        if (!window.responseTimeChart) {
+            window.responseTimeChart = echarts.init(respDom);
+        }
+        const times = (responseSeries || []).map(p => p.time);
+        const values = (responseSeries || []).map(p => p.value);
+        window.responseTimeChart.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: times, show: false },
+            yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#444' } } },
+            series: [{ data: values, type: 'line', smooth: false, areaStyle: { color: 'rgba(68, 141, 254, 0.1)' }, lineStyle: { color: '#448dfe', width: 2 }, symbol: 'none' }],
+            grid: { left: 40, right: 20, top: 20, bottom: 20 }
+        }, true);
+    }
+}
+
+async function importDemoData() {
+    const importBtn = document.getElementById('importDemoBtn');
+    const originalText = importBtn ? importBtn.textContent : '';
+    if (importBtn) {
+        importBtn.textContent = '导入中...';
+        importBtn.disabled = true;
+    }
+    try {
+        // 计算时间范围：最近 24 小时
+        const toDate = new Date();
+        const fromDate = new Date(toDate.getTime() - 24 * 60 * 60 * 1000);
+        const fromDateStr = fromDate.toISOString();
+        const toDateStr = toDate.toISOString();
+
+        const res = await fetch(
+            `/api/import/start?from_date=${encodeURIComponent(fromDateStr)}&to_date=${encodeURIComponent(toDateStr)}&limit=1000`,
+            { method: 'POST' }
+        );
+        const payload = await res.json();
+        if (!payload.ok) throw new Error(payload.error);
+
+        const taskId = payload.data.task_id;
+        // 轮询导入进度
+        await pollImportStatus(taskId);
+        // 导入完成后刷新数据
+        await fetchDashboardOverview();
+        await fetchRuns();
+        alert(`数据导入完成！任务ID: ${taskId}`);
+    } catch (e) {
+        console.error('导入数据失败:', e);
+        alert('导入数据失败: ' + e.message);
+    } finally {
+        if (importBtn) {
+            importBtn.textContent = originalText;
+            importBtn.disabled = false;
+        }
+    }
+}
+
+async function pollImportStatus(taskId) {
+    const maxAttempts = 60;
+    for (let i = 0; i < maxAttempts; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        try {
+            const res = await fetch(`/api/import/${taskId}/status`);
+            const payload = await res.json();
+            const status = payload.data.status;
+            if (status === 'done') {
+                return;
+            }
+            if (status === 'error') {
+                throw new Error(payload.data.error || '导入任务失败');
+            }
+        } catch (e) {
+            if (e.message.includes('导入任务失败')) throw e;
+            // 继续等待
+        }
+    }
+    throw new Error('导入超时，请稍后刷新页面查看结果');
 }
 
 function renderKPIs(kpiData) {
@@ -92,13 +203,13 @@ async function fetchRuns() {
     try {
         const res = await fetch('/api/runs?size=20');
         const payload = await res.json();
-        if (!res.ok) throw new Error(payload.error);
+        if (!payload.ok) throw new Error(payload.error || '加载失败');
         const tbody = document.getElementById('runsTableBody');
         if (!tbody) return;
         tbody.innerHTML = '';
         const items = payload.data.items || [];
         if (items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 16px;">无数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 16px;">无数据（请确认 ES 中有 trace 数据）</td></tr>';
             return;
         }
         items.forEach(item => {
@@ -109,6 +220,8 @@ async function fetchRuns() {
                    <span style="background: ${item.status === 'failed' ? '#e74c3c' : (item.status === 'degraded' ? '#e67e22' : '#2ecc71')}; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${item.status}</span>
                 </td>
                 <td><a href="?trace_id=${item.trace_id}" style="color: var(--sw-primary); text-decoration: none;">${item.trace_id}</a></td>
+                <td>${item.service_name || '-'}</td>
+                <td>${item.duration_ms ? item.duration_ms + ' ms' : '-'}</td>
                 <td>${item.started_at ? new Date(item.started_at).toLocaleString() : '-'}</td>
                 <td>
                    <button onclick="inspectTrace('${item.trace_id}')" style="background:transparent; border:1px solid #777; color:#ddd; padding: 4px 8px; border-radius: 4px; cursor: pointer;">查看异常/监控</button>
@@ -118,6 +231,10 @@ async function fetchRuns() {
         });
     } catch (e) {
         console.error('Fetch runs error', e);
+        const tbody = document.getElementById('runsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 16px; color:#e74c3c;">加载失败: ${e.message}</td></tr>`;
+        }
     }
 }
 
@@ -401,26 +518,12 @@ function initECharts() {
     const apdexDom = document.getElementById('apdexChart');
     if (apdexDom) {
         window.apdexChart = echarts.init(apdexDom);
-        window.apdexChart.setOption({
-            backgroundColor: 'transparent',
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: ['09:40', '09:45', '09:50', '09:55', '10:00', '10:05'], show: false },
-            yAxis: { type: 'value', min: 0, max: 1, splitLine: { lineStyle: { type: 'dashed', color: '#444' } } },
-            series: [{ data: [1, 0.95, 0.9, 0.97, 1, 0.9], type: 'line', smooth: false, lineStyle: { color: '#448dfe', width: 2 }, symbol: 'none' }],
-            grid: { left: 40, right: 20, top: 20, bottom: 20 }
-        });
+        // 等待 fetchDashboardOverview 提供真实数据
     }
 
     const respDom = document.getElementById('responseTimeChart');
     if (respDom) {
         window.responseTimeChart = echarts.init(respDom);
-        window.responseTimeChart.setOption({
-            backgroundColor: 'transparent',
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: ['09:40', '09:45', '09:50', '09:55', '10:00', '10:05'], show: false },
-            yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#444' } } },
-            series: [{ data: [50, 300, 40, 250, 60, 45], type: 'line', smooth: false, areaStyle: { color: 'rgba(68, 141, 254, 0.1)' }, lineStyle: { color: '#448dfe', width: 2 }, symbol: 'none' }],
-            grid: { left: 40, right: 20, top: 20, bottom: 20 }
-        });
+        // 等待 fetchDashboardOverview 提供真实数据
     }
 }
