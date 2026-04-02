@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "project": "nebula-copilot",
+  "description": "微服务排障助手 - 长时间运行智能体任务清单",
+  "tasks": [],
+  "meta": {
+    "last_session": null,
+    "total_sessions": 0,
+    "completed_features": 0,
+    "failed_features": 0
+  }
+}

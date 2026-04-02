@@ -1,0 +1,133 @@
+{
+  "version": "1.0",
+  "project": "nebula-copilot",
+  "description": "Nebula-Copilot 下一阶段优化功能列表",
+  "features": [
+    {
+      "id": "opt-001",
+      "category": "vector",
+      "description": "接入生产向量模型 - 升级 bag-of-words 到 OpenAI Embeddings",
+      "steps": [
+        "调研 OpenAI Embeddings 和开源语义模型方案",
+        "修改 vector_store.py 支持新的嵌入模型",
+        "更新 VECTOR_PROVIDER 配置",
+        "测试嵌入质量和检索召回率",
+        "更新文档和迁移脚本"
+      ],
+      "passes": false,
+      "priority": 1,
+      "notes": "需要评估成本和性能"
+    },
+    {
+      "id": "opt-002",
+      "category": "vector",
+      "description": "扩展向量库容量 - 评估 Milvus/Weaviate 作为大规模存储",
+      "steps": [
+        "调研 Milvus 和 Weaviate 方案",
+        "设计向量数据迁移方案",
+        "实现新后端支持",
+        "性能基准测试",
+        "更新配置文档"
+      ],
+      "passes": false,
+      "priority": 2,
+      "notes": "Phase 2 当前使用 local 后端"
+    },
+    {
+      "id": "opt-003",
+      "category": "feedback",
+      "description": "人工反馈循环 - 建立线上反馈机制",
+      "steps": [
+        "设计反馈数据模型",
+        "实现反馈收集 API",
+        "建立反馈处理流程",
+        "实现反馈驱动的持续改进机制",
+        "添加反馈统计看板"
+      ],
+      "passes": false,
+      "priority": 2,
+      "notes": ""
+    },
+    {
+      "id": "opt-004",
+      "category": "web",
+      "description": "前端增强 - 集成历史案例和源码定位结果到 Dashboard",
+      "steps": [
+        "在 Run Detail 页面集成历史案例面板",
+        "添加源码定位结果展示",
+        "实现历史案例检索入口",
+        "优化前端加载性能",
+        "端到端测试"
+      ],
+      "passes": false,
+      "priority": 3,
+      "notes": ""
+    },
+    {
+      "id": "opt-005",
+      "category": "monitoring",
+      "description": "监控联动 - 诊断效果指标与告警系统联动",
+      "steps": [
+        "定义诊断效果指标体系",
+        "实现指标收集和上报",
+        "对接告警系统 webhooks",
+        "配置告警规则",
+        "测试告警触发和通知"
+      ],
+      "passes": false,
+      "priority": 3,
+      "notes": ""
+    },
+    {
+      "id": "opt-006",
+      "category": "testing",
+      "description": "端到端测试覆盖 - 完善 monitor-es 和 notifier 流程测试",
+      "steps": [
+        "分析 monitor-es 代码路径",
+        "编写 monitor-es 集成测试",
+        "编写 notifier 推送测试",
+        "添加失败场景测试用例",
+        "更新测试覆盖率报告"
+      ],
+      "passes": false,
+      "priority": 1,
+      "notes": "提高系统可靠性"
+    },
+    {
+      "id": "opt-007",
+      "category": "performance",
+      "description": "性能优化 - 优化大 trace 文件处理速度",
+      "steps": [
+        "分析当前 trace 处理瓶颈",
+        "实现流式处理方案",
+        "添加进度提示",
+        "内存使用优化",
+        "性能基准测试"
+      ],
+      "passes": false,
+      "priority": 2,
+      "notes": ""
+    },
+    {
+      "id": "opt-008",
+      "category": "docs",
+      "description": "文档完善 - 补充运维故障排查手册",
+      "steps": [
+        "梳理常见运维场景",
+        "编写故障排查手册",
+        "添加错误码说明",
+        "补充灾备方案",
+        "评审和测试文档"
+      ],
+      "passes": false,
+      "priority": 3,
+      "notes": ""
+    }
+  ],
+  "meta": {
+    "total_features": 8,
+    "completed": 0,
+    "failed": 0,
+    "last_updated": "2026-04-02"
+  }
+}
