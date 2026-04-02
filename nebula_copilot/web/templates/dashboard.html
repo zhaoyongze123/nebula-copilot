@@ -3,176 +3,148 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nebula Observability</title>
+  <title>Nebula 可观测排障台 (SkyWalking Style)</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.0/cytoscape.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>Nebula 可观测排障台</h1>
-      <p>30 秒排障闭环：异常 -> Run -> Trace -> 日志</p>
-    </div>
-    <div class="controls">
-      <label>
-        自动刷新
-        <input id="autoRefresh" type="checkbox" checked />
-      </label>
-      <button id="refreshBtn">立即刷新</button>
-      <button id="importBtn" class="primary">📥 批量导入</button>
-      <button id="syncBtn" class="primary">🔄 自动同步</button>
-      <span id="lastRefresh">-</span>
-    </div>
-  </header>
-
-  <section class="kpi-grid" id="kpiGrid"></section>
-
-  <section class="search-row">
-    <input id="traceIdInput" placeholder="按 trace_id 过滤" />
-    <select id="statusSelect">
-      <option value="">全部状态</option>
-      <option value="failed">failed</option>
-      <option value="degraded">degraded</option>
-      <option value="ok">ok</option>
-    </select>
-    <select id="sortSelect">
-      <option value="error_first">问题优先</option>
-      <option value="latest">最新优先</option>
-      <option value="slowest">最慢优先</option>
-      <option value="most_retries">重试最多</option>
-    </select>
-    <button id="filterBtn">查询</button>
-  </section>
-
-  <main class="layout">
-    <section>
-      <h2>Runs <span id="sourceRuns" class="source-chip">source:-</span></h2>
-      <div id="runsAccordion" class="runs-accordion"></div>
-    </section>
-
-    <section>
-      <h2>Run Detail <span id="sourceRunDetail" class="source-chip">source:-</span></h2>
-      <div id="runSummary" class="card"></div>
-      <h3>Timeline</h3>
-      <ul id="timeline" class="timeline"></ul>
-      <h3>Diagnosis</h3>
-      <pre id="diagnosis"></pre>
-      <h3>LLM 分析结果</h3>
-      <pre id="llmResult"></pre>
-    </section>
-
-    <section>
-      <h2>Trace Inspect <span id="sourceTrace" class="source-chip">source:-</span></h2>
-      <div id="tracePanel" class="card"></div>
-      <h3>Trace Tree</h3>
-      <div id="traceTree" class="tree card"></div>
-      <h3>Topology <span id="sourceTopology" class="source-chip">auto</span></h3>
-      <div id="cy" class="card" style="height: 300px; width: 100%; position: relative;"></div>
-      <h3>Logs <span id="sourceLogs" class="source-chip">source:-</span></h3>
-      <div class="logs-search">
-        <input id="logTraceIdInput" placeholder="trace_id（自动）" readonly />
-        <input id="logServiceInput" placeholder="service_name（自动填充）" />
-        <input id="keywordInput" placeholder="关键字（可选）" />
-        <button id="logSearchBtn">查日志</button>
+  <div class="layout-wrapper">
+    <!-- 侧边栏导航 -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-text">Nebula</span>
+        <span class="logo-sub">APM</span>
       </div>
-      <pre id="logsResult"></pre>
-    </section>
-  </main>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-target="panel-dashboard">全局看板</div>
+        <div class="nav-item" data-target="panel-topology">服务拓扑</div>
+        <div class="nav-item" data-target="panel-trace">链路追踪</div>
+        <div class="nav-item" data-target="panel-runs">执行记录</div>
+      </nav>
+    </aside>
 
-  <div class="kpi-source-wrap">
-    <span id="sourceKpi" class="source-chip">KPI source:-</span>
-  </div>
+    <!-- 主体内容 -->
+    <main class="main-content">
+      <!-- 顶栏控制 -->
+      <header class="topbar">
+        <div class="page-title">可观测排障台</div>
+        <div class="controls">
+          <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+            自动刷新
+            <input id="autoRefresh" type="checkbox" checked />
+          </label>
+          <button id="refreshBtn" class="btn-primary">刷新数据</button>
+          <button id="importDemoBtn" class="btn-secondary">导入测试数据</button>
+        </div>
+      </header>
 
-  <!-- 批量导入弹窗 -->
-  <div id="importModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>📥 批量导入 Traces</h2>
-        <button class="modal-close" id="importModalClose">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>开始时间</label>
-          <input id="importFromDate" type="datetime-local" required />
-          <small>默认：7 天前</small>
-        </div>
-        <div class="form-group">
-          <label>结束时间</label>
-          <input id="importToDate" type="datetime-local" required />
-          <small>默认：当前时间</small>
-        </div>
-        <div class="form-group">
-          <label>导入数量</label>
-          <input id="importLimit" type="number" value="1000" min="1" max="5000" />
-          <small>最多导入多少条 traces（默认 1000）</small>
-        </div>
-        <div class="form-group">
-          <label>输出文件路径</label>
-          <input id="importOutputPath" type="text" value="data/agent_runs.json" />
-          <small>导入结果保存位置</small>
-        </div>
-        <div id="importProgress" style="display: none;">
-          <h3>导入进度</h3>
-          <div class="progress-bar">
-            <div id="importProgressBar" class="progress-fill"></div>
+      <div class="content-body">
+        <!-- 仪表板视图 -->
+        <section id="panel-dashboard" class="panel active">
+          <!-- KPI 区域 -->
+          <div id="kpiGrid" class="kpi-grid" style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;"></div>
+          
+          <div class="dashboard-grid">
+            <div class="chart-card">
+              <h3>Service Apdex</h3>
+              <div id="apdexChart" style="width: 100%; height: 250px;"></div>
+            </div>
+            <div class="chart-card">
+              <h3>Service Avg Response Time (ms)</h3>
+              <div id="responseTimeChart" style="width: 100%; height: 250px;"></div>
+            </div>
           </div>
-          <p id="importStatus">准备导入...</p>
-        </div>
+        </section>
+
+        <!-- 拓扑视图 -->
+        <section id="panel-topology" class="panel" style="display: none;">
+          <div id="cy" style="width: 100%; height: 600px; background: #252a36; border-radius: 4px;"></div>
+        </section>
+
+        <!-- 链路视图 -->
+        <section id="panel-trace" class="panel" style="display: none;">
+          <div class="search-bar" style="margin-bottom: 12px; display: flex; gap: 8px;">
+            <input id="traceIdInput" type="text" placeholder="输入 Trace ID (例如 123456789)" style="padding: 6px; width: 300px; background: #252a36; border: 1px solid #444; color: #fff; border-radius: 4px;" />
+            <button id="searchTraceBtn" class="btn-primary">查询</button>
+            <span id="traceStatusText" style="color: #aaa; margin-left: 10px; line-height: 28px;"></span>
+          </div>
+          <div class="trace-container" style="display: flex; gap: 16px; height: calc(100vh - 160px);">
+            <!-- 树状结构和甘特图 -->
+            <div id="traceGanttContainer" class="gantt-container" style="flex: 2; overflow-y: auto; background: #252a36; padding: 12px; border-radius: 4px;">
+              <div class="gantt-header" style="display: flex; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 8px; font-weight: bold; color: #fff;">
+                <div class="g-col-name" style="flex: 2;">服务端点</div>
+                <div class="g-col-duration" style="flex: 1;">耗时(ms)</div>
+                <div class="g-col-timeline" style="flex: 3;">执行时间轴</div>
+              </div>
+              <div id="ganttBody" class="gantt-body"></div>
+            </div>
+            <!-- 右侧详情面板 -->
+            <div id="traceDetailPanel" class="detail-panel" style="flex: 1; display: block; background: #252a36; padding: 16px; overflow-y: auto; border-radius: 4px; color: #ddd; max-height: 100%;">
+              <h3 style="margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px;">智能诊断分析</h3>
+              <div id="diagnosisResultContent">请输入 Trace ID 查询数据以获取排障报告...</div>
+              
+              <h3 style="margin-top: 20px; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px;">Span 详情</h3>
+              <div id="spanDetailContent">点击左侧链路中的节点以查看微服务及异常详细信息</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 执行记录视图 -->
+        <section id="panel-runs" class="panel" style="display: none;">
+           <div class="search-bar" style="margin-bottom: 12px; display: flex; gap: 8px;">
+             <button id="loadRunsBtn" class="btn-primary">加载最新记录</button>
+           </div>
+           <div style="background: #252a36; padding: 16px; border-radius: 4px;">
+             <table style="width: 100%; text-align: left; color: #ddd; border-collapse: collapse;">
+               <thead>
+                 <tr style="border-bottom: 1px solid #444;">
+                   <th style="padding: 8px 0;">状态</th>
+                   <th>Trace ID</th>
+                   <th>服务</th>
+                   <th>耗时</th>
+                   <th>运行时间</th>
+                   <th>操作</th>
+                 </tr>
+               </thead>
+               <tbody id="runsTableBody">
+                 <!-- 自动注入 -->
+               </tbody>
+             </table>
+           </div>
+        </section>
+
       </div>
-      <div class="modal-footer">
-        <button id="importStartBtn" class="btn-primary">开始导入</button>
-        <button id="importCancelBtn" class="btn-secondary">取消</button>
-      </div>
-    </div>
+    </main>
   </div>
 
-  <!-- 自动同步控制面板 -->
-  <div id="syncPanel" class="sync-panel" style="display: none;">
-    <div class="sync-header">
-      <h3>🔄 自动同步状态</h3>
-      <button class="panel-close" id="syncPanelClose">&times;</button>
-    </div>
-    <div class="sync-body">
-      <div class="sync-status">
-        <div class="status-item">
-          <label>状态</label>
-          <span id="syncStatus">未运行</span>
-        </div>
-        <div class="status-item">
-          <label>最后同步</label>
-          <span id="syncLastTime">-</span>
-        </div>
-        <div class="status-item">
-          <label>累计导入</label>
-          <span id="syncTotalCount">0</span> 条
-        </div>
-        <div class="status-item">
-          <label>错误数</label>
-          <span id="syncErrorCount">0</span>
-        </div>
-      </div>
-      <div class="sync-controls">
-        <div class="form-group">
-          <label>同步间隔（秒）</label>
-          <input id="syncInterval" type="number" value="300" min="60" max="3600" />
-        </div>
-        <div class="form-group">
-          <label>回溯窗口（分钟）</label>
-          <input id="syncLookback" type="number" value="60" min="10" max="1440" />
-        </div>
-        <div class="form-group">
-          <label>输出文件路径</label>
-          <input id="syncOutputPath" type="text" value="data/agent_runs.json" />
-        </div>
-        <div class="sync-buttons">
-          <button id="syncStartBtn" class="btn-primary">启动同步</button>
-          <button id="syncStopBtn" class="btn-secondary" disabled>停止同步</button>
-        </div>
-        <button id="syncRefreshStatusBtn" class="btn-small">刷新状态</button>
-      </div>
-    </div>
-  </div>
-
+  <script>
+    // 切换面板逻辑
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        this.classList.add('active');
+        
+        const targetId = this.getAttribute('data-target');
+        document.querySelectorAll('.panel').forEach(p => {
+          if (p.id === targetId) {
+            p.classList.add('active');
+            p.style.display = 'block';
+          } else {
+            p.classList.remove('active');
+            p.style.display = 'none';
+          }
+        });
+        
+        // 触发 ECharts 重绘避雷坑
+        if (targetId === 'panel-dashboard') {
+          setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+          }, 0);
+        }
+      });
+    });
+  </script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

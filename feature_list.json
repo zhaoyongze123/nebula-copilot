@@ -1,0 +1,139 @@
+{
+  "version": "2.0",
+  "project": "nebula-copilot",
+  "description": "Nebula-Copilot 功能特性列表 - 含状态接力与多角色支持",
+  "features": [
+    {
+      "id": "opt-001",
+      "type": "backend",
+      "category": "vector",
+      "description": "接入生产向量模型 - 升级 bag-of-words 到 OpenAI Embeddings",
+      "steps": [
+        "调研 OpenAI Embeddings 和开源语义模型方案",
+        "修改 vector_store.py 支持新的嵌入模型",
+        "更新 VECTOR_PROVIDER 配置",
+        "编写单元测试验证嵌入质量",
+        "性能基准测试"
+      ],
+      "passes": false,
+      "priority": 1,
+      "context_handoff": "",
+      "notes": ""
+    },
+    {
+      "id": "opt-002",
+      "type": "backend",
+      "category": "vector",
+      "description": "扩展向量库容量 - 评估 Milvus/Weaviate 作为大规模存储",
+      "steps": [
+        "调研 Milvus 和 Weaviate 方案",
+        "设计向量数据迁移方案",
+        "实现新后端支持",
+        "性能基准测试"
+      ],
+      "passes": false,
+      "priority": 2,
+      "context_handoff": "",
+      "notes": ""
+    },
+    {
+      "id": "opt-003",
+      "type": "backend",
+      "category": "feedback",
+      "description": "人工反馈循环 - 建立线上反馈机制",
+      "steps": [
+        "设计反馈数据模型 FeedbackRecord",
+        "实现反馈收集 API (POST /api/feedback)",
+        "建立反馈处理流程",
+        "实现反馈驱动的持续改进机制"
+      ],
+      "passes": false,
+      "priority": 2,
+      "context_handoff": "",
+      "notes": ""
+    },
+    {
+      "id": "opt-004",
+      "type": "frontend",
+      "category": "web",
+      "description": "前端增强 - 集成历史案例和源码定位结果到 Dashboard",
+      "steps": [
+        "在 Run Detail 页面集成历史案例面板",
+        "添加源码定位结果展示",
+        "实现历史案例检索入口"
+      ],
+      "passes": false,
+      "priority": 3,
+      "context_handoff": "",
+      "notes": ""
+    },
+    {
+      "id": "opt-005",
+      "type": "backend",
+      "category": "monitoring",
+      "description": "监控联动 - 诊断效果指标与告警系统联动",
+      "steps": [
+        "定义诊断效果指标体系",
+        "实现指标收集和上报",
+        "对接告警系统 webhooks"
+      ],
+      "passes": false,
+      "priority": 3,
+      "context_handoff": "",
+      "notes": ""
+    },
+    {
+      "id": "opt-006",
+      "type": "qa",
+      "category": "testing",
+      "description": "端到端测试覆盖 - 完善 monitor-es 和 notifier 流程测试",
+      "steps": [
+        "分析 monitor-es 代码路径",
+        "编写 monitor-es 集成测试",
+        "编写 notifier 推送测试",
+        "添加失败场景测试用例"
+      ],
+      "passes": false,
+      "priority": 1,
+      "context_handoff": "",
+      "notes": ""
+    },
+    {
+      "id": "opt-007",
+      "type": "backend",
+      "category": "performance",
+      "description": "性能优化 - 优化大 trace 文件处理速度",
+      "steps": [
+        "分析当前 trace 处理瓶颈",
+        "实现流式处理方案",
+        "内存使用优化",
+        "性能基准测试"
+      ],
+      "passes": false,
+      "priority": 2,
+      "context_handoff": "",
+      "notes": ""
+    },
+    {
+      "id": "opt-008",
+      "type": "docs",
+      "category": "docs",
+      "description": "文档完善 - 补充运维故障排查手册",
+      "steps": [
+        "梳理常见运维场景",
+        "编写故障排查手册",
+        "补充灾备方案"
+      ],
+      "passes": false,
+      "priority": 3,
+      "context_handoff": "",
+      "notes": ""
+    }
+  ],
+  "meta": {
+    "total_features": 8,
+    "completed": 0,
+    "failed": 0,
+    "last_updated": "2026-04-02"
+  }
+}

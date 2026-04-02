@@ -527,3 +527,11 @@ class AgentState(TypedDict, total=False):
 
 
 
+
+### 最新进度同步 (2026-04-01)
+- 已完成 Nebula APM Web UI 的全面重构，完美对标 Apache SkyWalking 风格：
+  - 新增深色左侧边栏导航，支持无缝切换“全局看板”、“服务拓扑”、“链路追踪”以及“执行记录”。
+  - 链路甘特图（Gantt Chart）升级为精确比例渲染，并支持动态展现毫秒级耗时。
+  - 拓扑图 (Topology) 改用定制化 3D 立体方块（Base64 SVG）呈现服务节点，错误节点自动标红。
+  - 实现了基于节点真实状态的**链路阻断机制**（Failed 节点断路，其后链路不再显示，聚焦根因）。
+  - 修通了底层所有 API 数据接口，前端展示已完全对接后端 `es_client` 和 `analyzer` 输出的正式数据。

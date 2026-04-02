@@ -28,6 +28,8 @@ nebula_copilot.egg-info/requires.txt
 nebula_copilot.egg-info/top_level.txt
 nebula_copilot/agent/__init__.py
 nebula_copilot/agent/graph.py
+nebula_copilot/agent/harness.py
+nebula_copilot/agent/session.py
 nebula_copilot/agent/state.py
 nebula_copilot/llm/__init__.py
 nebula_copilot/llm/executor.py
@@ -41,6 +43,7 @@ nebula_copilot/tools/types.py
 nebula_copilot/web/__init__.py
 nebula_copilot/web/app.py
 tests/test_agent_graph.py
+tests/test_agent_session.py
 tests/test_analyzer.py
 tests/test_cli.py
 tests/test_code_whitelist.py

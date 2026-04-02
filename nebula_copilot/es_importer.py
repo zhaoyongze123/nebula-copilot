@@ -16,6 +16,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from elasticsearch import Elasticsearch
+
 from nebula_copilot.es_client import search_traces_by_range
 from nebula_copilot.models import TraceDocument
 
@@ -147,7 +149,7 @@ class ESImporter:
 
         # 确定状态：根据是否有错误 span
         has_error = _has_error_span(trace.root)
-        status = "error" if has_error else "ok"
+        status = "failed" if has_error else "ok"
 
         # 构建 metrics
         metrics = {
@@ -172,7 +174,8 @@ class ESImporter:
         }
 
         # 构建 history（timeline 事件）
-        history = _build_timeline(trace.root)
+        # 失败链路在首个 ERROR 节点截断，不展示其后的 SKIPPED 节点
+        history = _build_timeline(trace.root, stop_on_error=True)
 
         return {
             "run_id": run_id,
@@ -235,6 +238,48 @@ class ESImporter:
             logger.error(msg)
             raise ImportError(msg) from exc
 
+    def reset_local_and_es(self, output_path: Path, clear_es: bool = False) -> None:
+        """清空本地输出文件，并按需清空 ES 索引数据。
+
+        行为：
+        - 本地：如果 output_path 存在，覆盖为空数组 []
+        - ES（可选）：对目标 index 执行 delete_by_query(match_all)
+        """
+        # 1) 清空本地文件
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text("[]", encoding="utf-8")
+            logger.info(f"已清空本地输出文件: {output_path}")
+        except Exception as exc:
+            msg = f"清空本地输出文件失败: {exc}"
+            logger.error(msg)
+            raise ImportError(msg) from exc
+
+        # 2) 按需清空 ES 索引
+        if not clear_es:
+            return
+
+        try:
+            client = Elasticsearch(
+                hosts=[self.es_url],
+                basic_auth=(self.username, self.password) if self.username and self.password else None,
+                verify_certs=self.verify_certs,
+                request_timeout=self.timeout_seconds,
+            )
+            # ignore_unavailable=True: 索引不存在时不报错
+            resp = client.delete_by_query(
+                index=self.index,
+                query={"match_all": {}},
+                refresh=True,
+                conflicts="proceed",
+                ignore_unavailable=True,
+            )
+            logger.info(f"已清空 ES 索引数据: index={self.index}, deleted={resp.get('deleted', 0)}")
+        except Exception as exc:
+            msg = f"清空 ES 索引失败: {exc}"
+            logger.error(msg)
+            raise ImportError(msg) from exc
+
 
 def _count_spans(span: Any, visited: set[str] | None = None) -> int:
     """递归计算 span 树中的总 span 数（去除重复）。"""
@@ -294,7 +339,7 @@ def _has_error_span(span: Any) -> bool:
     return False
 
 
-def _build_timeline(span: Any, level: int = 0) -> list[dict[str, Any]]:
+def _build_timeline(span: Any, level: int = 0, stop_on_error: bool = True) -> list[dict[str, Any]]:
     """从 span 树构建 timeline 事件列表。"""
     if span is None:
         return []
@@ -305,21 +350,38 @@ def _build_timeline(span: Any, level: int = 0) -> list[dict[str, Any]]:
     start_time = getattr(span, "start_time", 0)
     end_time = getattr(span, "end_time", start_time)
     duration = end_time - start_time if isinstance(end_time, (int, float)) and isinstance(start_time, (int, float)) else 0
+    status = str(getattr(span, "status", "UNKNOWN") or "UNKNOWN").upper()
+
+    # start_time 缺失时避免显示 1970 年
+    if not isinstance(start_time, (int, float)) or start_time <= 0:
+        ts_str = datetime.now().isoformat()
+    else:
+        ts_str = datetime.fromtimestamp(start_time).isoformat()
 
     timeline.append({
-        "timestamp": datetime.fromtimestamp(start_time).isoformat() if isinstance(start_time, (int, float)) else datetime.now().isoformat(),
+        "timestamp": ts_str,
         "level": level,
         "span_id": getattr(span, "span_id", "unknown"),
         "service_name": getattr(span, "service_name", "unknown"),
         "operation_name": getattr(span, "operation_name", "unknown"),
         "duration_ms": int(duration * 1000),
-        "status": getattr(span, "status", "UNKNOWN"),
+        "status": status,
         "event": "span_start",
     })
+
+    # 失败链路在第一个 ERROR 节点截断
+    if stop_on_error and status == "ERROR":
+        return timeline
 
     # 递归处理子 spans
     children = getattr(span, "children", None) or []
     for child in children:
-        timeline.extend(_build_timeline(child, level + 1))
+        child_status = str(getattr(child, "status", "UNKNOWN") or "UNKNOWN").upper()
+        if stop_on_error and child_status == "SKIPPED":
+            # SKIPPED 表示失败后的未执行链路，前端不展示
+            continue
+        timeline.extend(_build_timeline(child, level + 1, stop_on_error=stop_on_error))
+        if stop_on_error and child_status == "ERROR":
+            break
 
     return timeline

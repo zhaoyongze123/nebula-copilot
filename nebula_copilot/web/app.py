@@ -14,7 +14,7 @@ from nebula_copilot.analyzer import analyze_trace
 from nebula_copilot.cli import _load_run_records
 from nebula_copilot.config import load_app_config
 from nebula_copilot.errors import DataSourceError, TraceNotFoundError, TraceValidationError
-from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, search_service_logs
+from nebula_copilot.es_client import ESQueryError, fetch_trace_by_id, query_overview_metrics, query_recent_traces, search_service_logs
 from nebula_copilot.es_importer import ESImporter, ImportError
 from nebula_copilot.es_sync import ESSync, SyncError
 from nebula_copilot.knowledge_base import KnowledgeBase
@@ -106,28 +106,30 @@ def _diagnosis_has_error(item: dict[str, Any]) -> bool:
 
 def _normalized_run_status(item: dict[str, Any]) -> str:
     status = str(item.get("status") or "").lower()
+    # 历史导入数据可能写入为 "error"，统一归一化到 "failed"
+    if status in {"error", "failed"}:
+        if _diagnosis_has_error(item):
+            return "failed"
+
+        error_text = str(item.get("error") or "").lower()
+        history = item.get("history") if isinstance(item.get("history"), list) else []
+        has_llm_fallback = any(
+            isinstance(ev, dict)
+            and "llm" in str(ev.get("node") or "").lower()
+            and str(ev.get("status") or "").lower() in {"fallback", "failed"}
+            for ev in history
+        )
+
+        if has_llm_fallback or any(
+            token in error_text
+            for token in ["rate limit", "ratelimit", "429", "llm decision required", "openai"]
+        ):
+            return "degraded"
+        return "failed"
+
     if status != "failed":
         return status
-
-    if _diagnosis_has_error(item):
-        return status
-
-    error_text = str(item.get("error") or "").lower()
-    history = item.get("history") if isinstance(item.get("history"), list) else []
-    has_llm_fallback = any(
-        isinstance(ev, dict)
-        and "llm" in str(ev.get("node") or "").lower()
-        and str(ev.get("status") or "").lower() in {"fallback", "failed"}
-        for ev in history
-    )
-
-    if has_llm_fallback or any(
-        token in error_text
-        for token in ["rate limit", "ratelimit", "429", "llm decision required", "openai"]
-    ):
-        return "degraded"
-
-    return status
+    return "failed"
 
 
 def _status_rank(status: str) -> int:
@@ -234,82 +236,93 @@ def create_app() -> Flask:
     @app.get("/api/overview")
     def api_overview() -> Any:
         start = time.time() * 1000
-        runs_path = Path(request.args.get("runs_path", "data/agent_runs.json"))
-        runs = _load_runs(runs_path)
+        es_url = request.args.get("es_url") or os.getenv("NEBULA_ES_URL", "http://localhost:9200")
+        index = request.args.get("index") or os.getenv("NEBULA_ES_INDEX", "nebula_metrics")
+        username = request.args.get("username") or os.getenv("NEBULA_ES_USERNAME")
+        password = request.args.get("password") or os.getenv("NEBULA_ES_PASSWORD")
+        verify_certs = request.args.get("verify_certs", "true").lower() == "true"
+        timeout_seconds = int(request.args.get("timeout_seconds", "30"))
+        last_hours = int(request.args.get("last_hours", "168"))
 
-        total = len(runs)
-        failed = sum(1 for item in runs if str(item.get("status")) == "failed")
-        degraded = sum(1 for item in runs if str(item.get("status")) == "degraded")
-        ok = sum(1 for item in runs if str(item.get("status")) == "ok")
-        success_rate = round((ok / total) * 100, 2) if total else 0.0
+        try:
+            metrics = query_overview_metrics(
+                es_url=es_url,
+                index=index,
+                last_hours=last_hours,
+                username=username,
+                password=password,
+                verify_certs=verify_certs,
+                timeout_seconds=timeout_seconds,
+            )
 
-        durations = [int((item.get("metrics") or {}).get("duration_ms") or 0) for item in runs]
-        durations = [d for d in durations if d > 0]
-        p95 = 0
-        if durations:
-            durations.sort()
-            idx = min(len(durations) - 1, max(0, int(len(durations) * 0.95) - 1))
-            p95 = durations[idx]
-
-        recent_anomalies = []
-        for item in _sort_runs(runs, "error_first"):
-            status = str(item.get("status") or "")
-            if status in {"failed", "degraded"}:
-                recent_anomalies.append(
-                    {
-                        "run_id": item.get("run_id"),
-                        "trace_id": item.get("trace_id"),
-                        "status": status,
-                        "started_at": item.get("started_at"),
-                    }
-                )
-            if len(recent_anomalies) >= 10:
-                break
-
-        data = {
-            "kpi": {
-                "total": total,
-                "success_rate": success_rate,
-                "failed": failed,
-                "degraded": degraded,
-                "p95_duration_ms": p95,
-            },
-            "recent_anomalies": recent_anomalies,
-        }
-        return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+            data = {
+                "kpi": {
+                    "total": metrics["total"],
+                    "success_rate": metrics["success_rate"],
+                    "failed": metrics["failed"],
+                    "degraded": metrics["degraded"],
+                    "p95_duration_ms": metrics["p95_duration_ms"],
+                },
+                "recent_anomalies": [],
+                "apdex_series": metrics["apdex_series"],
+                "response_time_series": metrics["response_time_series"],
+            }
+            return jsonify(_envelope(data, source="es", degraded=False, start_ms=start))
+        except ESQueryError as exc:
+            return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 503
+        except Exception as exc:
+            return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 500
 
     @app.get("/api/runs")
     def api_runs() -> Any:
         start = time.time() * 1000
-        runs_path = Path(request.args.get("runs_path", "data/agent_runs.json"))
+        es_url = request.args.get("es_url") or os.getenv("NEBULA_ES_URL", "http://localhost:9200")
+        index = request.args.get("index") or os.getenv("NEBULA_ES_INDEX", "nebula_metrics")
+        username = request.args.get("username") or os.getenv("NEBULA_ES_USERNAME")
+        password = request.args.get("password") or os.getenv("NEBULA_ES_PASSWORD")
+        verify_certs = request.args.get("verify_certs", "true").lower() == "true"
+        timeout_seconds = int(request.args.get("timeout_seconds", "30"))
         status = request.args.get("status", "").strip()
         trace_id = request.args.get("trace_id", "").strip()
-        sort_mode = request.args.get("sort", "error_first").strip() or "error_first"
         page = max(1, int(request.args.get("page", "1")))
         size = max(1, min(100, int(request.args.get("size", "20"))))
+        last_minutes = int(request.args.get("last_minutes", "10080"))
 
-        items = _load_runs(runs_path)
-        if status:
-            items = [item for item in items if str(item.get("status") or "") == status]
-        if trace_id:
-            items = [item for item in items if str(item.get("trace_id") or "") == trace_id]
+        try:
+            items = query_recent_traces(
+                es_url=es_url,
+                index=index,
+                last_minutes=last_minutes,
+                limit=200,
+                username=username,
+                password=password,
+                verify_certs=verify_certs,
+                timeout_seconds=timeout_seconds,
+            )
+            if status:
+                items = [item for item in items if str(item.get("status") or "") == status]
+            if trace_id:
+                items = [item for item in items if str(item.get("trace_id") or "") == trace_id]
 
-        items = _sort_runs(items, sort_mode)
-        total = len(items)
-        start_idx = (page - 1) * size
-        end_idx = start_idx + size
-        page_items = items[start_idx:end_idx]
+            total = len(items)
+            start_idx = (page - 1) * size
+            end_idx = start_idx + size
+            page_items = items[start_idx:end_idx]
 
-        data = {
-            "items": page_items,
-            "paging": {
-                "page": page,
-                "size": size,
-                "total": total,
-                "has_next": end_idx < total,
-            },
-        }
-        return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+            data = {
+                "items": page_items,
+                "paging": {
+                    "page": page,
+                    "size": size,
+                    "total": total,
+                    "has_next": end_idx < total,
+                },
+            }
+            return jsonify(_envelope(data, source="es", degraded=False, start_ms=start))
+        except ESQueryError as exc:
+            return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 503
+        except Exception as exc:
+            return jsonify(_envelope({}, source="es", degraded=True, start_ms=start, error=str(exc))), 500
 
     @app.get("/api/runs/<run_id>/page")
     def api_run_detail(run_id: str) -> Any:
@@ -493,6 +506,7 @@ def create_app() -> Flask:
         - username: ES 用户名
         - password: ES 密码
         - output_path: 输出文件路径（默认 data/agent_runs.json）
+        - clear_es: 是否先清空 ES 索引（默认 false）
 
         返回：{task_id, status, created_at}
         """
@@ -515,6 +529,7 @@ def create_app() -> Flask:
             username = request.args.get("username") or os.getenv("NEBULA_ES_USERNAME")
             password = request.args.get("password") or os.getenv("NEBULA_ES_PASSWORD")
             output_path = Path(request.args.get("output_path", "data/agent_runs.json"))
+            clear_es = request.args.get("clear_es", "false").lower() in ("1", "true", "yes", "on")
 
             task_id = str(uuid.uuid4())[:8]
             import_tasks[task_id] = {
@@ -534,6 +549,8 @@ def create_app() -> Flask:
                         username=username,
                         password=password,
                     )
+                    # 每次批量导入前：先清空本地文件；按需清空 ES 源索引
+                    importer.reset_local_and_es(output_path, clear_es=clear_es)
                     runs = importer.import_traces(from_date=from_date, to_date=to_date, limit=limit)
                     importer.save_runs(runs, output_path)
 
@@ -669,6 +686,139 @@ def create_app() -> Flask:
                 es_sync_instance.stop_sync()
 
             data = {"status": "stopped"}
+            return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
+
+        except Exception as exc:
+            return jsonify(_envelope({}, source="local", degraded=True, start_ms=start, error=str(exc))), 500
+
+    @app.post("/api/demo/import")
+    def api_demo_import() -> Any:
+        """导入演示数据到本地 data/agent_runs.json。"""
+        start = time.time() * 1000
+        output_path = Path(request.args.get("output_path", "data/agent_runs.json"))
+
+        try:
+            # 生成演示数据
+            now = datetime.now()
+            demo_runs = [
+                {
+                    "run_id": "demo_run_001",
+                    "trace_id": "demo_trace_001",
+                    "status": "ok",
+                    "started_at": (now - timedelta(minutes=5)).isoformat(),
+                    "finished_at": now.isoformat(),
+                    "metrics": {"duration_ms": 1250},
+                    "diagnosis": {
+                        "bottleneck": None,
+                        "top_spans": [
+                            {"service_name": "api-gateway", "operation_name": "/orders", "duration_ms": 800, "status": "ok"},
+                            {"service_name": "order-service", "operation_name": "createOrder", "duration_ms": 450, "status": "ok"},
+                        ],
+                        "root_cause": "系统运行正常，未检测到异常。",
+                    },
+                    "history": [],
+                    "notify": {"status": "sent"},
+                },
+                {
+                    "run_id": "demo_run_002",
+                    "trace_id": "demo_trace_002",
+                    "status": "failed",
+                    "started_at": (now - timedelta(minutes=15)).isoformat(),
+                    "finished_at": (now - timedelta(minutes=14)).isoformat(),
+                    "metrics": {"duration_ms": 3200},
+                    "diagnosis": {
+                        "bottleneck": {"service_name": "db-service", "operation_name": "query", "duration_ms": 2800, "status": "ERROR"},
+                        "top_spans": [
+                            {"service_name": "api-gateway", "operation_name": "/orders", "duration_ms": 3200, "status": "ERROR"},
+                            {"service_name": "db-service", "operation_name": "query", "duration_ms": 2800, "status": "ERROR"},
+                        ],
+                        "root_cause": "数据库查询超时，可能存在慢查询或死锁。",
+                    },
+                    "history": [],
+                    "notify": {"status": "sent"},
+                    "error": "deadlock detected",
+                },
+                {
+                    "run_id": "demo_run_003",
+                    "trace_id": "demo_trace_003",
+                    "status": "degraded",
+                    "started_at": (now - timedelta(minutes=30)).isoformat(),
+                    "finished_at": (now - timedelta(minutes=29)).isoformat(),
+                    "metrics": {"duration_ms": 5800},
+                    "diagnosis": {
+                        "bottleneck": {"service_name": "payment-service", "operation_name": "charge", "duration_ms": 4500, "status": "ok"},
+                        "top_spans": [
+                            {"service_name": "api-gateway", "operation_name": "/checkout", "duration_ms": 5800, "status": "ok"},
+                            {"service_name": "payment-service", "operation_name": "charge", "duration_ms": 4500, "status": "ok"},
+                        ],
+                        "root_cause": "支付服务响应延迟较高，建议检查下游支付网关。",
+                    },
+                    "history": [],
+                    "notify": {"status": "fallback"},
+                },
+                {
+                    "run_id": "demo_run_004",
+                    "trace_id": "demo_trace_004",
+                    "status": "ok",
+                    "started_at": (now - timedelta(minutes=45)).isoformat(),
+                    "finished_at": (now - timedelta(minutes=44)).isoformat(),
+                    "metrics": {"duration_ms": 890},
+                    "diagnosis": {
+                        "bottleneck": None,
+                        "top_spans": [
+                            {"service_name": "api-gateway", "operation_name": "/health", "duration_ms": 890, "status": "ok"},
+                        ],
+                        "root_cause": "系统运行正常。",
+                    },
+                    "history": [],
+                    "notify": {"status": "sent"},
+                },
+                {
+                    "run_id": "demo_run_005",
+                    "trace_id": "demo_trace_005",
+                    "status": "failed",
+                    "started_at": (now - timedelta(hours=1)).isoformat(),
+                    "finished_at": (now - timedelta(hours=1) + timedelta(minutes=2)).isoformat(),
+                    "metrics": {"duration_ms": 12000},
+                    "diagnosis": {
+                        "bottleneck": {"service_name": "inventory-service", "operation_name": "reserveStock", "duration_ms": 10500, "status": "ERROR"},
+                        "top_spans": [
+                            {"service_name": "api-gateway", "operation_name": "/purchase", "duration_ms": 12000, "status": "ERROR"},
+                            {"service_name": "inventory-service", "operation_name": "reserveStock", "duration_ms": 10500, "status": "ERROR"},
+                        ],
+                        "root_cause": "库存服务超时，可能原因为库存不足或下游服务过载。",
+                    },
+                    "history": [],
+                    "notify": {"status": "sent"},
+                    "error": "connection timeout",
+                },
+            ]
+
+            # 确保目录存在
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # 追加到现有数据（如果文件存在）
+            existing = []
+            if output_path.exists():
+                try:
+                    import json as _json
+                    with open(output_path, "r", encoding="utf-8") as f:
+                        existing = _json.load(f)
+                except Exception:
+                    existing = []
+
+            # 合并去重（按 run_id）
+            existing_ids = {r.get("run_id") for r in existing if isinstance(r, dict)}
+            for run in demo_runs:
+                if run["run_id"] not in existing_ids:
+                    existing.append(run)
+
+            # 写入文件
+            import json as _json
+            with open(output_path, "w", encoding="utf-8") as f:
+                _json.dump(existing, f, ensure_ascii=False, indent=2)
+
+            data = {"imported": len(demo_runs), "total": len(existing), "path": str(output_path)}
             return jsonify(_envelope(data, source="local", degraded=False, start_ms=start))
 
         except Exception as exc:

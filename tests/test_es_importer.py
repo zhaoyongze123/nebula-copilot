@@ -90,8 +90,52 @@ class TestESImporterTransformTraceToRun:
 
         run = ESImporter.transform_trace_to_run(trace)
 
-        assert run["status"] == "error"
+        assert run["status"] == "failed"
         assert run["metrics"]["has_error"] is True
+
+    def test_transform_trace_timeline_stops_at_first_error(self) -> None:
+        """失败链路应在首个 ERROR 节点截断，后续 SKIPPED 不展示。"""
+        skipped_child = Span(
+            span_id="skipped",
+            parent_span_id="error",
+            service_name="downstream-service",
+            operation_name="RPC downstream",
+            duration_ms=5,
+            status="SKIPPED",
+            exception_stack="upstream aborted",
+            children=[],
+        )
+        error_child = Span(
+            span_id="error",
+            parent_span_id="root",
+            service_name="payment-service",
+            operation_name="RPC pay",
+            duration_ms=1200,
+            status="ERROR",
+            exception_stack="timeout",
+            children=[skipped_child],
+        )
+        root = Span(
+            span_id="root",
+            parent_span_id=None,
+            service_name="gateway-service",
+            operation_name="HTTP POST /submit",
+            duration_ms=1300,
+            status="OK",
+            exception_stack=None,
+            children=[error_child],
+        )
+        trace = TraceDocument(trace_id="trace-stop-error", root=root)
+
+        run = ESImporter.transform_trace_to_run(trace)
+        timeline = run["history"]
+        statuses = [ev["status"] for ev in timeline]
+        span_ids = [ev["span_id"] for ev in timeline]
+
+        assert run["status"] == "failed"
+        assert "ERROR" in statuses
+        assert "SKIPPED" not in statuses
+        assert "skipped" not in span_ids
 
     def test_transform_trace_none_root_raises(self) -> None:
         """Test that transform_trace_to_run raises when root is invalid."""
