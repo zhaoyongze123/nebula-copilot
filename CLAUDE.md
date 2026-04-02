@@ -173,50 +173,58 @@ echo "[$(date)] 模块: vector_store 核心类: VectorStore.py 状态: 待测试
 
 ## 第六部分：MCP 工具集成规范（2026 Agent 增强）
 
-基于《2026 Agentic Coding Trends Report》，通过 MCP (Model Context Protocol) 赋予 Agent "眼、耳、手"。
+基于《2026 Agentic Coding Trends Report》，通过 MCP 赋予 Agent "眼、耳、手"。
 
-### 已配置 MCP 服务器
+### 已配置并连接成功的 MCP
 
-| MCP | 用途 | 状态 |
+| MCP | 用途 | 工具 |
 |-----|------|------|
-| `memory` | 长期记忆存储 | ✅ 已连接 |
-| `filesystem` | Obsidian 笔记库访问 | ✅ 已连接 |
-| `fetch` | HTTP 请求（接口测试/文档获取） | ⚠️ 待修复 |
+| `memory` | 长期记忆存储 | memory_create, memory_search, memory_list |
+| `filesystem` | Obsidian 笔记库访问 | filesystem_read, filesystem_search |
+| `github` | GitHub API 操作 | github_create_pr, github_search_repo |
+| `thinking` | 顺序思考/问题解决 | thinking_next, thinking_reset |
 
 ### Memory MCP 使用规范
 ```
-工具: memory_* 系列
-用途:
-  - 记录高频 Bug 和解决方案
-  - 存储架构决策记录
-  - 跨会话共享重要发现
-
-规则:
-  - 遇到疑难 Bug 时，先查询 memory 是否有记录
-  - 解决后写入 memory 供后续使用
-  - 格式: [时间] 类别: xxx 内容: xxx
+遇到疑难 Bug 时：
+1. memory_search("NullPointerException")
+2. 如果有记录，使用已知方案
+3. 如果没有，解决后 memory_create() 记录
 ```
 
 ### Filesystem MCP 使用规范
 ```
-工具: filesystem_* 系列
 访问路径: /Users/mac/Documents/Obsidian Vault/
+工具: filesystem_read, filesystem_search
 
-用途:
-  - 查阅业务规则和设计文档
-  - 参考架构图和流程图
-  - 查询历史决策记录
-
-规则:
-  - 遇到业务逻辑问题，先查阅 Obsidian 笔记
-  - 笔记路径: /Users/mac/Documents/Obsidian Vault/{category}/xxx.md
-  - 优先查阅: java基础、java面试题 等与项目相关的笔记
+遇到业务逻辑问题：
+1. filesystem_search("订单状态机")
+2. filesystem_read("/path/to/note.md")
 ```
 
-### Fetch MCP 使用规范（待修复）
+### GitHub MCP 使用规范
 ```
-工具: fetch_* 系列
-用途:
+功能完成后：
+1. github_create_pull_request(...)
+2. github_search_repositories("nebula-copilot")
+```
+
+### Thinking MCP 使用规范
+```
+遇到复杂问题时：
+1. thinking_next("问题是什么？")
+2. thinking_next("可能的原因？")
+3. thinking_next("验证方案？")
+```
+
+### Puppeteer MCP（需安装 Chrome）
+```
+验证 Web Dashboard：
+1. puppeteer_navigate("http://localhost:8080")
+2. puppeteer_fill("#search", "trace_id")
+3. puppeteer_screenshot("results/verify.png")
+```
+详细配置见 `docs/MCP_SETUP.md`
   - 测试本地 HTTP 接口
   - 验证 Web Dashboard 功能
   - 获取在线文档
