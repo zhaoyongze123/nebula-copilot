@@ -171,7 +171,88 @@ echo "[$(date)] 模块: vector_store 核心类: VectorStore.py 状态: 待测试
 
 ---
 
-## 第六部分：项目概述
+## 第六部分：MCP 工具集成规范（2026 Agent 增强）
+
+基于《2026 Agentic Coding Trends Report》，通过 MCP (Model Context Protocol) 赋予 Agent "眼、耳、手"。
+
+### 已配置 MCP 服务器
+
+| MCP | 用途 | 状态 |
+|-----|------|------|
+| `memory` | 长期记忆存储 | ✅ 已连接 |
+| `filesystem` | Obsidian 笔记库访问 | ✅ 已连接 |
+| `fetch` | HTTP 请求（接口测试/文档获取） | ⚠️ 待修复 |
+
+### Memory MCP 使用规范
+```
+工具: memory_* 系列
+用途:
+  - 记录高频 Bug 和解决方案
+  - 存储架构决策记录
+  - 跨会话共享重要发现
+
+规则:
+  - 遇到疑难 Bug 时，先查询 memory 是否有记录
+  - 解决后写入 memory 供后续使用
+  - 格式: [时间] 类别: xxx 内容: xxx
+```
+
+### Filesystem MCP 使用规范
+```
+工具: filesystem_* 系列
+访问路径: /Users/mac/Documents/Obsidian Vault/
+
+用途:
+  - 查阅业务规则和设计文档
+  - 参考架构图和流程图
+  - 查询历史决策记录
+
+规则:
+  - 遇到业务逻辑问题，先查阅 Obsidian 笔记
+  - 笔记路径: /Users/mac/Documents/Obsidian Vault/{category}/xxx.md
+  - 优先查阅: java基础、java面试题 等与项目相关的笔记
+```
+
+### Fetch MCP 使用规范（待修复）
+```
+工具: fetch_* 系列
+用途:
+  - 测试本地 HTTP 接口
+  - 验证 Web Dashboard 功能
+  - 获取在线文档
+
+规则:
+  - 开发完接口后，用 fetch 验证 localhost:8080
+  - 遇到错误，用 fetch 查阅 StackOverflow
+  - 请求格式: fetch(url, options)
+```
+
+### Puppeteer MCP（可选，浏览器控制）
+如需开启，终端执行：
+```bash
+claude mcp add puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
+```
+
+Puppeteer 工具集：
+- `puppeteer_navigate`: 访问 URL
+- `puppeteer_screenshot`: 截图保存
+- `puppeteer_click`: 点击元素
+- `puppeteer_fill`: 填写表单
+- `puppeteer_evaluate`: 执行 JS 获取 DOM
+
+### MCP 故障排查
+```bash
+# 查看 MCP 状态
+claude mcp list
+
+# 重新连接失败的 MCP
+claude mcp remove <name>
+claude mcp add <name> -- <command>
+```
+
+---
+
+## 第七部分：项目概述
 
 Nebula-Copilot 是一个面向微服务生产环境的终端排障助手，通过分析分布式链路（trace）数据自动识别瓶颈、分类错误并提供可执行建议。支持本地 JSON 文件和 Elasticsearch 双数据源，提供 CLI 和 Web Dashboard 两种交互方式。
 

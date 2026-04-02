@@ -17,6 +17,29 @@
   - nebula_copilot/
 ```
 
+## MCP 工具权限
+```
+✅ 可用:
+  - memory_* : 记录测试发现和 Bug 细节
+  - filesystem_* : 查阅业务文档
+  - fetch_* : 验证 HTTP 接口
+  - puppeteer_* : 浏览器 UI 验证（如果已配置）
+
+❌ 禁用:
+  - 直接修改业务代码
+```
+
+## 网页实时验证规范（MCP Puppeteer）
+如果 Puppeteer MCP 已启用，QA Agent 应优先使用浏览器验证：
+```
+1. puppeteer_navigate("http://localhost:8080/dashboard")
+2. puppeteer_fill("#search-input", "trace_id_xxx")
+3. puppeteer_click("#search-btn")
+4. puppeteer_evaluate("document.querySelector('.result').textContent")
+5. 如验证成功 → 更新 ready_for_test.md
+6. 如页面报错 → puppeteer_screenshot("errors/bug_xxx.png")
+```
+
 ## 核心职责
 
 ### 1. 监控消息总线
